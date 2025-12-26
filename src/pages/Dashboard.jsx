@@ -8,7 +8,7 @@ import { Progress } from '@/components/ui/progress';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { motion } from 'framer-motion';
-import CourseCard from '../components/courses/CourseCard';
+
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -36,9 +36,9 @@ export default function Dashboard() {
     enabled: !!user?.email
   });
 
-  const { data: courses = [] } = useQuery({
-    queryKey: ['courses'],
-    queryFn: () => base44.entities.Course.filter({ is_published: true }, '-created_date', 6)
+  const { data: shiurim = [] } = useQuery({
+    queryKey: ['shiurim'],
+    queryFn: () => base44.entities.ShiurRecording.list('-created_date', 6)
   });
 
   const { data: userProgress = [] } = useQuery({
@@ -72,8 +72,6 @@ export default function Dashboard() {
   }, [subscription]);
 
   const completedLessons = userProgress?.filter(p => p.completed).length || 0;
-  const inProgressCourseIds = [...new Set(userProgress?.filter(p => !p.completed).map(p => p.course_id) || [])];
-  const inProgressCourses = courses.filter(c => inProgressCourseIds.includes(c.id));
 
   const tierBenefits = {
     free: { name: 'Free', color: 'text-slate-600', icon: Star },
@@ -243,131 +241,96 @@ export default function Dashboard() {
           </Card>
         </motion.div>
 
-        {/* Current Courses - In Progress */}
-        {inProgressCourses.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4 }}
-          >
-            <div className="flex items-center space-x-3 mb-6">
-              <div className="h-1 w-12 bg-gradient-to-r from-blue-600 to-transparent rounded-full" />
-              <h2 className="text-3xl md:text-4xl font-bold text-slate-900">Your Studies</h2>
-            </div>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {inProgressCourses.map((course, idx) => {
-                const courseProgressItems = userProgress.filter(p => p.course_id === course.id);
-                const totalLessons = courseProgressItems.length;
-                const completedInCourse = courseProgressItems.filter(p => p.completed).length;
-                const progressPercent = totalLessons > 0 ? (completedInCourse / totalLessons) * 100 : 0;
-                
-                return (
-                  <motion.div
-                    key={course.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.5 + idx * 0.1 }}
-                  >
-                    <Card className="glass-card hover:shadow-2xl transition-all duration-300 border-0 group">
-                      <CardHeader className="pb-4">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="text-xs font-semibold text-blue-600 mb-2 uppercase tracking-wider">
-                              In Progress
-                            </div>
-                            <CardTitle className="text-2xl mb-3 group-hover:text-blue-600 transition-colors">
-                              {course.title}
-                            </CardTitle>
-                            {course.title_hebrew && (
-                              <p className="text-amber-700 text-lg mb-2" dir="rtl">{course.title_hebrew}</p>
-                            )}
-                            <p className="text-slate-600 text-sm line-clamp-2">{course.description}</p>
-                          </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-4">
-                          <div className="bg-slate-50 rounded-xl p-4">
-                            <div className="flex justify-between text-sm mb-2">
-                              <span className="text-slate-600 font-medium">Course Progress</span>
-                              <span className="text-slate-900 font-bold">{Math.round(progressPercent)}%</span>
-                            </div>
-                            <div className="relative h-2 bg-slate-200 rounded-full overflow-hidden">
-                              <motion.div 
-                                initial={{ width: 0 }}
-                                animate={{ width: `${progressPercent}%` }}
-                                transition={{ duration: 1, delay: 0.7 + idx * 0.1 }}
-                                className="h-full bg-gradient-to-r from-blue-500 to-blue-600"
-                              />
-                            </div>
-                            <div className="text-xs text-slate-500 mt-2">
-                              {completedInCourse} of {totalLessons} lessons completed
-                            </div>
-                          </div>
-                          
-                          <Link to={createPageUrl('CourseDetail') + '?id=' + course.id}>
-                            <Button className="w-full bg-gradient-to-r from-slate-900 to-slate-800 hover:from-slate-800 hover:to-slate-700 text-white font-semibold shadow-lg group-hover:shadow-xl transition-all">
-                              Continue Course
-                              <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                            </Button>
-                          </Link>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                );
-              })}
-            </div>
-          </motion.div>
-        )}
+        {/* Jewish Learning Paths */}
 
-        {/* Course Catalog */}
+        {/* Jewish Learning Paths */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
+          transition={{ delay: 0.4 }}
         >
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center space-x-3">
-              <div className="h-1 w-12 bg-gradient-to-r from-amber-500 to-transparent rounded-full" />
-              <h2 className="text-3xl md:text-4xl font-bold text-slate-900">
-                {inProgressCourses.length > 0 ? 'Course Catalogue' : 'Begin Your Scholarly Journey'}
-              </h2>
-            </div>
-            <Link to={createPageUrl('Marketplace')}>
-              <Button variant="outline" className="group border-2 font-semibold">
-                View All Courses
-                <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-              </Button>
-            </Link>
+          <div className="flex items-center space-x-3 mb-6">
+            <div className="h-1 w-12 bg-gradient-to-r from-amber-500 to-transparent rounded-full" />
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900">Torah Learning Paths</h2>
           </div>
 
-          {courses.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {courses
-                .filter(c => !inProgressCourseIds.includes(c.id))
-                .slice(0, 3)
-                .map((course, idx) => (
-                  <motion.div
-                    key={course.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.7 + idx * 0.1 }}
-                  >
-                    <CourseCard course={course} userTier={userTier} />
-                  </motion.div>
-                ))}
-            </div>
-          ) : (
-            <Card className="glass-card border-2 border-dashed border-slate-300">
-              <CardContent className="text-center py-20">
-                <BookOpen className="w-20 h-20 text-slate-400 mx-auto mb-4" />
-                <h3 className="text-xl font-bold text-slate-700 mb-2">Course Library Opening Soon</h3>
-                <p className="text-slate-500">New Torah scholarship will be available shortly</p>
-              </CardContent>
-            </Card>
-          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+            >
+              <Link to={createPageUrl('TalmudStudy')}>
+                <Card className="glass-card border-0 shadow-xl hover:shadow-2xl transition-all group cursor-pointer h-full">
+                  <CardContent className="p-6">
+                    <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center text-4xl mb-4 group-hover:scale-110 transition-transform">
+                      📖
+                    </div>
+                    <h3 className="text-2xl font-bold text-slate-900 mb-2 group-hover:text-blue-600 transition-colors">Talmud</h3>
+                    <p className="text-slate-600 text-sm mb-4">Gemara, Mishnah & Daf Yomi</p>
+                    <Button variant="outline" className="w-full">Study Now</Button>
+                  </CardContent>
+                </Card>
+              </Link>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+            >
+              <Link to={createPageUrl('TorahStudy')}>
+                <Card className="glass-card border-0 shadow-xl hover:shadow-2xl transition-all group cursor-pointer h-full">
+                  <CardContent className="p-6">
+                    <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-green-600 rounded-2xl flex items-center justify-center text-4xl mb-4 group-hover:scale-110 transition-transform">
+                      📜
+                    </div>
+                    <h3 className="text-2xl font-bold text-slate-900 mb-2 group-hover:text-green-600 transition-colors">Torah</h3>
+                    <p className="text-slate-600 text-sm mb-4">Chumash, Parsha & Rashi</p>
+                    <Button variant="outline" className="w-full">Study Now</Button>
+                  </CardContent>
+                </Card>
+              </Link>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.7 }}
+            >
+              <Link to={createPageUrl('KabbalahStudy')}>
+                <Card className="glass-card border-0 shadow-xl hover:shadow-2xl transition-all group cursor-pointer h-full">
+                  <CardContent className="p-6">
+                    <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center text-4xl mb-4 group-hover:scale-110 transition-transform">
+                      ✨
+                    </div>
+                    <h3 className="text-2xl font-bold text-slate-900 mb-2 group-hover:text-purple-600 transition-colors">Kabbalah</h3>
+                    <p className="text-slate-600 text-sm mb-4">Zohar & Mystical Wisdom</p>
+                    <Button variant="outline" className="w-full">Study Now</Button>
+                  </CardContent>
+                </Card>
+              </Link>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.8 }}
+            >
+              <Link to={createPageUrl('HalachaGuide')}>
+                <Card className="glass-card border-0 shadow-xl hover:shadow-2xl transition-all group cursor-pointer h-full">
+                  <CardContent className="p-6">
+                    <div className="w-16 h-16 bg-gradient-to-r from-amber-500 to-amber-600 rounded-2xl flex items-center justify-center text-4xl mb-4 group-hover:scale-110 transition-transform">
+                      ⚖️
+                    </div>
+                    <h3 className="text-2xl font-bold text-slate-900 mb-2 group-hover:text-amber-600 transition-colors">Halacha</h3>
+                    <p className="text-slate-600 text-sm mb-4">Jewish Law & Practice</p>
+                    <Button variant="outline" className="w-full">Study Now</Button>
+                  </CardContent>
+                </Card>
+              </Link>
+            </motion.div>
+          </div>
         </motion.div>
       </div>
     </div>
