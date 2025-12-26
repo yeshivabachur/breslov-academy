@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from './utils';
 import { base44 } from '@/api/base44Client';
-import { BookOpen, GraduationCap, TrendingUp, Crown, Menu, X, LogOut } from 'lucide-react';
+import { BookOpen, GraduationCap, TrendingUp, Crown, Menu, X, LogOut, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function Layout({ children, currentPageName }) {
@@ -24,7 +24,10 @@ export default function Layout({ children, currentPageName }) {
   const navigation = [
     { name: 'Dashboard', path: 'Dashboard', icon: BookOpen },
     { name: 'Courses', path: 'Courses', icon: GraduationCap },
+    { name: 'Learning Paths', path: 'LearningPaths', icon: Menu },
+    { name: 'Community', path: 'Community', icon: Menu },
     { name: 'My Progress', path: 'MyProgress', icon: TrendingUp },
+    { name: 'Achievements', path: 'Achievements', icon: Trophy },
     { name: 'Subscription', path: 'Subscription', icon: Crown },
   ];
 

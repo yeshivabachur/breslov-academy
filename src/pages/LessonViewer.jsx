@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, CheckCircle, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react';
+import DiscussionThread from '../components/learning/DiscussionThread';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Link } from 'react-router-dom';
@@ -62,6 +63,15 @@ export default function LessonViewer() {
       return progs[0];
     },
     enabled: !!user?.email && !!lessonId
+  });
+
+  const { data: discussions = [] } = useQuery({
+    queryKey: ['discussions', lesson?.course_id, lessonId],
+    queryFn: () => base44.entities.Discussion.filter({ 
+      course_id: lesson.course_id,
+      lesson_id: lessonId 
+    }, '-created_date'),
+    enabled: !!lesson?.course_id
   });
 
   useEffect(() => {
@@ -176,6 +186,16 @@ export default function LessonViewer() {
           </ReactMarkdown>
         </div>
       )}
+
+      {/* Discussion Section */}
+      <div className="bg-white rounded-xl shadow-md p-6">
+        <DiscussionThread
+          discussions={discussions || []}
+          courseId={lesson.course_id}
+          lessonId={lessonId}
+          user={user}
+        />
+      </div>
 
       {/* Notes Section */}
       <div className="bg-white rounded-xl shadow-md p-6">
