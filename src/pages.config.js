@@ -33,6 +33,7 @@ import Forums from './pages/Forums';
 import Scholarships from './pages/Scholarships';
 import Microlearning from './pages/Microlearning';
 import AlumniNetwork from './pages/AlumniNetwork';
+import HabitTracker from './pages/HabitTracker';
 import __Layout from './Layout.jsx';
 
 
@@ -72,6 +73,7 @@ export const PAGES = {
     "Scholarships": Scholarships,
     "Microlearning": Microlearning,
     "AlumniNetwork": AlumniNetwork,
+    "HabitTracker": HabitTracker,
 }
 
 export const pagesConfig = {
