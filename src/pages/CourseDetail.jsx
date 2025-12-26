@@ -181,6 +181,7 @@ export default function CourseDetail() {
               </Card>
             )}
           </div>
+          </div>
         </div>
       </div>
 
