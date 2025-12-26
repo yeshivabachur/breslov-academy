@@ -34,9 +34,9 @@ export default function Layout({ children, currentPageName }) {
     { name: 'Messages', path: 'TeacherMessaging', icon: MessageCircle },
   ] : [
     { name: 'Dashboard', path: 'Dashboard', icon: BookOpen },
-    { name: 'My Courses', path: 'StudentEnrollments', icon: BookOpen },
-    { name: 'Assignments', path: 'Assignments', icon: FileText },
-    { name: 'Grades', path: 'GradeBook', icon: Award },
+    { name: 'Seder Halimud', path: 'SederPaths', icon: BookOpen },
+    { name: 'My Learning', path: 'MyLearning', icon: FileText },
+    { name: 'Marketplace', path: 'Marketplace', icon: Award },
   ];
 
   return (
