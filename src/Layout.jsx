@@ -158,9 +158,47 @@ export default function Layout({ children, currentPageName }) {
       {/* Footer */}
       <footer className="bg-slate-900/95 backdrop-blur-xl border-t border-white/10 mt-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="text-center">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+            <div>
+              <h4 className="text-white font-bold mb-4">Learn</h4>
+              <ul className="space-y-2 text-slate-400">
+                <li><a href="#" className="hover:text-amber-400 transition-colors">Torah</a></li>
+                <li><a href="#" className="hover:text-amber-400 transition-colors">Talmud</a></li>
+                <li><a href="#" className="hover:text-amber-400 transition-colors">Kabbalah</a></li>
+                <li><a href="#" className="hover:text-amber-400 transition-colors">Halacha</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-white font-bold mb-4">Community</h4>
+              <ul className="space-y-2 text-slate-400">
+                <li><a href="#" className="hover:text-amber-400 transition-colors">Study Groups</a></li>
+                <li><a href="#" className="hover:text-amber-400 transition-colors">Forums</a></li>
+                <li><a href="#" className="hover:text-amber-400 transition-colors">Events</a></li>
+                <li><a href="#" className="hover:text-amber-400 transition-colors">Teachers</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-white font-bold mb-4">Resources</h4>
+              <ul className="space-y-2 text-slate-400">
+                <li><a href="#" className="hover:text-amber-400 transition-colors">Library</a></li>
+                <li><a href="#" className="hover:text-amber-400 transition-colors">Audio Shiurim</a></li>
+                <li><a href="#" className="hover:text-amber-400 transition-colors">Video Lessons</a></li>
+                <li><a href="#" className="hover:text-amber-400 transition-colors">Downloads</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-white font-bold mb-4">Connect</h4>
+              <ul className="space-y-2 text-slate-400">
+                <li><a href="#" className="hover:text-amber-400 transition-colors">Contact Us</a></li>
+                <li><a href="#" className="hover:text-amber-400 transition-colors">Support</a></li>
+                <li><a href="#" className="hover:text-amber-400 transition-colors">About</a></li>
+                <li><a href="#" className="hover:text-amber-400 transition-colors">Donate</a></li>
+              </ul>
+            </div>
+          </div>
+          <div className="text-center border-t border-white/10 pt-8">
             <p className="text-slate-300 font-semibold mb-2">
-              © 2024 Breslov Academy • Spreading the Torah of Rebbe Nachman of Breslov
+              © 2025 Breslov Academy • Spreading the Torah of Rebbe Nachman of Breslov
             </p>
             <p className="text-slate-400 italic">
               "It is a great mitzvah to always be happy" - Likutey Moharan II:24
