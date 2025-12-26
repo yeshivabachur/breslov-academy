@@ -25,6 +25,9 @@ import Feed from './pages/Feed';
 import Portfolio from './pages/Portfolio';
 import AdaptiveLearning from './pages/AdaptiveLearning';
 import Tournaments from './pages/Tournaments';
+import Skills from './pages/Skills';
+import StudyBuddies from './pages/StudyBuddies';
+import CareerPaths from './pages/CareerPaths';
 import __Layout from './Layout.jsx';
 
 
@@ -56,6 +59,9 @@ export const PAGES = {
     "Portfolio": Portfolio,
     "AdaptiveLearning": AdaptiveLearning,
     "Tournaments": Tournaments,
+    "Skills": Skills,
+    "StudyBuddies": StudyBuddies,
+    "CareerPaths": CareerPaths,
 }
 
 export const pagesConfig = {
