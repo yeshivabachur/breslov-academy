@@ -28,8 +28,7 @@ export default function Layout({ children, currentPageName }) {
   const isInstructor = user?.role === 'admin'; // Instructors are admins
 
   const navigation = isInstructor ? [
-    { name: 'Dashboard', path: 'Dashboard', icon: BookOpen },
-    { name: 'Teach', path: 'InstructorDashboard', icon: GraduationCap },
+    { name: 'Dashboard', path: 'InstructorDashboard', icon: GraduationCap },
     { name: 'Analytics', path: 'InstructorAnalytics', icon: BarChart3 },
     { name: 'Messages', path: 'TeacherMessaging', icon: MessageCircle },
   ] : [
