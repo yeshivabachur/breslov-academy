@@ -2,6 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@300;400;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
 /* Dark Mode Support */
 :root {
   --background: 0 0% 100%;
@@ -56,6 +58,24 @@ body {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
   transition: background-color 0.3s ease, color 0.3s ease;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Crimson Pro', Georgia, serif;
+  font-weight: 600;
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.dark .glass-card {
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 /* Custom Scrollbar */
