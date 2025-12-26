@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, CheckCircle, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react';
 import DiscussionThread from '../components/learning/DiscussionThread';
+import AdvancedVideoPlayer from '../components/video/AdvancedVideoPlayer';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Link } from 'react-router-dom';
@@ -159,15 +160,24 @@ export default function LessonViewer() {
 
       {/* Video/Audio Player */}
       {lesson.video_url && (
-        <div className="bg-slate-900 rounded-xl overflow-hidden shadow-lg">
-          <video 
-            controls 
-            className="w-full"
-            src={lesson.video_url}
-          >
-            Your browser does not support video playback.
-          </video>
-        </div>
+        <AdvancedVideoPlayer
+          src={lesson.video_url}
+          onTimeUpdate={(time) => {
+            // Auto-save progress
+            if (progress) {
+              base44.entities.UserProgress.update(progress.id, {
+                last_position_seconds: Math.floor(time)
+              });
+            }
+          }}
+          onEnded={() => {
+            // Auto-complete lesson when video ends
+            if (!progress?.completed) {
+              markCompleteMutation.mutate();
+            }
+          }}
+          initialTime={progress?.last_position_seconds || 0}
+        />
       )}
 
       {lesson.audio_url && !lesson.video_url && (

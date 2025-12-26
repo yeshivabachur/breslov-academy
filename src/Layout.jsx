@@ -4,6 +4,8 @@ import { createPageUrl } from './utils';
 import { base44 } from '@/api/base44Client';
 import { BookOpen, GraduationCap, TrendingUp, Crown, Menu, X, LogOut, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import ThemeToggle from '@/components/theme/ThemeToggle';
+import NotificationCenter from '@/components/notifications/NotificationCenter';
 
 export default function Layout({ children, currentPageName }) {
   const [user, setUser] = useState(null);
@@ -88,10 +90,12 @@ export default function Layout({ children, currentPageName }) {
             </nav>
 
             {/* User Menu */}
-            <div className="hidden md:flex items-center space-x-4">
+            <div className="hidden md:flex items-center space-x-2">
               {user && (
                 <>
-                  <div className="text-right">
+                  <NotificationCenter user={user} />
+                  <ThemeToggle userEmail={user.email} />
+                  <div className="text-right ml-2">
                     <p className="text-sm font-medium text-white">{user.full_name}</p>
                     <p className="text-xs text-slate-400">{user.email}</p>
                   </div>
