@@ -19,6 +19,11 @@ export default function Dashboard() {
       try {
         const currentUser = await base44.auth.me();
         setUser(currentUser);
+        
+        // Redirect instructors to their dashboard
+        if (currentUser.role === 'admin') {
+          window.location.href = createPageUrl('InstructorDashboard');
+        }
       } catch (error) {
         base44.auth.redirectToLogin();
       }
