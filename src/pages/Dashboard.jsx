@@ -122,7 +122,7 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/20">
       <div className="max-w-7xl mx-auto space-y-12 md:space-y-16 px-4 py-8 md:py-12">
-        {/* Welcome Header - Oxford Inspired */}
+        {/* Welcome Header with Analytics */}
         <motion.div 
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -136,21 +136,22 @@ export default function Dashboard() {
           </div>
           <div className="absolute inset-0 bg-gradient-to-b from-transparent to-slate-950/20" />
           
-          <div className="relative p-10 md:p-16">
+          <div className="relative p-10 md:p-16 space-y-8">
+            {/* Main Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-10">
-              <div className="flex-1 space-y-8">
+              <div className="flex-1 space-y-6">
                 <motion.div 
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2, duration: 0.6 }}
                 >
-                  <div className="inline-flex items-center space-x-3 mb-6">
+                  <div className="inline-flex items-center space-x-3 mb-4">
                     <div className="p-2.5 bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 rounded-xl shadow-xl">
                       <GraduationCap className="w-7 h-7 text-white" />
                     </div>
                     <span className="text-amber-300 font-semibold text-sm tracking-wider uppercase">Breslov Academy</span>
                   </div>
-                  <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-white tracking-tight leading-none mb-4">
+                  <h1 className="text-5xl md:text-7xl font-black text-white tracking-tight leading-none mb-3">
                     Shalom,<br />
                     <span className="bg-gradient-to-r from-amber-300 via-amber-400 to-amber-500 text-transparent bg-clip-text">
                       {user?.full_name?.split(' ')[0] || 'Student'}
@@ -160,57 +161,6 @@ export default function Dashboard() {
                     Continue your scholarly journey through the profound wisdom of Rebbe Nachman of Breslov
                   </p>
                 </motion.div>
-                
-                <div className="flex flex-wrap items-center gap-3">
-                  <motion.div 
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.4 }}
-                    whileHover={{ scale: 1.08, y: -4 }}
-                    className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl px-5 py-3 shadow-xl hover:shadow-2xl transition-all duration-300"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div className="p-2 bg-gradient-to-br from-orange-400 to-red-500 rounded-lg">
-                        <Flame className="w-4 h-4 text-white" />
-                      </div>
-                      <div>
-                        <div className="text-white font-bold text-lg">{studyStreak?.current_streak || 0}</div>
-                        <div className="text-slate-300 text-xs">Day Streak</div>
-                      </div>
-                    </div>
-                  </motion.div>
-                  
-                  <motion.div 
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.5 }}
-                    whileHover={{ scale: 1.08, y: -4 }}
-                    className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl px-5 py-3 shadow-xl hover:shadow-2xl transition-all duration-300"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div className="p-2 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg">
-                        <Trophy className="w-4 h-4 text-white" />
-                      </div>
-                      <div>
-                        <div className="text-white font-bold text-lg">{completedLessons}</div>
-                        <div className="text-slate-300 text-xs">Lessons</div>
-                      </div>
-                    </div>
-                  </motion.div>
-
-                  <motion.div 
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.6 }}
-                    whileHover={{ scale: 1.08, y: -4, rotate: 2 }}
-                    className={`backdrop-blur-xl bg-gradient-to-r ${currentLevelInfo.color} border border-white/20 rounded-2xl px-5 py-3 shadow-xl hover:shadow-2xl transition-all duration-300`}
-                  >
-                    <div className="flex items-center space-x-2">
-                      <Sparkles className="w-4 h-4 text-white" />
-                      <div className="text-white font-bold">{userLevel?.current_level || 'Initiate'}</div>
-                    </div>
-                  </motion.div>
-                </div>
               </div>
 
               {/* Level Progress Card */}
@@ -239,6 +189,87 @@ export default function Dashboard() {
                   </div>
                 </motion.div>
               )}
+            </div>
+
+            {/* Analytics Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                whileHover={{ scale: 1.05, y: -4 }}
+                className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-5 shadow-xl hover:shadow-2xl transition-all duration-300"
+              >
+                <div className="flex items-center space-x-3 mb-2">
+                  <div className="p-2 bg-gradient-to-br from-orange-400 to-red-500 rounded-lg">
+                    <Flame className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="text-white font-black text-2xl">{studyStreak?.current_streak || 0}</div>
+                </div>
+                <div className="text-slate-300 text-sm font-medium">Day Streak</div>
+              </motion.div>
+              
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                whileHover={{ scale: 1.05, y: -4 }}
+                className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-5 shadow-xl hover:shadow-2xl transition-all duration-300"
+              >
+                <div className="flex items-center space-x-3 mb-2">
+                  <div className="p-2 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg">
+                    <Trophy className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="text-white font-black text-2xl">{completedLessons}</div>
+                </div>
+                <div className="text-slate-300 text-sm font-medium">Completed</div>
+              </motion.div>
+
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+                whileHover={{ scale: 1.05, y: -4 }}
+                className={`backdrop-blur-xl bg-gradient-to-r ${currentLevelInfo.color} border border-white/20 rounded-2xl p-5 shadow-xl hover:shadow-2xl transition-all duration-300`}
+              >
+                <div className="flex items-center space-x-3 mb-2">
+                  <Sparkles className="w-5 h-5 text-white" />
+                  <div className="text-white font-black text-2xl">{userLevel?.current_level || 'Initiate'}</div>
+                </div>
+                <div className="text-white/80 text-sm font-medium">Current Rank</div>
+              </motion.div>
+
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 }}
+                whileHover={{ scale: 1.05, y: -4 }}
+                className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-5 shadow-xl hover:shadow-2xl transition-all duration-300"
+              >
+                <div className="flex items-center space-x-3 mb-2">
+                  <div className="p-2 bg-gradient-to-br from-green-400 to-emerald-600 rounded-lg">
+                    <Star className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="text-white font-black text-2xl">{userLevel?.experience_points || 0}</div>
+                </div>
+                <div className="text-slate-300 text-sm font-medium">Total XP</div>
+              </motion.div>
+
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.7 }}
+                whileHover={{ scale: 1.05, y: -4 }}
+                className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-5 shadow-xl hover:shadow-2xl transition-all duration-300"
+              >
+                <div className="flex items-center space-x-3 mb-2">
+                  <div className="p-2 bg-gradient-to-br from-purple-400 to-purple-600 rounded-lg">
+                    <Clock className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="text-white font-black text-2xl">{userProgress?.length || 0}</div>
+                </div>
+                <div className="text-slate-300 text-sm font-medium">In Progress</div>
+              </motion.div>
             </div>
           </div>
         </motion.div>
