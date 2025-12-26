@@ -1,89 +1,77 @@
 import React, { useState, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Play, Pause, Volume2, SkipForward, SkipBack } from 'lucide-react';
+import { Slider } from '@/components/ui/slider';
+import { Badge } from '@/components/ui/badge';
 
-export default function AudioPlayer({ title, duration = "45:30" }) {
+export default function AudioPlayer({ title, src, duration = 0 }) {
+  const audioRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
-  const [isMuted, setIsMuted] = useState(false);
-  const [volume, setVolume] = useState(100);
+  const [volume, setVolume] = useState(75);
+
+  const togglePlay = () => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+      } else {
+        audioRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   return (
-    <Card className="glass-effect border-0 premium-shadow-lg rounded-[2rem] overflow-hidden">
-      <div className="h-2 bg-gradient-to-r from-purple-500 via-pink-500 to-red-500" />
-      <CardContent className="p-6">
-        <div className="space-y-4">
-          <div className="text-center">
-            <h3 className="text-xl font-black text-slate-900 mb-1">{title}</h3>
-            <p className="text-sm text-slate-600">Daily Shiur • {duration}</p>
+    <Card className="glass-effect border-0 premium-shadow-lg rounded-[2rem]">
+      <CardContent className="p-6 space-y-4">
+        <div className="flex items-center gap-3">
+          <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-pink-500 rounded-2xl flex items-center justify-center">
+            <Volume2 className="w-8 h-8 text-white" />
           </div>
-
-          <div className="space-y-2">
-            <div className="h-2 bg-slate-200 rounded-full overflow-hidden cursor-pointer">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${currentTime}%` }}
-                className="h-full bg-gradient-to-r from-purple-500 to-pink-500"
-              />
-            </div>
-            <div className="flex justify-between text-xs text-slate-600 font-mono">
-              <span>00:00</span>
-              <span>{duration}</span>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="rounded-full"
-            >
-              <SkipBack className="w-5 h-5" />
-            </Button>
-            
-            <Button
-              onClick={() => setIsPlaying(!isPlaying)}
-              className="w-16 h-16 rounded-full bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 shadow-xl"
-            >
-              {isPlaying ? (
-                <Pause className="w-6 h-6 text-white" />
-              ) : (
-                <Play className="w-6 h-6 text-white ml-1" />
-              )}
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="icon"
-              className="rounded-full"
-            >
-              <SkipForward className="w-5 h-5" />
-            </Button>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Button
-              onClick={() => setIsMuted(!isMuted)}
-              variant="ghost"
-              size="icon"
-              className="rounded-full flex-shrink-0"
-            >
-              {isMuted ? (
-                <VolumeX className="w-4 h-4" />
-              ) : (
-                <Volume2 className="w-4 h-4" />
-              )}
-            </Button>
-            <div className="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden cursor-pointer">
-              <div
-                className="h-full bg-gradient-to-r from-purple-500 to-pink-500"
-                style={{ width: `${volume}%` }}
-              />
-            </div>
+          <div className="flex-1">
+            <div className="font-bold text-slate-900">{title || 'Audio Shiur'}</div>
+            <Badge variant="outline" className="text-xs">Audio</Badge>
           </div>
         </div>
+
+        <Slider
+          value={[currentTime]}
+          max={duration}
+          step={1}
+          className="w-full"
+        />
+
+        <div className="flex items-center justify-between text-xs text-slate-600">
+          <span>{formatTime(currentTime)}</span>
+          <span>{formatTime(duration)}</span>
+        </div>
+
+        <div className="flex items-center justify-center gap-4">
+          <Button variant="outline" size="sm" className="rounded-full h-10 w-10 p-0">
+            <SkipBack className="w-5 h-5" />
+          </Button>
+          
+          <Button
+            onClick={togglePlay}
+            size="lg"
+            className="rounded-full h-14 w-14 p-0 bg-gradient-to-br from-purple-600 to-pink-600 text-white"
+          >
+            {isPlaying ? <Pause className="w-7 h-7" /> : <Play className="w-7 h-7" />}
+          </Button>
+          
+          <Button variant="outline" size="sm" className="rounded-full h-10 w-10 p-0">
+            <SkipForward className="w-5 h-5" />
+          </Button>
+        </div>
+
+        <audio ref={audioRef} src={src} />
       </CardContent>
     </Card>
   );

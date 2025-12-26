@@ -1,78 +1,72 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Users, TrendingUp, Award, BookOpen } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Users, BookOpen, Clock, Award } from 'lucide-react';
 
-export default function TeamDashboard({ team }) {
+export default function TeamDashboard({ teamId }) {
+  const teamStats = {
+    members: 24,
+    avgProgress: 72,
+    totalHours: 456,
+    coursesCompleted: 18,
+    topPerformer: 'Moshe L.',
+    teamGoal: 85
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-3">
-              <Users className="w-8 h-8 text-blue-600" />
-              <div>
-                <p className="text-sm text-slate-600">Team Members</p>
-                <p className="text-2xl font-bold">{team?.member_emails?.length || 0}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-3">
-              <BookOpen className="w-8 h-8 text-green-600" />
-              <div>
-                <p className="text-sm text-slate-600">Assigned Courses</p>
-                <p className="text-2xl font-bold">{team?.assigned_courses?.length || 0}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-3">
-              <Clock className="w-8 h-8 text-purple-600" />
-              <div>
-                <p className="text-sm text-slate-600">Study Hours</p>
-                <p className="text-2xl font-bold">{team?.total_study_hours || 0}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-3">
-              <Award className="w-8 h-8 text-amber-600" />
-              <div>
-                <p className="text-sm text-slate-600">Completion Rate</p>
-                <p className="text-2xl font-bold">{team?.completion_rate || 0}%</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Team Progress</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {team?.assigned_courses?.map((courseId, idx) => (
-              <div key={idx}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">Course {idx + 1}</span>
-                  <span className="text-sm text-slate-600">
-                    {Math.floor(Math.random() * 100)}% complete
-                  </span>
-                </div>
-                <Progress value={Math.floor(Math.random() * 100)} />
-              </div>
-            ))}
+    <Card className="glass-effect border-0 premium-shadow-xl rounded-[2.5rem]">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 font-serif">
+          <Users className="w-5 h-5 text-blue-600" />
+          <div>
+            <div>Team Dashboard</div>
+            <div className="text-sm text-slate-600 font-normal" dir="rtl">לוח צוות</div>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="grid grid-cols-4 gap-3">
+          <div className="p-4 bg-blue-50 rounded-xl border border-blue-200 text-center">
+            <Users className="w-5 h-5 text-blue-600 mx-auto mb-2" />
+            <div className="text-2xl font-black text-slate-900">{teamStats.members}</div>
+            <div className="text-xs text-slate-600">Members</div>
+          </div>
+          <div className="p-4 bg-green-50 rounded-xl border border-green-200 text-center">
+            <TrendingUp className="w-5 h-5 text-green-600 mx-auto mb-2" />
+            <div className="text-2xl font-black text-slate-900">{teamStats.avgProgress}%</div>
+            <div className="text-xs text-slate-600">Avg Progress</div>
+          </div>
+          <div className="p-4 bg-purple-50 rounded-xl border border-purple-200 text-center">
+            <BookOpen className="w-5 h-5 text-purple-600 mx-auto mb-2" />
+            <div className="text-2xl font-black text-slate-900">{teamStats.coursesCompleted}</div>
+            <div className="text-xs text-slate-600">Completed</div>
+          </div>
+          <div className="p-4 bg-amber-50 rounded-xl border border-amber-200 text-center">
+            <Award className="w-5 h-5 text-amber-600 mx-auto mb-2" />
+            <div className="text-2xl font-black text-slate-900">{teamStats.totalHours}</div>
+            <div className="text-xs text-slate-600">Hours</div>
+          </div>
+        </div>
+
+        <div className="p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border-2 border-blue-200">
+          <div className="flex justify-between mb-3">
+            <div className="text-sm font-bold text-slate-900">Team Goal Progress</div>
+            <span className="text-sm text-slate-600">{teamStats.avgProgress}% / {teamStats.teamGoal}%</span>
+          </div>
+          <Progress value={(teamStats.avgProgress / teamStats.teamGoal) * 100} className="h-3" />
+        </div>
+
+        <div className="p-4 bg-amber-50 rounded-xl border border-amber-200">
+          <div className="flex items-center gap-2">
+            <Award className="w-5 h-5 text-amber-600" />
+            <div>
+              <div className="font-bold text-amber-900">Top Performer</div>
+              <div className="text-sm text-amber-800">{teamStats.topPerformer}</div>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

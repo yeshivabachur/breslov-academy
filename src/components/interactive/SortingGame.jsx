@@ -1,53 +1,86 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowUpDown, CheckCircle } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { ArrowUp, ArrowDown, CheckCircle } from 'lucide-react';
 
-export default function SortingGame() {
-  const [items, setItems] = useState([
-    { id: 1, text: 'Bereshit', order: 1 },
-    { id: 2, text: 'Vayikra', order: 3 },
-    { id: 3, text: 'Shemot', order: 2 },
-    { id: 4, text: 'Bamidbar', order: 4 },
-    { id: 5, text: 'Devarim', order: 5 },
-  ].sort(() => Math.random() - 0.5));
+export default function SortingGame({ items, onComplete }) {
+  const defaultItems = [
+    { id: 1, text: 'Creation', order: 1 },
+    { id: 2, text: 'Exodus from Egypt', order: 2 },
+    { id: 3, text: 'Giving of Torah', order: 3 },
+    { id: 4, text: 'Entering Israel', order: 4 }
+  ];
 
-  const isCorrect = items.every((item, idx) => item.order === idx + 1);
+  const [sortedItems, setSortedItems] = useState(
+    (items || defaultItems).sort(() => Math.random() - 0.5)
+  );
+
+  const moveUp = (index) => {
+    if (index === 0) return;
+    const newItems = [...sortedItems];
+    [newItems[index], newItems[index - 1]] = [newItems[index - 1], newItems[index]];
+    setSortedItems(newItems);
+  };
+
+  const moveDown = (index) => {
+    if (index === sortedItems.length - 1) return;
+    const newItems = [...sortedItems];
+    [newItems[index], newItems[index + 1]] = [newItems[index + 1], newItems[index]];
+    setSortedItems(newItems);
+  };
+
+  const checkOrder = () => {
+    return sortedItems.every((item, idx) => item.order === idx + 1);
+  };
 
   return (
     <Card className="glass-effect border-0 premium-shadow-lg rounded-[2rem]">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <ArrowUpDown className="w-5 h-5 text-teal-600" />
-          Sort the Five Books
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {items.map((item, idx) => (
-          <motion.div
-            key={item.id}
-            drag="y"
-            dragConstraints={{ top: 0, bottom: 0 }}
-            whileDrag={{ scale: 1.05, zIndex: 10 }}
-            className="p-4 bg-gradient-to-r from-teal-500 to-cyan-600 text-white font-bold rounded-xl shadow-lg cursor-move"
-          >
-            <div className="flex items-center justify-between">
-              <span>{item.text}</span>
-              <span className="text-xs opacity-70">#{idx + 1}</span>
-            </div>
-          </motion.div>
-        ))}
+      <CardContent className="p-6 space-y-4">
+        <Badge className="bg-purple-100 text-purple-800">Sort in Order</Badge>
 
-        {isCorrect && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="p-4 bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl text-center text-white font-bold flex items-center justify-center gap-2"
-          >
-            <CheckCircle className="w-5 h-5" />
-            Perfect Order! +100 XP
-          </motion.div>
-        )}
+        <div className="space-y-2">
+          {sortedItems.map((item, idx) => (
+            <div
+              key={item.id}
+              className="p-4 bg-white rounded-xl border-2 border-slate-200 flex items-center justify-between"
+            >
+              <span className="font-bold text-slate-900">{item.text}</span>
+              <div className="flex gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => moveUp(idx)}
+                  disabled={idx === 0}
+                  className="h-8 w-8 p-0"
+                >
+                  <ArrowUp className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => moveDown(idx)}
+                  disabled={idx === sortedItems.length - 1}
+                  className="h-8 w-8 p-0"
+                >
+                  <ArrowDown className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <Button
+          onClick={() => {
+            if (checkOrder()) {
+              onComplete?.(true);
+            }
+          }}
+          className="w-full bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-xl"
+        >
+          <CheckCircle className="w-4 h-4 mr-2" />
+          Submit Order
+        </Button>
       </CardContent>
     </Card>
   );

@@ -1,99 +1,79 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, XCircle, HelpCircle } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { CheckCircle, XCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { motion } from 'framer-motion';
 
-export default function TrueFalseQuiz() {
+export default function TrueFalseQuiz({ questions, onComplete }) {
   const [currentQ, setCurrentQ] = useState(0);
-  const [answered, setAnswered] = useState(false);
-  const [selectedAnswer, setSelectedAnswer] = useState(null);
+  const [score, setScore] = useState(0);
 
-  const questions = [
-    { question: 'Rebbe Nachman emphasized the importance of joy in serving God', answer: true },
-    { question: 'Hitbodedut should only be practiced in groups', answer: false },
+  const sampleQuestions = questions || [
+    { statement: 'Rebbe Nachman taught that joy is a great mitzvah', statementHebrew: 'רבי נחמן לימד ששמחה היא מצווה גדולה', answer: true },
+    { statement: 'Azamra means to sing praises', statementHebrew: 'אזמרה פירושו לשיר שבחים', answer: false },
+    { statement: 'Hitbodedut is personal prayer in solitude', statementHebrew: 'התבודדות היא תפילה אישית בהתבודדות', answer: true }
   ];
 
+  const question = sampleQuestions[currentQ];
+
   const handleAnswer = (answer) => {
-    setSelectedAnswer(answer);
-    setAnswered(true);
-    setTimeout(() => {
-      if (currentQ < questions.length - 1) {
-        setCurrentQ(currentQ + 1);
-        setAnswered(false);
-        setSelectedAnswer(null);
-      }
-    }, 2000);
+    if (answer === question.answer) {
+      setScore(score + 1);
+    }
+    
+    if (currentQ < sampleQuestions.length - 1) {
+      setTimeout(() => setCurrentQ(currentQ + 1), 500);
+    } else {
+      setTimeout(() => onComplete?.(score), 1000);
+    }
   };
 
-  const question = questions[currentQ];
-
   return (
-    <Card className="glass-effect border-0 premium-shadow-lg rounded-[2rem]">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <HelpCircle className="w-5 h-5 text-blue-600" />
-          True or False?
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentQ}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
+    <Card className="glass-effect border-0 premium-shadow-xl rounded-[2.5rem]">
+      <CardContent className="p-8 space-y-6">
+        <div className="flex justify-between items-center">
+          <Badge className="bg-blue-100 text-blue-800">
+            Question {currentQ + 1} / {sampleQuestions.length}
+          </Badge>
+          <Badge className="bg-green-100 text-green-800">
+            Score: {score}
+          </Badge>
+        </div>
+
+        <motion.div
+          key={currentQ}
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="p-8 bg-white rounded-2xl border-2 border-slate-200 text-center space-y-4"
+        >
+          <div className="text-2xl font-bold text-slate-900">
+            {question.statement}
+          </div>
+          {question.statementHebrew && (
+            <div className="text-xl text-amber-700 font-serif" dir="rtl">
+              {question.statementHebrew}
+            </div>
+          )}
+        </motion.div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <Button
+            onClick={() => handleAnswer(true)}
+            size="lg"
+            className="h-24 bg-gradient-to-br from-green-500 to-emerald-600 text-white rounded-2xl text-xl font-bold"
           >
-            <div className="p-6 bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl mb-6">
-              <p className="text-xl text-slate-900 font-medium leading-relaxed">
-                {question.question}
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <Button
-                onClick={() => handleAnswer(true)}
-                disabled={answered}
-                className={`py-8 rounded-2xl font-bold text-lg ${
-                  answered
-                    ? selectedAnswer === true
-                      ? question.answer === true
-                        ? 'bg-green-500 text-white'
-                        : 'bg-red-500 text-white'
-                      : 'bg-slate-200 text-slate-400'
-                    : 'bg-gradient-to-r from-green-500 to-emerald-600 text-white'
-                }`}
-              >
-                {answered && selectedAnswer === true && (
-                  question.answer === true ? <CheckCircle className="w-6 h-6 mr-2" /> : <XCircle className="w-6 h-6 mr-2" />
-                )}
-                True
-              </Button>
-
-              <Button
-                onClick={() => handleAnswer(false)}
-                disabled={answered}
-                className={`py-8 rounded-2xl font-bold text-lg ${
-                  answered
-                    ? selectedAnswer === false
-                      ? question.answer === false
-                        ? 'bg-green-500 text-white'
-                        : 'bg-red-500 text-white'
-                      : 'bg-slate-200 text-slate-400'
-                    : 'bg-gradient-to-r from-red-500 to-pink-600 text-white'
-                }`}
-              >
-                {answered && selectedAnswer === false && (
-                  question.answer === false ? <CheckCircle className="w-6 h-6 mr-2" /> : <XCircle className="w-6 h-6 mr-2" />
-                )}
-                False
-              </Button>
-            </div>
-          </motion.div>
-        </AnimatePresence>
-
-        <div className="text-center text-sm text-slate-600">
-          Question {currentQ + 1} of {questions.length}
+            <CheckCircle className="w-8 h-8 mr-3" />
+            True
+          </Button>
+          <Button
+            onClick={() => handleAnswer(false)}
+            size="lg"
+            className="h-24 bg-gradient-to-br from-red-500 to-red-600 text-white rounded-2xl text-xl font-bold"
+          >
+            <XCircle className="w-8 h-8 mr-3" />
+            False
+          </Button>
         </div>
       </CardContent>
     </Card>

@@ -1,61 +1,59 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle2, Circle, Star } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Target, CheckCircle, Lock } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 
-export default function MilestoneTracker() {
-  const milestones = [
-    { title: 'Complete First Course', achieved: true, xp: 100 },
-    { title: 'Study for 7 Days Straight', achieved: true, xp: 200 },
-    { title: '10 Hours of Learning', achieved: true, xp: 150 },
-    { title: 'Join a Study Group', achieved: false, xp: 100 },
-    { title: 'Complete 5 Courses', achieved: false, xp: 500 },
-    { title: 'Master Hebrew Vocabulary', achieved: false, xp: 300 },
+export default function MilestoneTracker({ milestones = [] }) {
+  const defaultMilestones = [
+    { id: 1, name: 'Complete 5 Lessons', progress: 5, target: 5, reward: '50 XP', completed: true },
+    { id: 2, name: 'Maintain 7-Day Streak', progress: 4, target: 7, reward: '100 XP', completed: false },
+    { id: 3, name: 'Score 90%+ on Quiz', progress: 1, target: 3, reward: '150 XP', completed: false }
   ];
+
+  const active = milestones.length > 0 ? milestones : defaultMilestones;
 
   return (
     <Card className="glass-effect border-0 premium-shadow-lg rounded-[2rem]">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Star className="w-5 h-5 text-amber-600" />
-          Learning Milestones
+        <CardTitle className="flex items-center gap-2 font-serif">
+          <Target className="w-5 h-5 text-purple-600" />
+          Milestones
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
-          {milestones.map((milestone, idx) => (
-            <motion.div
-              key={idx}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: idx * 0.1 }}
-              className={`flex items-center gap-3 p-3 rounded-xl transition-all ${
-                milestone.achieved
-                  ? 'bg-gradient-to-r from-green-50 to-emerald-50'
-                  : 'bg-slate-50'
+      <CardContent className="space-y-3">
+        {active.map((milestone, idx) => {
+          const progressPercent = (milestone.progress / milestone.target) * 100;
+          
+          return (
+            <div
+              key={milestone.id}
+              className={`p-4 rounded-xl border-2 ${
+                milestone.completed 
+                  ? 'bg-green-50 border-green-200' 
+                  : 'bg-white border-slate-200'
               }`}
             >
-              {milestone.achieved ? (
-                <CheckCircle2 className="w-6 h-6 text-green-600 flex-shrink-0" />
-              ) : (
-                <Circle className="w-6 h-6 text-slate-400 flex-shrink-0" />
-              )}
-              <div className="flex-1">
-                <div className={`font-bold ${milestone.achieved ? 'text-slate-900' : 'text-slate-600'}`}>
-                  {milestone.title}
+              <div className="flex items-start justify-between mb-2">
+                <div className="flex-1">
+                  <div className="font-bold text-slate-900">{milestone.name}</div>
+                  <div className="text-xs text-slate-600">Reward: {milestone.reward}</div>
                 </div>
-                <div className="text-sm text-slate-500">+{milestone.xp} XP</div>
+                {milestone.completed ? (
+                  <CheckCircle className="w-6 h-6 text-green-600" />
+                ) : (
+                  <Badge variant="outline">
+                    {milestone.progress}/{milestone.target}
+                  </Badge>
+                )}
               </div>
-            </motion.div>
-          ))}
-        </div>
 
-        <div className="mt-6 pt-6 border-t border-slate-200 text-center">
-          <div className="text-2xl font-black text-slate-900 mb-1">
-            {milestones.filter(m => m.achieved).length} / {milestones.length}
-          </div>
-          <div className="text-sm text-slate-600">Milestones Completed</div>
-        </div>
+              {!milestone.completed && (
+                <Progress value={progressPercent} className="h-2 mt-2" />
+              )}
+            </div>
+          );
+        })}
       </CardContent>
     </Card>
   );

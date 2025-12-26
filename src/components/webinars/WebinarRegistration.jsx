@@ -1,89 +1,87 @@
 import React, { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Video, Calendar, Users, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Video, Calendar, Clock, Users, Bell } from 'lucide-react';
-import { motion } from 'framer-motion';
 
-export default function WebinarRegistration({ webinar, onRegister }) {
+export default function WebinarRegistration({ webinar }) {
   const [registered, setRegistered] = useState(false);
 
-  const handleRegister = () => {
-    onRegister?.(webinar.id);
-    setRegistered(true);
+  const event = webinar || {
+    title: 'Breslov Teachings for Modern Life',
+    instructor: 'Rabbi Cohen',
+    date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
+    duration: 90,
+    registered: 156,
+    maxCapacity: 200,
+    topics: ['Joy', 'Prayer', 'Simplicity']
   };
 
-  const attendeeCount = webinar.registered_count || 0;
-  const spotsLeft = webinar.max_attendees ? webinar.max_attendees - attendeeCount : null;
+  const spotsLeft = event.maxCapacity - event.registered;
 
   return (
-    <Card className="card-modern border-white/60 premium-shadow hover:premium-shadow-lg transition-all rounded-[2rem] overflow-hidden">
-      <div className="h-48 bg-gradient-to-br from-slate-900 via-blue-900 to-purple-900 relative flex items-center justify-center">
-        <Video className="w-20 h-20 text-white/20 absolute" />
-        <Badge className="absolute top-4 left-4 bg-red-500 text-white">
-          LIVE WEBINAR
-        </Badge>
-        {spotsLeft && spotsLeft < 10 && (
-          <Badge className="absolute top-4 right-4 bg-amber-500 text-white animate-pulse">
-            {spotsLeft} spots left!
-          </Badge>
-        )}
-      </div>
-
-      <CardContent className="p-8 space-y-6">
+    <Card className="glass-effect border-0 premium-shadow-xl rounded-[2.5rem]">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 font-serif">
+          <Video className="w-5 h-5 text-red-600" />
+          Live Webinar
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
         <div>
-          <h3 className="text-2xl font-black text-slate-900 mb-2">{webinar.title}</h3>
-          <p className="text-slate-600">{webinar.description}</p>
+          <div className="text-2xl font-black text-slate-900 mb-2">{event.title}</div>
+          <div className="text-slate-600">with {event.instructor}</div>
         </div>
 
         <div className="space-y-3">
-          <div className="flex items-center gap-3 text-slate-700">
+          <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-xl">
             <Calendar className="w-5 h-5 text-blue-600" />
-            <span>{new Date(webinar.scheduled_date).toLocaleDateString()}</span>
-          </div>
-          <div className="flex items-center gap-3 text-slate-700">
-            <Clock className="w-5 h-5 text-blue-600" />
-            <span>{new Date(webinar.scheduled_date).toLocaleTimeString()}</span>
-          </div>
-          <div className="flex items-center gap-3 text-slate-700">
-            <Users className="w-5 h-5 text-blue-600" />
-            <span>{attendeeCount} registered</span>
-          </div>
-          <div className="flex items-center gap-3 text-slate-700">
-            <Video className="w-5 h-5 text-blue-600" />
-            <span>Hosted by {webinar.instructor_name}</span>
-          </div>
-        </div>
-
-        <div className="pt-4 border-t border-slate-200">
-          <h4 className="font-bold text-slate-900 mb-2">What You'll Learn:</h4>
-          <ul className="space-y-1 text-sm text-slate-700">
-            {webinar.learning_objectives?.map((obj, idx) => (
-              <li key={idx} className="flex items-start gap-2">
-                <span className="text-blue-600">•</span>
-                {obj}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {registered ? (
-          <div className="p-4 bg-green-50 border border-green-200 rounded-xl text-center">
-            <CheckCircle className="w-8 h-8 text-green-600 mx-auto mb-2" />
-            <div className="font-bold text-green-900 mb-1">You're Registered!</div>
-            <div className="text-sm text-green-700">
-              We'll send you a reminder before the webinar starts
+            <div>
+              <div className="font-bold text-slate-900">
+                {event.date.toLocaleDateString('en-US', { 
+                  weekday: 'long',
+                  month: 'long', 
+                  day: 'numeric',
+                  hour: 'numeric',
+                  minute: '2-digit'
+                })}
+              </div>
+              <div className="text-xs text-slate-600">{event.duration} minutes</div>
             </div>
           </div>
-        ) : (
+
+          <div className="flex items-center gap-3 p-3 bg-purple-50 rounded-xl">
+            <Users className="w-5 h-5 text-purple-600" />
+            <div>
+              <div className="font-bold text-slate-900">{event.registered} registered</div>
+              <div className="text-xs text-slate-600">{spotsLeft} spots remaining</div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div className="text-sm font-bold text-slate-700 mb-2">Topics</div>
+          <div className="flex flex-wrap gap-2">
+            {event.topics.map((topic, idx) => (
+              <Badge key={idx} variant="outline">{topic}</Badge>
+            ))}
+          </div>
+        </div>
+
+        {!registered ? (
           <Button
-            onClick={handleRegister}
-            className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold py-6 rounded-2xl"
+            onClick={() => setRegistered(true)}
+            size="lg"
+            className="w-full bg-gradient-to-r from-red-600 to-red-700 text-white rounded-2xl"
           >
-            <Bell className="w-5 h-5 mr-2" />
-            Register for Free
+            Register Now
           </Button>
+        ) : (
+          <div className="p-6 bg-green-50 rounded-2xl border-2 border-green-300 text-center">
+            <CheckCircle className="w-12 h-12 text-green-600 mx-auto mb-3" />
+            <div className="font-bold text-green-900 mb-1">You're Registered!</div>
+            <div className="text-sm text-green-800">Check your email for the Zoom link</div>
+          </div>
         )}
       </CardContent>
     </Card>

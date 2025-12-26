@@ -1,47 +1,40 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Star, Play } from 'lucide-react';
+import { Quote, Star } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 export default function TestimonialCard({ testimonial }) {
+  const sample = testimonial || {
+    name: 'David Cohen',
+    role: 'Torah Student',
+    course: 'Likutey Moharan Mastery',
+    rating: 5,
+    text: 'This platform transformed my Torah learning. The AI tutor and spaced repetition made mastering Hebrew effortless.',
+    image: null
+  };
+
   return (
-    <Card className={testimonial.featured ? 'border-2 border-amber-500' : ''}>
-      <CardContent className="p-6">
-        <div className="flex items-center space-x-3 mb-4">
-          <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-xl">
-            {testimonial.student_name?.[0]}
-          </div>
-          <div>
-            <h4 className="font-bold">{testimonial.student_name}</h4>
-            <div className="flex items-center">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Star
-                  key={i}
-                  className={`w-4 h-4 ${i < testimonial.rating ? 'text-amber-500 fill-amber-500' : 'text-slate-300'}`}
-                />
-              ))}
-            </div>
-          </div>
+    <Card className="glass-effect border-0 premium-shadow-lg rounded-[2rem]">
+      <CardContent className="p-8 space-y-4">
+        <Quote className="w-10 h-10 text-amber-600 opacity-50" />
+        
+        <div className="flex gap-0.5 mb-3">
+          {[...Array(5)].map((_, i) => (
+            <Star key={i} className={`w-5 h-5 ${i < sample.rating ? 'text-amber-500 fill-amber-500' : 'text-slate-300'}`} />
+          ))}
         </div>
-        
-        <p className="text-slate-700 mb-4 italic">"{testimonial.content}"</p>
-        
-        {testimonial.video_url && (
-          <button className="flex items-center text-blue-600 hover:text-blue-700 text-sm font-medium">
-            <Play className="w-4 h-4 mr-2" />
-            Watch Video Testimonial
-          </button>
-        )}
-        
-        {testimonial.results_achieved?.length > 0 && (
-          <div className="mt-4 pt-4 border-t">
-            <p className="text-sm font-medium mb-2">Results Achieved:</p>
-            <ul className="text-sm text-slate-600 space-y-1">
-              {testimonial.results_achieved.slice(0, 3).map((result, idx) => (
-                <li key={idx}>✓ {result}</li>
-              ))}
-            </ul>
-          </div>
-        )}
+
+        <p className="text-lg text-slate-700 leading-relaxed font-serif">
+          "{sample.text}"
+        </p>
+
+        <div className="pt-4 border-t border-slate-200">
+          <div className="font-bold text-slate-900">{sample.name}</div>
+          <div className="text-sm text-slate-600">{sample.role}</div>
+          <Badge variant="outline" className="text-xs mt-2">
+            {sample.course}
+          </Badge>
+        </div>
       </CardContent>
     </Card>
   );

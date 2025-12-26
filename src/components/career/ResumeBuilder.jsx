@@ -1,78 +1,64 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { FileText, Download, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FileText, Download } from 'lucide-react';
 
-export default function ResumeBuilder({ userEmail }) {
-  const [template, setTemplate] = useState('modern');
-  const [sections, setSections] = useState({
+export default function ResumeBuilder({ userData }) {
+  const [resume, setResume] = useState({
     summary: '',
-    experience: [],
-    education: [],
-    skills: []
+    skills: [],
+    certifications: []
   });
 
-  const downloadPDF = () => {
-    // In real implementation, this would generate PDF
-    alert('Generating PDF...');
-  };
-
   return (
-    <Card>
+    <Card className="glass-effect border-0 premium-shadow-lg rounded-[2rem]">
       <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <FileText className="w-5 h-5" />
-            <span>Resume Builder</span>
-          </div>
-          <Button onClick={downloadPDF} size="sm">
-            <Download className="w-4 h-4 mr-2" />
-            Download PDF
-          </Button>
+        <CardTitle className="flex items-center gap-2 font-serif">
+          <FileText className="w-5 h-5 text-blue-600" />
+          Torah Resume Builder
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
-        <div>
-          <label className="block text-sm font-medium mb-2">Template</label>
-          <Select value={template} onValueChange={setTemplate}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="modern">Modern</SelectItem>
-              <SelectItem value="classic">Classic</SelectItem>
-              <SelectItem value="creative">Creative</SelectItem>
-              <SelectItem value="academic">Academic</SelectItem>
-            </SelectContent>
-          </Select>
+      <CardContent className="space-y-4">
+        <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
+          <div className="text-sm text-blue-900">
+            Showcase your Torah learning achievements to potential employers and institutions
+          </div>
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-2">Professional Summary</label>
+          <label className="block text-sm font-bold text-slate-700 mb-2">
+            Professional Summary
+          </label>
           <Textarea
-            value={sections.summary}
-            onChange={(e) => setSections({...sections, summary: e.target.value})}
-            placeholder="Write a brief professional summary..."
-            rows={4}
+            placeholder="Describe your Torah education and expertise..."
+            className="min-h-[100px] rounded-xl"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-2">Experience</label>
-          <Button variant="outline" size="sm">Add Experience</Button>
+          <label className="block text-sm font-bold text-slate-700 mb-2">
+            Torah Skills
+          </label>
+          <div className="flex flex-wrap gap-2 mb-2">
+            {['Hebrew', 'Aramaic', 'Gemara', 'Halacha', 'Chassidus'].map((skill, idx) => (
+              <Badge key={idx} className="bg-purple-100 text-purple-800">
+                {skill}
+              </Badge>
+            ))}
+          </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-2">Education</label>
-          <Button variant="outline" size="sm">Add Education</Button>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-2">Skills</label>
-          <Input placeholder="Add skills..." />
+        <div className="flex gap-2">
+          <Button variant="outline" className="flex-1 rounded-xl">
+            <Eye className="w-4 h-4 mr-2" />
+            Preview
+          </Button>
+          <Button className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-xl">
+            <Download className="w-4 h-4 mr-2" />
+            Download
+          </Button>
         </div>
       </CardContent>
     </Card>

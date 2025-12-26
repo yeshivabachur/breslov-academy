@@ -1,94 +1,95 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Sparkles, Send, Loader2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Sparkles, Send, BookOpen, Lightbulb } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
-import { toast } from 'sonner';
 
-export default function AITutor({ courseId, lessonId, topic }) {
-  const [messages, setMessages] = useState([]);
+export default function AITutor({ context }) {
+  const [messages, setMessages] = useState([
+    { role: 'assistant', content: 'Shalom! I\'m your AI Torah tutor. How can I help you learn today?' }
+  ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const sendMessage = async () => {
-    if (!input.trim()) return;
+  const suggestions = [
+    'Explain Azamra simply',
+    'What is Hitbodedut?',
+    'Quiz me on this lesson',
+    'Break down this concept'
+  ];
 
-    const userMessage = { role: 'user', content: input, timestamp: new Date().toISOString() };
-    setMessages([...messages, userMessage]);
+  const sendMessage = async (text) => {
+    const userMsg = text || input;
+    if (!userMsg.trim()) return;
+
+    setMessages([...messages, { role: 'user', content: userMsg }]);
     setInput('');
     setLoading(true);
 
     try {
       const response = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are an expert Torah tutor specializing in Breslov Chassidus. 
-        Current topic: ${topic}
-        Student question: ${input}
-        
-        Provide a clear, educational response that helps the student understand. Be warm, patient, and encouraging.`,
-        add_context_from_internet: false
+        prompt: `You are a Breslov Torah study AI tutor. Context: ${context}. Student asks: ${userMsg}. Provide clear, educational response.`
       });
-
-      const aiMessage = { 
-        role: 'assistant', 
-        content: typeof response === 'string' ? response : response.response || 'I understand your question. Let me help you with that...',
-        timestamp: new Date().toISOString() 
-      };
-      
-      setMessages(prev => [...prev, aiMessage]);
-    } catch (error) {
-      toast.error('Failed to get response from AI tutor');
+      setMessages(prev => [...prev, { role: 'assistant', content: response }]);
+    } catch {
+      setMessages(prev => [...prev, { role: 'assistant', content: 'Please try again.' }]);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Card className="shadow-xl">
-      <CardHeader className="bg-gradient-to-r from-purple-600 to-blue-600 text-white">
-        <CardTitle className="flex items-center space-x-2">
-          <Sparkles className="w-5 h-5" />
-          <span>AI Torah Tutor</span>
+    <Card className="glass-effect border-0 premium-shadow-lg rounded-[2rem] h-full flex flex-col">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 font-serif">
+          <Sparkles className="w-5 h-5 text-purple-600" />
+          AI Tutor
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-4">
-        <div className="space-y-4 mb-4 max-h-96 overflow-y-auto">
-          {messages.length === 0 && (
-            <div className="text-center text-slate-500 py-8">
-              <Sparkles className="w-12 h-12 mx-auto mb-3 text-purple-400" />
-              <p>Ask me anything about this lesson!</p>
-            </div>
-          )}
+      <CardContent className="flex-1 flex flex-col p-6">
+        <div className="flex-1 overflow-y-auto space-y-3 mb-4">
           {messages.map((msg, idx) => (
             <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[80%] p-3 rounded-lg ${
+              <div className={`max-w-[80%] px-4 py-3 rounded-2xl ${
                 msg.role === 'user' 
-                  ? 'bg-blue-600 text-white' 
-                  : 'bg-slate-100 text-slate-900'
+                  ? 'bg-gradient-to-r from-blue-600 to-indigo-700 text-white' 
+                  : 'bg-white border border-slate-200 text-slate-900'
               }`}>
-                <p className="text-sm">{msg.content}</p>
+                {msg.content}
               </div>
             </div>
           ))}
-          {loading && (
-            <div className="flex justify-start">
-              <div className="bg-slate-100 p-3 rounded-lg">
-                <Loader2 className="w-5 h-5 animate-spin text-purple-600" />
-              </div>
-            </div>
-          )}
         </div>
 
-        <div className="flex space-x-2">
-          <Textarea
+        <div className="flex gap-2 flex-wrap mb-3">
+          {suggestions.map((sug, idx) => (
+            <Button
+              key={idx}
+              onClick={() => sendMessage(sug)}
+              variant="outline"
+              size="sm"
+              className="rounded-lg text-xs"
+            >
+              <Lightbulb className="w-3 h-3 mr-1" />
+              {sug}
+            </Button>
+          ))}
+        </div>
+
+        <div className="flex gap-2">
+          <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), sendMessage())}
-            placeholder="Ask a question about this lesson..."
-            className="flex-1"
-            rows={2}
+            onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+            placeholder="Ask anything..."
+            className="flex-1 rounded-xl"
           />
-          <Button onClick={sendMessage} disabled={loading || !input.trim()}>
+          <Button
+            onClick={() => sendMessage()}
+            disabled={loading}
+            className="bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl"
+          >
             <Send className="w-4 h-4" />
           </Button>
         </div>

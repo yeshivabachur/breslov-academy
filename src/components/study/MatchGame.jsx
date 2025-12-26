@@ -1,112 +1,79 @@
-import React, { useState, useEffect } from 'react';
-import { Card } from '@/components/ui/card';
+import React, { useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { motion } from 'framer-motion';
-import { Trophy, RotateCcw } from 'lucide-react';
+import { CheckCircle, Award } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
-export default function MatchGame({ terms, onComplete }) {
-  const [cards, setCards] = useState([]);
+export default function MatchGame({ pairs }) {
   const [selected, setSelected] = useState([]);
   const [matched, setMatched] = useState([]);
-  const [startTime] = useState(Date.now());
-  const [gameComplete, setGameComplete] = useState(false);
 
-  useEffect(() => {
-    // Create pairs of term and definition cards
-    const gameCards = [];
-    terms.slice(0, 6).forEach((term, idx) => {
-      gameCards.push({ id: `term-${idx}`, text: term.term, pairId: idx, type: 'term' });
-      gameCards.push({ id: `def-${idx}`, text: term.definition, pairId: idx, type: 'definition' });
-    });
+  const defaultPairs = pairs || [
+    { id: 1, term: 'שלום', definition: 'Peace' },
+    { id: 2, term: 'תורה', definition: 'Torah' },
+    { id: 3, term: 'חכמה', definition: 'Wisdom' }
+  ];
+
+  const allItems = [
+    ...defaultPairs.map(p => ({ ...p, type: 'term' })),
+    ...defaultPairs.map(p => ({ ...p, type: 'definition' }))
+  ].sort(() => Math.random() - 0.5);
+
+  const handleClick = (item) => {
+    if (matched.includes(item.id)) return;
     
-    // Shuffle
-    setCards(gameCards.sort(() => Math.random() - 0.5));
-  }, [terms]);
-
-  const handleCardClick = (card) => {
-    if (selected.length === 2 || matched.includes(card.id) || selected.find(s => s.id === card.id)) {
-      return;
-    }
-
-    const newSelected = [...selected, card];
-    setSelected(newSelected);
-
-    if (newSelected.length === 2) {
-      // Check if match
-      if (newSelected[0].pairId === newSelected[1].pairId) {
-        setMatched([...matched, newSelected[0].id, newSelected[1].id]);
-        setSelected([]);
-        
-        // Check if game complete
-        if (matched.length + 2 === cards.length) {
-          const timeTaken = Math.round((Date.now() - startTime) / 1000);
-          setGameComplete(true);
-          onComplete?.({ time: timeTaken, moves: Math.ceil((matched.length + 2) / 2) });
-        }
-      } else {
-        setTimeout(() => setSelected([]), 800);
-      }
+    if (selected.length === 0) {
+      setSelected([item]);
+    } else if (selected[0].id === item.id && selected[0].type !== item.type) {
+      setMatched([...matched, item.id]);
+      setSelected([]);
+    } else {
+      setSelected([]);
     }
   };
 
-  const reset = () => {
-    setSelected([]);
-    setMatched([]);
-    setGameComplete(false);
-    setCards(cards.sort(() => Math.random() - 0.5));
-  };
-
-  if (gameComplete) {
-    const timeTaken = Math.round((Date.now() - startTime) / 1000);
-    return (
-      <div className="text-center py-12">
-        <Trophy className="w-20 h-20 text-amber-500 mx-auto mb-4" />
-        <h2 className="text-3xl font-bold text-slate-900 mb-2">Perfect Match!</h2>
-        <p className="text-slate-600 text-lg mb-6">
-          Completed in {timeTaken} seconds
-        </p>
-        <Button onClick={reset}>
-          <RotateCcw className="w-4 h-4 mr-2" />
-          Play Again
-        </Button>
-      </div>
-    );
-  }
+  const isComplete = matched.length === defaultPairs.length;
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <p className="text-slate-600">Match the terms with their definitions</p>
-        <p className="font-semibold">{matched.length / 2} / {cards.length / 2} matched</p>
-      </div>
+    <Card className="glass-effect border-0 premium-shadow-lg rounded-[2rem]">
+      <CardContent className="p-8 space-y-6">
+        <Badge className="bg-blue-100 text-blue-800">Match the Pairs</Badge>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {cards.map((card) => {
-          const isSelected = selected.find(s => s.id === card.id);
-          const isMatched = matched.includes(card.id);
-          
-          return (
-            <motion.div
-              key={card.id}
-              whileHover={{ scale: isMatched ? 1 : 1.05 }}
-              whileTap={{ scale: isMatched ? 1 : 0.95 }}
-            >
-              <Card
-                onClick={() => handleCardClick(card)}
-                className={`p-4 min-h-32 flex items-center justify-center text-center cursor-pointer transition-all ${
-                  isMatched ? 'bg-green-100 border-green-400 opacity-50' :
-                  isSelected ? 'bg-blue-100 border-blue-400 scale-105' :
-                  'bg-white hover:bg-slate-50 border-slate-200'
+        <div className="grid grid-cols-2 gap-3">
+          {allItems.map((item, idx) => {
+            const isMatched = matched.includes(item.id);
+            const isSelected = selected.some(s => s.id === item.id && s.type === item.type);
+            
+            return (
+              <Button
+                key={idx}
+                onClick={() => handleClick(item)}
+                disabled={isMatched}
+                variant="outline"
+                className={`p-6 rounded-xl text-lg font-bold h-auto ${
+                  isMatched 
+                    ? 'bg-green-100 border-green-500 text-green-900' 
+                    : isSelected
+                    ? 'bg-blue-100 border-blue-500 text-blue-900'
+                    : ''
                 }`}
               >
-                <p className={`font-medium ${card.type === 'term' ? 'text-lg' : 'text-base'}`}>
-                  {card.text}
-                </p>
-              </Card>
-            </motion.div>
-          );
-        })}
-      </div>
-    </div>
+                <div className={item.type === 'term' ? 'font-serif' : ''} dir={item.type === 'term' ? 'rtl' : 'ltr'}>
+                  {item.type === 'term' ? item.term : item.definition}
+                </div>
+              </Button>
+            );
+          })}
+        </div>
+
+        {isComplete && (
+          <div className="p-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl border-2 border-green-300 text-center">
+            <Award className="w-12 h-12 text-green-600 mx-auto mb-3" />
+            <div className="text-2xl font-black text-slate-900">All Matched!</div>
+            <div className="text-green-800">+75 XP</div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

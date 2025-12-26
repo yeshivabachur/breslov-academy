@@ -1,74 +1,80 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Eraser, Pen, Square, Circle, Trash2 } from 'lucide-react';
+import { Pencil, Eraser, Trash2, Download, Users } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
-export default function Whiteboard() {
+export default function Whiteboard({ isShared = false }) {
   const canvasRef = useRef(null);
-  const [isDrawing, setIsDrawing] = useState(false);
   const [tool, setTool] = useState('pen');
   const [color, setColor] = useState('#000000');
+  const [isDrawing, setIsDrawing] = useState(false);
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (canvas) {
-      canvas.width = canvas.offsetWidth;
-      canvas.height = 400;
-    }
-  }, []);
-
-  const startDrawing = (e) => {
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    ctx.beginPath();
-    ctx.moveTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
-    setIsDrawing(true);
-  };
-
-  const draw = (e) => {
-    if (!isDrawing) return;
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    ctx.strokeStyle = tool === 'eraser' ? '#ffffff' : color;
-    ctx.lineWidth = tool === 'eraser' ? 20 : 2;
-    ctx.lineCap = 'round';
-    ctx.lineTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
-    ctx.stroke();
-  };
-
-  const stopDrawing = () => setIsDrawing(false);
-
-  const clearCanvas = () => {
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-  };
+  const colors = ['#000000', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
   return (
-    <Card>
+    <Card className="glass-effect border-0 premium-shadow-lg rounded-[2rem]">
       <CardHeader>
-        <CardTitle>Collaborative Whiteboard</CardTitle>
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center gap-2 font-serif">
+            <Pencil className="w-5 h-5 text-blue-600" />
+            Collaborative Whiteboard
+          </div>
+          {isShared && (
+            <Badge className="bg-green-100 text-green-800 flex items-center gap-1">
+              <Users className="w-3 h-3" />
+              Shared
+            </Badge>
+          )}
+        </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="flex space-x-2 mb-4">
-          <Button variant={tool === 'pen' ? 'default' : 'outline'} onClick={() => setTool('pen')} size="sm">
-            <Pen className="w-4 h-4" />
+      <CardContent className="space-y-4">
+        <div className="flex gap-2 items-center">
+          <Button
+            onClick={() => setTool('pen')}
+            variant={tool === 'pen' ? 'default' : 'outline'}
+            size="sm"
+            className="rounded-lg"
+          >
+            <Pencil className="w-4 h-4" />
           </Button>
-          <Button variant={tool === 'eraser' ? 'default' : 'outline'} onClick={() => setTool('eraser')} size="sm">
+          <Button
+            onClick={() => setTool('eraser')}
+            variant={tool === 'eraser' ? 'default' : 'outline'}
+            size="sm"
+            className="rounded-lg"
+          >
             <Eraser className="w-4 h-4" />
           </Button>
-          <input type="color" value={color} onChange={(e) => setColor(e.target.value)} className="w-10 h-10 rounded" />
-          <Button variant="outline" onClick={clearCanvas} size="sm">
-            <Trash2 className="w-4 h-4" />
-          </Button>
+          
+          <div className="h-8 w-px bg-slate-300 mx-2" />
+          
+          {colors.map((c, idx) => (
+            <button
+              key={idx}
+              onClick={() => setColor(c)}
+              className={`w-8 h-8 rounded-lg border-2 ${
+                color === c ? 'border-slate-900 scale-110' : 'border-slate-200'
+              }`}
+              style={{ backgroundColor: c }}
+            />
+          ))}
+
+          <div className="ml-auto flex gap-2">
+            <Button variant="outline" size="sm" className="rounded-lg">
+              <Trash2 className="w-4 h-4" />
+            </Button>
+            <Button variant="outline" size="sm" className="rounded-lg">
+              <Download className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
+
         <canvas
           ref={canvasRef}
-          onMouseDown={startDrawing}
-          onMouseMove={draw}
-          onMouseUp={stopDrawing}
-          onMouseLeave={stopDrawing}
-          className="border border-slate-300 rounded-lg w-full cursor-crosshair"
+          width={800}
+          height={500}
+          className="w-full border-2 border-slate-300 rounded-xl bg-white cursor-crosshair"
         />
       </CardContent>
     </Card>

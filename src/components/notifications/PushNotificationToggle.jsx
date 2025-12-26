@@ -1,45 +1,52 @@
 import React, { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Switch } from '@/components/ui/switch';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Bell, BellOff } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
 
 export default function PushNotificationToggle() {
-  const [enabled, setEnabled] = useState(false);
-  const [notificationTypes, setNotificationTypes] = useState({
-    newCourses: true,
+  const [settings, setSettings] = useState({
+    lessonReminders: true,
     achievements: true,
-    reminders: true,
-    community: false,
+    messages: true,
+    liveEvents: true,
+    dailyWisdom: false
   });
 
-  const toggleType = (type) => {
-    setNotificationTypes({ ...notificationTypes, [type]: !notificationTypes[type] });
-  };
+  const notifications = [
+    { key: 'lessonReminders', label: 'Lesson Reminders', description: 'Daily study time notifications' },
+    { key: 'achievements', label: 'Achievements', description: 'Badge unlocks and milestones' },
+    { key: 'messages', label: 'Messages', description: 'New messages from instructors' },
+    { key: 'liveEvents', label: 'Live Events', description: 'Upcoming shiurim and webinars' },
+    { key: 'dailyWisdom', label: 'Daily Wisdom', description: 'Morning Torah inspiration' }
+  ];
 
   return (
     <Card className="glass-effect border-0 premium-shadow-lg rounded-[2rem]">
-      <CardContent className="p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {enabled ? <Bell className="w-5 h-5 text-blue-600" /> : <BellOff className="w-5 h-5 text-slate-400" />}
-            <div>
-              <h3 className="font-bold text-slate-900">Push Notifications</h3>
-              <p className="text-sm text-slate-600">Stay updated on your learning</p>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 font-serif">
+          <Bell className="w-5 h-5 text-blue-600" />
+          Notifications
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {notifications.map((notif, idx) => (
+          <div
+            key={notif.key}
+            className="flex items-center justify-between p-4 bg-white rounded-xl border border-slate-200"
+          >
+            <div className="flex-1">
+              <div className="font-bold text-slate-900 text-sm">{notif.label}</div>
+              <div className="text-xs text-slate-600">{notif.description}</div>
             </div>
+            <Switch
+              checked={settings[notif.key]}
+              onCheckedChange={(checked) => 
+                setSettings({ ...settings, [notif.key]: checked })
+              }
+            />
           </div>
-          <Switch checked={enabled} onCheckedChange={setEnabled} />
-        </div>
-
-        {enabled && (
-          <div className="space-y-3 pl-8 border-l-2 border-blue-200">
-            {Object.entries(notificationTypes).map(([key, value]) => (
-              <div key={key} className="flex items-center justify-between">
-                <span className="text-sm text-slate-700 capitalize">{key.replace(/([A-Z])/g, ' $1')}</span>
-                <Switch checked={value} onCheckedChange={() => toggleType(key)} />
-              </div>
-            ))}
-          </div>
-        )}
+        ))}
       </CardContent>
     </Card>
   );

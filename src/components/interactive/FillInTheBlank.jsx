@@ -1,91 +1,81 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, XCircle, PenLine } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { CheckCircle, Lightbulb } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
-export default function FillInTheBlank() {
-  const [answers, setAnswers] = useState(['', '']);
-  const [submitted, setSubmitted] = useState(false);
+export default function FillInTheBlank({ sentence, blanks, onComplete }) {
+  const [answers, setAnswers] = useState({});
+  const [showHints, setShowHints] = useState(false);
 
-  const question = {
-    text: "Rebbe Nachman taught that ___ is a great mitzvah, and one should never ___.",
-    correctAnswers: ['simcha', 'despair'],
-  };
+  const sampleSentence = sentence || "The Rebbe taught that ___ is a great mitzvah to always be ___";
+  const sampleBlanks = blanks || [
+    { id: 1, answer: 'it', hint: 'pronoun' },
+    { id: 2, answer: 'happy', hint: 'emotion' }
+  ];
 
   const checkAnswers = () => {
-    setSubmitted(true);
+    let correct = 0;
+    sampleBlanks.forEach(blank => {
+      if (answers[blank.id]?.toLowerCase().trim() === blank.answer.toLowerCase()) {
+        correct++;
+      }
+    });
+    return correct === sampleBlanks.length;
   };
 
   return (
     <Card className="glass-effect border-0 premium-shadow-lg rounded-[2rem]">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <PenLine className="w-5 h-5 text-blue-600" />
-          Fill in the Blanks
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="p-6 bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl">
-          <p className="text-lg text-slate-900 leading-relaxed">
-            {question.text.split('___').map((part, idx) => (
+      <CardContent className="p-8 space-y-6">
+        <Badge className="bg-purple-100 text-purple-800">Fill in the Blanks</Badge>
+
+        <div className="p-6 bg-blue-50 rounded-xl border border-blue-200">
+          <div className="text-xl text-slate-900 leading-relaxed">
+            {sampleSentence.split('___').map((part, idx) => (
               <React.Fragment key={idx}>
                 {part}
-                {idx < question.correctAnswers.length && (
-                  <span className="inline-block mx-2 relative">
-                    <Input
-                      value={answers[idx]}
-                      onChange={(e) => {
-                        const newAnswers = [...answers];
-                        newAnswers[idx] = e.target.value;
-                        setAnswers(newAnswers);
-                      }}
-                      disabled={submitted}
-                      className="w-32 inline-block"
-                    />
-                    {submitted && (
-                      <motion.span
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        className="absolute -right-6 top-1/2 -translate-y-1/2"
-                      >
-                        {answers[idx].toLowerCase() === question.correctAnswers[idx] ? (
-                          <CheckCircle className="w-5 h-5 text-green-600" />
-                        ) : (
-                          <XCircle className="w-5 h-5 text-red-600" />
-                        )}
-                      </motion.span>
-                    )}
-                  </span>
+                {idx < sampleBlanks.length && (
+                  <Input
+                    value={answers[sampleBlanks[idx].id] || ''}
+                    onChange={(e) => setAnswers({ ...answers, [sampleBlanks[idx].id]: e.target.value })}
+                    className="inline-block w-32 mx-2 h-10 text-center font-bold"
+                  />
                 )}
               </React.Fragment>
             ))}
-          </p>
+          </div>
         </div>
 
-        {!submitted ? (
+        <div className="flex gap-3">
           <Button
-            onClick={checkAnswers}
-            className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold rounded-2xl"
+            variant="outline"
+            onClick={() => setShowHints(!showHints)}
+            className="flex-1 rounded-xl"
           >
-            Check Answers
+            <Lightbulb className="w-4 h-4 mr-2" />
+            {showHints ? 'Hide' : 'Show'} Hints
           </Button>
-        ) : (
-          <div className="text-center">
-            {answers.every((ans, idx) => ans.toLowerCase() === question.correctAnswers[idx]) ? (
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                className="p-4 bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl text-white font-bold"
-              >
-                Perfect! +150 XP
-              </motion.div>
-            ) : (
-              <div className="p-4 bg-orange-100 rounded-2xl text-orange-900 font-medium">
-                Try again! The correct answers are: {question.correctAnswers.join(', ')}
-              </div>
-            )}
+          <Button
+            onClick={() => {
+              if (checkAnswers()) {
+                onComplete?.(true);
+              }
+            }}
+            className="flex-1 bg-gradient-to-r from-green-600 to-emerald-700 text-white rounded-xl"
+          >
+            <CheckCircle className="w-4 h-4 mr-2" />
+            Check
+          </Button>
+        </div>
+
+        {showHints && (
+          <div className="p-4 bg-amber-50 rounded-xl border border-amber-200">
+            <div className="text-sm text-amber-900">
+              {sampleBlanks.map((blank, idx) => (
+                <div key={blank.id}>Blank {idx + 1}: {blank.hint}</div>
+              ))}
+            </div>
           </div>
         )}
       </CardContent>

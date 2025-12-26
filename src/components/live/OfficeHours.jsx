@@ -1,109 +1,72 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Video, Calendar, Clock, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, Video, Users, Bell } from 'lucide-react';
-import { motion } from 'framer-motion';
 
-export default function OfficeHours({ sessions, instructorName, onJoin, onRemind }) {
-  const [reminded, setReminded] = useState({});
-
-  const handleRemind = (sessionId) => {
-    setReminded({ ...reminded, [sessionId]: true });
-    onRemind?.(sessionId);
-  };
+export default function OfficeHours({ instructor }) {
+  const slots = [
+    { time: 'Sunday 7-8 PM', available: true, booked: 2, capacity: 5 },
+    { time: 'Wednesday 8-9 PM', available: true, booked: 4, capacity: 5 },
+    { time: 'Thursday 6-7 PM', available: false, booked: 5, capacity: 5 }
+  ];
 
   return (
     <Card className="glass-effect border-0 premium-shadow-lg rounded-[2rem]">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Video className="w-5 h-5 text-blue-600" />
-          Live Office Hours with {instructorName}
+        <CardTitle className="flex items-center gap-2 font-serif">
+          <Video className="w-5 h-5 text-purple-600" />
+          <div>
+            <div>Office Hours</div>
+            <div className="text-sm text-slate-600 font-normal" dir="rtl">שעות קבלה</div>
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {sessions?.map((session, idx) => {
-          const isLive = session.status === 'live';
-          const isUpcoming = new Date(session.scheduled_time) > new Date();
-
-          return (
-            <motion.div
-              key={session.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.05 }}
-            >
-              <div className={`p-4 rounded-xl ${
-                isLive ? 'bg-red-50 border-2 border-red-500' : 'bg-white'
-              }`}>
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <h4 className="font-bold text-slate-900">{session.topic}</h4>
-                      {isLive && (
-                        <Badge className="bg-red-500 text-white animate-pulse">
-                          LIVE NOW
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-4 text-sm text-slate-600">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="w-4 h-4" />
-                        {new Date(session.scheduled_time).toLocaleDateString()}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Clock className="w-4 h-4" />
-                        {new Date(session.scheduled_time).toLocaleTimeString()}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Users className="w-4 h-4" />
-                        {session.attendees_count || 0} joined
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex gap-2">
-                  {isLive ? (
-                    <Button
-                      onClick={() => onJoin?.(session.id)}
-                      className="bg-gradient-to-r from-red-500 to-red-600 text-white font-bold rounded-xl"
-                    >
-                      <Video className="w-4 h-4 mr-2" />
-                      Join Now
-                    </Button>
-                  ) : isUpcoming ? (
-                    <>
-                      <Button
-                        variant="outline"
-                        onClick={() => handleRemind(session.id)}
-                        disabled={reminded[session.id]}
-                        className="rounded-xl"
-                      >
-                        <Bell className="w-4 h-4 mr-2" />
-                        {reminded[session.id] ? 'Reminder Set' : 'Remind Me'}
-                      </Button>
-                      <Button
-                        onClick={() => onJoin?.(session.id)}
-                        className="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl"
-                      >
-                        Add to Calendar
-                      </Button>
-                    </>
-                  ) : (
-                    <Badge variant="outline">Past Session</Badge>
-                  )}
-                </div>
-              </div>
-            </motion.div>
-          );
-        })}
-
-        {(!sessions || sessions.length === 0) && (
-          <div className="text-center py-8 text-slate-500">
-            No office hours scheduled yet
+        <div className="p-4 bg-purple-50 rounded-xl border border-purple-200">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center">
+              <User className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <div className="font-bold text-slate-900">Rabbi Cohen</div>
+              <div className="text-sm text-slate-600">Available for 1-on-1 sessions</div>
+            </div>
           </div>
-        )}
+        </div>
+
+        <div className="space-y-2">
+          {slots.map((slot, idx) => (
+            <div
+              key={idx}
+              className={`p-4 rounded-xl border-2 ${
+                slot.available 
+                  ? 'bg-white border-slate-200' 
+                  : 'bg-slate-50 border-slate-200 opacity-60'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-slate-600" />
+                  <span className="font-bold text-slate-900">{slot.time}</span>
+                </div>
+                <Badge className={slot.available ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                  {slot.available ? 'Available' : 'Full'}
+                </Badge>
+              </div>
+              <div className="text-xs text-slate-600 mb-3">
+                {slot.booked} / {slot.capacity} spots filled
+              </div>
+              <Button
+                disabled={!slot.available}
+                size="sm"
+                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl"
+              >
+                Book Slot
+              </Button>
+            </div>
+          ))}
+        </div>
       </CardContent>
     </Card>
   );

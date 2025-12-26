@@ -1,116 +1,61 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CreditCard, Calendar, CheckCircle } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+import { CreditCard, Calendar } from 'lucide-react';
 
-export default function PaymentPlans({ coursePrice, onSelect }) {
-  const [selectedPlan, setSelectedPlan] = useState('full');
-
+export default function PaymentPlans({ coursePrice = 199 }) {
   const plans = [
-    {
-      id: 'full',
-      name: 'Full Payment',
-      price: coursePrice,
-      savings: coursePrice * 0.1,
-      badge: 'Save 10%',
-      popular: true
-    },
-    {
-      id: '3month',
-      name: '3 Monthly Payments',
-      price: coursePrice / 3,
-      total: coursePrice * 1.05,
-      note: 'Small 5% processing fee'
-    },
-    {
-      id: '6month',
-      name: '6 Monthly Payments',
-      price: coursePrice / 6,
-      total: coursePrice * 1.1,
-      note: '10% total processing fee'
-    }
+    { name: 'Pay in Full', price: coursePrice, discount: 10, total: coursePrice * 0.9 },
+    { name: '3 Payments', payments: 3, price: Math.ceil(coursePrice / 3), total: coursePrice },
+    { name: '6 Payments', payments: 6, price: Math.ceil(coursePrice / 6), total: coursePrice }
   ];
 
   return (
     <Card className="glass-effect border-0 premium-shadow-lg rounded-[2rem]">
-      <CardContent className="p-8 space-y-6">
-        <div className="text-center">
-          <h3 className="text-2xl font-black text-slate-900 font-serif mb-2">Choose Your Payment Plan</h3>
-          <p className="text-slate-600 font-serif">Flexible options to make Torah learning accessible</p>
-        </div>
+      <CardContent className="p-6 space-y-4">
+        <h3 className="font-black text-slate-900 text-xl">Payment Options</h3>
 
         <div className="space-y-3">
-          {plans.map((plan, idx) => {
-            const isSelected = selectedPlan === plan.id;
-            
-            return (
-              <motion.button
-                key={plan.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: idx * 0.1 }}
-                onClick={() => setSelectedPlan(plan.id)}
-                className={`w-full text-left p-6 rounded-2xl border-2 transition-all ${
-                  isSelected
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-slate-200 bg-white hover:border-blue-300'
-                } ${plan.popular ? 'ring-2 ring-green-500 ring-offset-2' : ''}`}
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h4 className="font-bold text-lg text-slate-900 font-serif">{plan.name}</h4>
-                      {plan.popular && (
-                        <Badge className="bg-green-500 text-white">Most Popular</Badge>
-                      )}
-                      {plan.badge && (
-                        <Badge className="bg-amber-100 text-amber-800">{plan.badge}</Badge>
-                      )}
+          {plans.map((plan, idx) => (
+            <div
+              key={idx}
+              className={`p-4 rounded-xl border-2 ${
+                idx === 0 
+                  ? 'bg-green-50 border-green-300' 
+                  : 'bg-white border-slate-200'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div>
+                  <div className="font-bold text-slate-900">{plan.name}</div>
+                  {plan.payments && (
+                    <div className="text-sm text-slate-600">
+                      ${plan.price}/month × {plan.payments} months
                     </div>
-                    {plan.note && (
-                      <p className="text-sm text-slate-600 font-serif">{plan.note}</p>
-                    )}
-                  </div>
-                  
-                  <div className="text-right">
-                    <div className="text-3xl font-black text-slate-900">
-                      ${plan.price.toFixed(2)}
-                    </div>
-                    {plan.id !== 'full' && (
-                      <div className="text-sm text-slate-600">/month</div>
-                    )}
-                  </div>
+                  )}
                 </div>
-
-                {plan.total && (
-                  <div className="text-sm text-slate-600 font-serif">
-                    Total: ${plan.total.toFixed(2)}
-                  </div>
+                {plan.discount && (
+                  <Badge className="bg-green-600 text-white">
+                    Save {plan.discount}%
+                  </Badge>
                 )}
-
-                {plan.savings && (
-                  <div className="flex items-center gap-2 mt-2 text-green-600">
-                    <CheckCircle className="w-4 h-4" />
-                    <span className="text-sm font-bold">Save ${plan.savings.toFixed(2)}</span>
-                  </div>
-                )}
-              </motion.button>
-            );
-          })}
-        </div>
-
-        <Button
-          onClick={() => onSelect?.(selectedPlan)}
-          className="w-full bg-gradient-to-r from-blue-600 to-indigo-700 text-white font-bold py-6 rounded-2xl font-serif"
-        >
-          <CreditCard className="w-5 h-5 mr-2" />
-          Continue to Checkout
-        </Button>
-
-        <div className="text-center text-xs text-slate-600 font-serif">
-          30-day money-back guarantee • Secure payment processing
+              </div>
+              <div className="text-2xl font-black text-slate-900 mb-3">
+                ${plan.total}
+              </div>
+              <Button
+                className={`w-full rounded-xl ${
+                  idx === 0
+                    ? 'bg-gradient-to-r from-green-600 to-emerald-700 text-white'
+                    : 'bg-gradient-to-r from-blue-600 to-indigo-700 text-white'
+                }`}
+              >
+                <CreditCard className="w-4 h-4 mr-2" />
+                Choose Plan
+              </Button>
+            </div>
+          ))}
         </div>
       </CardContent>
     </Card>
