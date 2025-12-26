@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
-import { BookOpen, CheckCircle, Clock, Crown, ArrowRight, Star } from 'lucide-react';
+import { BookOpen, CheckCircle, Clock, Crown, ArrowRight, Star, Flame, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import StatCard from '../components/dashboard/StatCard';
 import CourseCard from '../components/courses/CourseCard';
-import CourseRecommendations from '../components/ai/CourseRecommendations';
-import LearningInsights from '../components/insights/LearningInsights';
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -41,12 +41,17 @@ export default function Dashboard() {
     queryFn: () => base44.entities.Course.filter({ is_published: true }, '-created_date', 6)
   });
 
-  const { data: progress = [] } = useQuery({
+  const { data: userProgress = [] } = useQuery({
     queryKey: ['progress', user?.email],
+    queryFn: () => base44.entities.UserProgress.filter({ user_email: user.email }),
+    enabled: !!user?.email
+  });
+
+  const { data: studyStreak } = useQuery({
+    queryKey: ['streak', user?.email],
     queryFn: async () => {
-      const courseProgress = await base44.entities.UserProgress.filter({ user_email: user.email });
-      const insights = await base44.entities.LearningInsight.filter({ user_email: user.email, is_read: false });
-      return { courseProgress, insights };
+      const streaks = await base44.entities.StudyStreak.filter({ user_email: user.email });
+      return streaks[0] || null;
     },
     enabled: !!user?.email
   });
@@ -57,8 +62,9 @@ export default function Dashboard() {
     }
   }, [subscription]);
 
-  const completedLessons = progress?.courseProgress?.filter(p => p.completed).length || 0;
-  const inProgressCourses = [...new Set(progress?.courseProgress?.filter(p => !p.completed).map(p => p.course_id) || [])].length;
+  const completedLessons = userProgress?.filter(p => p.completed).length || 0;
+  const inProgressCourseIds = [...new Set(userProgress?.filter(p => !p.completed).map(p => p.course_id) || [])];
+  const inProgressCourses = courses.filter(c => inProgressCourseIds.includes(c.id));
 
   const tierBenefits = {
     free: { name: 'Free', color: 'text-slate-600', icon: Star },
@@ -68,96 +74,144 @@ export default function Dashboard() {
 
   const currentTier = tierBenefits[userTier];
 
+  const dailyWisdom = [
+    {
+      text: "It is a great mitzvah to always be happy.",
+      source: "Likutey Moharan II:24"
+    },
+    {
+      text: "All the world is a very narrow bridge, but the essential thing is not to fear at all.",
+      source: "Likutey Moharan II:48"
+    },
+    {
+      text: "If you believe that you can damage, then believe that you can fix.",
+      source: "Likutey Moharan II:112"
+    },
+    {
+      text: "The whole world was created for my sake, therefore I must constantly examine myself.",
+      source: "Based on Likutey Moharan"
+    },
+    {
+      text: "Prayer is the highest form of wisdom.",
+      source: "Likutey Moharan I:9"
+    }
+  ];
+
+  const todayWisdom = dailyWisdom[new Date().getDay() % dailyWisdom.length];
+
   return (
-    <div className="space-y-8">
-      {/* Welcome Section */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-8 shadow-2xl">
-        <div className="flex flex-col md:flex-row items-center justify-between">
-          <div className="text-white mb-6 md:mb-0">
-            <h1 className="text-4xl font-bold mb-2">
-              Shalom, {user?.full_name || 'Student'}
-            </h1>
-            <p className="text-slate-300 text-lg">
-              Continue your journey through the teachings of Rebbe Nachman
-            </p>
-            <div className="flex items-center space-x-2 mt-4">
-              {React.createElement(currentTier.icon, { className: `w-5 h-5 ${currentTier.color}` })}
-              <span className={`font-semibold ${currentTier.color}`}>
-                {currentTier.name} Member
-              </span>
-            </div>
+    <div className="space-y-8 max-w-6xl mx-auto">
+      {/* Welcome Header */}
+      <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-8 md:p-12 shadow-2xl border border-slate-700">
+        <h1 className="text-4xl md:text-5xl font-bold text-white mb-3">
+          Shalom, {user?.full_name?.split(' ')[0] || 'Student'}
+        </h1>
+        <p className="text-slate-300 text-lg md:text-xl mb-6">
+          Continue your journey through the teachings of Rebbe Nachman of Breslov
+        </p>
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center space-x-2 bg-white/10 rounded-full px-4 py-2">
+            <Flame className="w-5 h-5 text-amber-400" />
+            <span className="text-white font-semibold">{studyStreak?.current_streak || 0} Day Streak</span>
           </div>
-          {userTier === 'free' && (
-            <Link to={createPageUrl('Subscription')}>
-              <Button className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold px-8 py-6 text-lg shadow-xl">
-                <Crown className="w-5 h-5 mr-2" />
-                Upgrade to Premium
-              </Button>
-            </Link>
-          )}
+          <div className="flex items-center space-x-2 bg-white/10 rounded-full px-4 py-2">
+            <Trophy className="w-5 h-5 text-amber-400" />
+            <span className="text-white font-semibold">{completedLessons} Lessons Completed</span>
+          </div>
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <StatCard
-          icon={BookOpen}
-          label="Courses Available"
-          value={courses.length}
-          color="from-blue-500 to-blue-600"
-        />
-        <StatCard
-          icon={CheckCircle}
-          label="Lessons Completed"
-          value={completedLessons}
-          color="from-green-500 to-green-600"
-        />
-        <StatCard
-          icon={Clock}
-          label="In Progress"
-          value={inProgressCourses}
-          color="from-amber-500 to-amber-600"
-        />
-      </div>
+      {/* Daily Wisdom */}
+      <Card className="bg-gradient-to-br from-amber-50 via-white to-blue-50 border-2 border-amber-200 shadow-xl">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-2xl font-serif text-slate-800 flex items-center space-x-2">
+            <Star className="w-6 h-6 text-amber-500" />
+            <span>Daily Wisdom</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <blockquote className="border-l-4 border-amber-500 pl-6 py-2">
+            <p className="text-slate-700 text-xl md:text-2xl italic font-serif leading-relaxed mb-3">
+              "{todayWisdom.text}"
+            </p>
+            <footer className="text-slate-600 font-semibold">— {todayWisdom.source}</footer>
+          </blockquote>
+        </CardContent>
+      </Card>
 
-      {/* Featured Quote */}
-      <div className="bg-gradient-to-r from-amber-50 to-blue-50 rounded-xl p-8 border-l-4 border-amber-500">
-        <p className="text-slate-700 text-xl italic font-serif mb-3">
-          "The essence of Torah study is to turn the intellect toward Hashem and to come closer to Him through the wisdom of Torah."
-        </p>
-        <p className="text-slate-600 font-semibold">— Likutey Moharan I:25</p>
-      </div>
+      {/* Current Courses - In Progress */}
+      {inProgressCourses.length > 0 && (
+        <div>
+          <h2 className="text-3xl font-bold text-slate-900 mb-6">Continue Learning</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {inProgressCourses.map((course) => {
+              const courseProgressItems = userProgress.filter(p => p.course_id === course.id);
+              const totalLessons = courseProgressItems.length;
+              const completedInCourse = courseProgressItems.filter(p => p.completed).length;
+              const progressPercent = totalLessons > 0 ? (completedInCourse / totalLessons) * 100 : 0;
+              
+              return (
+                <Card key={course.id} className="hover:shadow-xl transition-shadow bg-white">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <CardTitle className="text-xl mb-2">{course.title}</CardTitle>
+                        <p className="text-slate-600 text-sm line-clamp-2">{course.description}</p>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div>
+                        <div className="flex justify-between text-sm text-slate-600 mb-2">
+                          <span>{completedInCourse} of {totalLessons} lessons</span>
+                          <span className="font-semibold">{Math.round(progressPercent)}%</span>
+                        </div>
+                        <Progress value={progressPercent} className="h-2" />
+                      </div>
+                      <Link to={createPageUrl('CourseDetail') + '?id=' + course.id}>
+                        <Button className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800">
+                          Continue Course
+                          <ArrowRight className="w-4 h-4 ml-2" />
+                        </Button>
+                      </Link>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
-      {/* AI Recommendations */}
-      <CourseRecommendations 
-        user={user} 
-        userProgress={progress} 
-        courses={courses} 
-      />
-
-      {/* Featured Courses */}
+      {/* Available Courses */}
       <div>
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-3xl font-bold text-slate-900">Featured Courses</h2>
-          <Link to={createPageUrl('Courses')}>
+          <h2 className="text-3xl font-bold text-slate-900">
+            {inProgressCourses.length > 0 ? 'Explore More Courses' : 'Begin Your Journey'}
+          </h2>
+          <Link to={createPageUrl('Marketplace')}>
             <Button variant="outline" className="group">
-              View All Courses
+              View All
               <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
             </Button>
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {courses.slice(0, 3).map((course) => (
-            <CourseCard key={course.id} course={course} userTier={userTier} />
-          ))}
-        </div>
-
-        {courses.length === 0 && (
-          <div className="text-center py-12 bg-white rounded-xl border-2 border-dashed border-slate-300">
-            <BookOpen className="w-16 h-16 text-slate-400 mx-auto mb-4" />
-            <p className="text-slate-600 text-lg">No courses available yet</p>
-            <p className="text-slate-500 text-sm mt-2">Check back soon for new Torah content</p>
+        {courses.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {courses
+              .filter(c => !inProgressCourseIds.includes(c.id))
+              .slice(0, 3)
+              .map((course) => (
+                <CourseCard key={course.id} course={course} userTier={userTier} />
+              ))}
+          </div>
+        ) : (
+          <div className="text-center py-16 bg-white rounded-2xl border-2 border-dashed border-slate-300">
+            <BookOpen className="w-20 h-20 text-slate-400 mx-auto mb-4" />
+            <p className="text-slate-600 text-xl font-semibold">No courses available yet</p>
+            <p className="text-slate-500 mt-2">New Torah content coming soon</p>
           </div>
         )}
       </div>
