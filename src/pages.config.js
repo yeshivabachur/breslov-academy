@@ -57,6 +57,7 @@ import Specializations from './pages/Specializations';
 import Webinars from './pages/Webinars';
 import InstructorPayouts from './pages/InstructorPayouts';
 import MyLearning from './pages/MyLearning';
+import Jobs from './pages/Jobs';
 import __Layout from './Layout.jsx';
 
 
@@ -120,6 +121,7 @@ export const PAGES = {
     "Webinars": Webinars,
     "InstructorPayouts": InstructorPayouts,
     "MyLearning": MyLearning,
+    "Jobs": Jobs,
 }
 
 export const pagesConfig = {
