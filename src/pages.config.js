@@ -38,6 +38,7 @@ import TalmudStudy from './pages/TalmudStudy';
 import KabbalahStudy from './pages/KabbalahStudy';
 import HalachaGuide from './pages/HalachaGuide';
 import TorahStudy from './pages/TorahStudy';
+import ResourceLibrary from './pages/ResourceLibrary';
 import __Layout from './Layout.jsx';
 
 
@@ -82,6 +83,7 @@ export const PAGES = {
     "KabbalahStudy": KabbalahStudy,
     "HalachaGuide": HalachaGuide,
     "TorahStudy": TorahStudy,
+    "ResourceLibrary": ResourceLibrary,
 }
 
 export const pagesConfig = {
