@@ -39,6 +39,14 @@ import Subscription from './pages/Subscription';
 import TalmudStudy from './pages/TalmudStudy';
 import TorahStudy from './pages/TorahStudy';
 import Tournaments from './pages/Tournaments';
+import InstructorDashboard from './pages/InstructorDashboard';
+import CourseBuilder from './pages/CourseBuilder';
+import LessonBuilder from './pages/LessonBuilder';
+import StudentEnrollments from './pages/StudentEnrollments';
+import Assignments from './pages/Assignments';
+import GradeBook from './pages/GradeBook';
+import TeacherMessaging from './pages/TeacherMessaging';
+import InstructorAnalytics from './pages/InstructorAnalytics';
 import __Layout from './Layout.jsx';
 
 
@@ -84,6 +92,14 @@ export const PAGES = {
     "TalmudStudy": TalmudStudy,
     "TorahStudy": TorahStudy,
     "Tournaments": Tournaments,
+    "InstructorDashboard": InstructorDashboard,
+    "CourseBuilder": CourseBuilder,
+    "LessonBuilder": LessonBuilder,
+    "StudentEnrollments": StudentEnrollments,
+    "Assignments": Assignments,
+    "GradeBook": GradeBook,
+    "TeacherMessaging": TeacherMessaging,
+    "InstructorAnalytics": InstructorAnalytics,
 }
 
 export const pagesConfig = {
