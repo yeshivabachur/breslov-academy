@@ -1,146 +1,143 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Plus, Trash2, Save, HelpCircle } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Plus, Trash2, FileText } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
-export default function QuizBuilder({ courseId, onSave }) {
+export default function QuizBuilder({ lessonId, onSave }) {
   const [quiz, setQuiz] = useState({
     title: '',
-    passing_score: 70,
+    passingScore: 70,
     questions: []
   });
 
-  const [currentQuestion, setCurrentQuestion] = useState({
-    question_text: '',
+  const [newQuestion, setNewQuestion] = useState({
+    question: '',
+    questionHebrew: '',
     options: ['', '', '', ''],
-    correct_option: 0
+    correctAnswer: '',
+    explanation: ''
   });
 
   const addQuestion = () => {
-    if (currentQuestion.question_text && currentQuestion.options[0]) {
+    if (newQuestion.question && newQuestion.correctAnswer) {
       setQuiz({
         ...quiz,
-        questions: [...quiz.questions, currentQuestion]
+        questions: [...quiz.questions, { ...newQuestion }]
       });
-      setCurrentQuestion({
-        question_text: '',
+      setNewQuestion({
+        question: '',
+        questionHebrew: '',
         options: ['', '', '', ''],
-        correct_option: 0
+        correctAnswer: '',
+        explanation: ''
       });
     }
   };
 
   return (
-    <Card className="glass-effect border-0 premium-shadow-lg rounded-[2rem]">
+    <Card className="glass-effect border-0 premium-shadow-xl rounded-[2.5rem]">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <HelpCircle className="w-5 h-5 text-purple-600" />
-          Quiz Builder
+        <CardTitle className="flex items-center gap-2 font-serif">
+          <FileText className="w-5 h-5 text-blue-600" />
+          <div>
+            <div>Quiz Builder</div>
+            <div className="text-sm text-slate-600 font-normal" dir="rtl">בניית מבחן</div>
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">Quiz Title</label>
+          <label className="block text-sm font-bold text-slate-700 mb-2">Quiz Title</label>
           <Input
             value={quiz.title}
             onChange={(e) => setQuiz({ ...quiz, title: e.target.value })}
-            placeholder="Lesson 1 Quiz"
+            placeholder="e.g., Azamra Comprehension Quiz"
             className="rounded-xl"
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">Passing Score (%)</label>
-          <Input
-            type="number"
-            value={quiz.passing_score}
-            onChange={(e) => setQuiz({ ...quiz, passing_score: parseInt(e.target.value) })}
-            placeholder="70"
-            className="rounded-xl"
-          />
-        </div>
-
-        <div className="space-y-4 pt-4 border-t border-slate-200">
-          <h4 className="font-bold text-slate-900">Add Question</h4>
+        <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
+          <div className="text-sm font-bold text-blue-900 mb-3">
+            Add Question {quiz.questions.length + 1}
+          </div>
           
-          <Input
-            value={currentQuestion.question_text}
-            onChange={(e) => setCurrentQuestion({ ...currentQuestion, question_text: e.target.value })}
-            placeholder="What is simcha?"
-            className="rounded-xl"
-          />
+          <div className="space-y-3">
+            <Input
+              value={newQuestion.question}
+              onChange={(e) => setNewQuestion({ ...newQuestion, question: e.target.value })}
+              placeholder="Question in English"
+              className="rounded-lg"
+            />
+            
+            <Input
+              value={newQuestion.questionHebrew}
+              onChange={(e) => setNewQuestion({ ...newQuestion, questionHebrew: e.target.value })}
+              placeholder="Question in Hebrew (optional)"
+              className="rounded-lg"
+              dir="rtl"
+            />
 
-          <div className="space-y-2">
-            {currentQuestion.options.map((option, idx) => (
-              <div key={idx} className="flex gap-2">
+            <div className="grid grid-cols-2 gap-2">
+              {newQuestion.options.map((opt, idx) => (
                 <Input
-                  value={option}
+                  key={idx}
+                  value={opt}
                   onChange={(e) => {
-                    const newOptions = [...currentQuestion.options];
+                    const newOptions = [...newQuestion.options];
                     newOptions[idx] = e.target.value;
-                    setCurrentQuestion({ ...currentQuestion, options: newOptions });
+                    setNewQuestion({ ...newQuestion, options: newOptions });
                   }}
                   placeholder={`Option ${idx + 1}`}
-                  className="flex-1 rounded-xl"
+                  className="rounded-lg"
                 />
-                <Button
-                  onClick={() => setCurrentQuestion({ ...currentQuestion, correct_option: idx })}
-                  variant={currentQuestion.correct_option === idx ? 'default' : 'outline'}
-                  className="rounded-xl"
-                >
-                  ✓
-                </Button>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
 
-          <Button onClick={addQuestion} variant="outline" className="w-full rounded-xl">
-            <Plus className="w-4 h-4 mr-2" />
-            Add Question
-          </Button>
+            <Input
+              value={newQuestion.correctAnswer}
+              onChange={(e) => setNewQuestion({ ...newQuestion, correctAnswer: e.target.value })}
+              placeholder="Correct answer"
+              className="rounded-lg"
+            />
+
+            <Button
+              onClick={addQuestion}
+              className="w-full bg-gradient-to-r from-green-600 to-emerald-700 text-white rounded-xl"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Question
+            </Button>
+          </div>
         </div>
 
-        {/* Questions List */}
-        {quiz.questions.length > 0 && (
-          <div className="space-y-2 pt-4 border-t border-slate-200">
-            <h4 className="font-bold text-slate-900">Questions ({quiz.questions.length})</h4>
-            <AnimatePresence>
-              {quiz.questions.map((q, idx) => (
-                <motion.div
-                  key={idx}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  className="p-3 bg-white rounded-xl"
-                >
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <div className="font-medium text-slate-900 text-sm">{q.question_text}</div>
-                      <div className="text-xs text-green-600 mt-1">✓ {q.options[q.correct_option]}</div>
-                    </div>
-                    <Button
-                      onClick={() => setQuiz({ ...quiz, questions: quiz.questions.filter((_, i) => i !== idx) })}
-                      variant="ghost"
-                      size="icon"
-                      className="text-red-500"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
+        <div className="space-y-2">
+          <div className="text-sm font-bold text-slate-700">
+            Questions ({quiz.questions.length})
           </div>
-        )}
+          {quiz.questions.map((q, idx) => (
+            <div key={idx} className="p-3 bg-white rounded-xl border border-slate-200 flex items-start justify-between">
+              <div className="flex-1">
+                <div className="font-bold text-slate-900 text-sm">{idx + 1}. {q.question}</div>
+                {q.questionHebrew && (
+                  <div className="text-xs text-amber-700 font-serif" dir="rtl">{q.questionHebrew}</div>
+                )}
+              </div>
+              <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                <Trash2 className="w-3 h-3 text-red-500" />
+              </Button>
+            </div>
+          ))}
+        </div>
 
         <Button
           onClick={() => onSave?.(quiz)}
-          disabled={!quiz.title || quiz.questions.length === 0}
-          className="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white font-bold rounded-2xl"
+          disabled={quiz.questions.length === 0}
+          size="lg"
+          className="w-full bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-2xl"
         >
-          <Save className="w-4 h-4 mr-2" />
           Save Quiz
         </Button>
       </CardContent>

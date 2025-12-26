@@ -1,30 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Users, Radio } from 'lucide-react';
+import { Eye } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-export default function LiveViewerCount({ count = 0 }) {
-  const [viewers, setViewers] = useState(count);
+export default function LiveViewerCount({ initialCount = 0 }) {
+  const [count, setCount] = useState(initialCount);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setViewers(prev => prev + Math.floor(Math.random() * 3) - 1);
-    }, 3000);
+      setCount(c => c + Math.floor(Math.random() * 3) - 1);
+    }, 5000);
+
     return () => clearInterval(interval);
   }, []);
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.8 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className="inline-flex items-center gap-2 bg-red-500 text-white px-4 py-2 rounded-full shadow-lg"
+      animate={{ scale: [1, 1.05, 1] }}
+      transition={{ duration: 2, repeat: Infinity }}
     >
-      <Radio className="w-4 h-4 animate-pulse" />
-      <div className="flex items-center gap-2">
-        <Users className="w-4 h-4" />
-        <span className="font-bold">{viewers}</span>
-        <span className="text-sm">watching</span>
-      </div>
+      <Badge className="bg-red-600 text-white flex items-center gap-2 px-3 py-1.5">
+        <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
+        <Eye className="w-4 h-4" />
+        <span className="font-bold">{count}</span>
+      </Badge>
     </motion.div>
   );
 }

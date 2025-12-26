@@ -1,55 +1,71 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Bell, BellOff, Clock } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Bell, X, BookOpen } from 'lucide-react';
 
-export default function DailyReminder() {
-  const [enabled, setEnabled] = useState(true);
-  const [time, setTime] = useState('20:00');
+export default function DailyReminder({ userPreferences }) {
+  const [showReminder, setShowReminder] = useState(false);
+
+  useEffect(() => {
+    const checkTime = () => {
+      const now = new Date();
+      const hour = now.getHours();
+      
+      // Show reminder at preferred study time
+      if (hour === (userPreferences?.studyHour || 9)) {
+        setShowReminder(true);
+      }
+    };
+
+    checkTime();
+    const interval = setInterval(checkTime, 60000);
+    return () => clearInterval(interval);
+  }, [userPreferences]);
 
   return (
-    <Card className="glass-effect border-0 premium-shadow-lg rounded-[2rem]">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          {enabled ? <Bell className="w-5 h-5 text-blue-600" /> : <BellOff className="w-5 h-5 text-slate-400" />}
-          Daily Study Reminder
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl">
-          <div className="flex items-center gap-3">
-            <Clock className="w-5 h-5 text-blue-600" />
-            <div>
-              <div className="font-bold text-slate-900">Reminder Time</div>
-              <div className="text-sm text-slate-600">Daily notification</div>
-            </div>
-          </div>
-          <input
-            type="time"
-            value={time}
-            onChange={(e) => setTime(e.target.value)}
-            className="px-3 py-2 bg-white rounded-lg border-2 border-slate-200 font-mono font-bold text-slate-900"
-          />
-        </div>
+    <AnimatePresence>
+      {showReminder && (
+        <motion.div
+          initial={{ opacity: 0, x: 300 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: 300 }}
+          className="fixed top-24 right-4 z-50"
+        >
+          <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-300 shadow-2xl w-80">
+            <CardContent className="p-6">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <BookOpen className="w-8 h-8 text-blue-600" />
+                  <div>
+                    <div className="font-black text-slate-900">Study Time!</div>
+                    <div className="text-sm text-blue-700" dir="rtl">עת ללמוד</div>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowReminder(false)}
+                  className="h-6 w-6 p-0"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+              
+              <p className="text-sm text-slate-700 mb-4 font-serif">
+                Your daily learning time has arrived. Continue your Torah journey!
+              </p>
 
-        <motion.div whileTap={{ scale: 0.98 }}>
-          <Button
-            onClick={() => setEnabled(!enabled)}
-            className={`w-full rounded-2xl font-bold ${
-              enabled
-                ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white'
-                : 'bg-slate-200 text-slate-600'
-            }`}
-          >
-            {enabled ? 'Reminders Enabled' : 'Enable Reminders'}
-          </Button>
+              <Button
+                onClick={() => setShowReminder(false)}
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-xl"
+              >
+                Start Learning
+              </Button>
+            </CardContent>
+          </Card>
         </motion.div>
-
-        <div className="text-xs text-slate-500 text-center">
-          We'll remind you to continue your learning journey every day at {time}
-        </div>
-      </CardContent>
-    </Card>
+      )}
+    </AnimatePresence>
   );
 }

@@ -1,39 +1,53 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { X, Sparkles } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { X, Sparkles } from 'lucide-react';
 
 export default function WelcomeBanner({ userName, onDismiss }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="relative overflow-hidden rounded-[2rem] mb-8"
-    >
-      <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600" />
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/20" />
-      
-      <div className="relative p-8 md:p-12">
-        <button
-          onClick={onDismiss}
-          className="absolute top-4 right-4 text-white/80 hover:text-white transition-colors"
-        >
-          <X className="w-5 h-5" />
-        </button>
+  const [visible, setVisible] = useState(true);
 
-        <div className="flex items-center gap-3 mb-4">
-          <Sparkles className="w-8 h-8 text-amber-300" />
-          <h2 className="text-3xl md:text-4xl font-black text-white">
-            Welcome back, {userName}!
-          </h2>
-        </div>
-        <p className="text-white/90 text-lg mb-6">
-          Ready to continue your Torah learning journey?
-        </p>
-        <Button className="bg-white text-purple-600 hover:bg-white/90 font-bold rounded-2xl px-8">
-          Continue Learning
-        </Button>
-      </div>
-    </motion.div>
+  if (!visible) return null;
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+      >
+        <Card className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 border-0 shadow-2xl rounded-[2rem] mb-6">
+          <CardContent className="p-6">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-3">
+                  <Sparkles className="w-6 h-6 text-amber-300" />
+                  <div className="text-2xl font-black text-white">
+                    Welcome, {userName}!
+                  </div>
+                </div>
+                <p className="text-blue-100 mb-4">
+                  Begin your sacred journey through Breslov teachings. May your learning bring light and joy.
+                </p>
+                <div className="text-lg text-amber-300 font-serif" dir="rtl">
+                  ברוך הבא! מצוה גדולה להיות בשמחה תמיד
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setVisible(false);
+                  onDismiss?.();
+                }}
+                className="text-white/70 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+    </AnimatePresence>
   );
 }

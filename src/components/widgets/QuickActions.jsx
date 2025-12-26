@@ -1,49 +1,58 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Plus, BookOpen, Video, Users, Calendar } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Plus, BookOpen, Users, MessageCircle, Calendar, X } from 'lucide-react';
 
 export default function QuickActions() {
+  const [isOpen, setIsOpen] = useState(false);
+
   const actions = [
-    { icon: BookOpen, label: 'Start Course', color: 'from-blue-500 to-blue-600' },
-    { icon: Video, label: 'Watch Shiur', color: 'from-purple-500 to-purple-600' },
-    { icon: Users, label: 'Join Group', color: 'from-green-500 to-green-600' },
-    { icon: Calendar, label: 'Schedule', color: 'from-orange-500 to-orange-600' },
+    { icon: BookOpen, label: 'Start Lesson', color: 'from-blue-500 to-blue-600' },
+    { icon: Users, label: 'Find Chavruta', color: 'from-purple-500 to-purple-600' },
+    { icon: MessageCircle, label: 'Ask Question', color: 'from-green-500 to-green-600' },
+    { icon: Calendar, label: 'Schedule Study', color: 'from-amber-500 to-amber-600' }
   ];
 
   return (
-    <div className="fixed bottom-6 right-6 z-40">
-      <div className="relative">
-        <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-          <Button
-            size="lg"
-            className="w-16 h-16 rounded-full bg-gradient-to-r from-amber-500 to-orange-600 shadow-2xl"
+    <div className="fixed bottom-6 right-6 z-50">
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            className="mb-4 space-y-2"
           >
-            <Plus className="w-8 h-8" />
-          </Button>
-        </motion.div>
-
-        <div className="absolute bottom-20 right-0 space-y-2 opacity-0 hover:opacity-100 transition-opacity">
-          {actions.map((action, idx) => {
-            const Icon = action.icon;
-            return (
-              <motion.div
-                key={action.label}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: idx * 0.1 }}
-              >
-                <Button
-                  className={`w-14 h-14 rounded-full bg-gradient-to-r ${action.color} shadow-xl`}
-                  title={action.label}
+            {actions.map((action, idx) => {
+              const Icon = action.icon;
+              return (
+                <motion.div
+                  key={idx}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 20 }}
+                  transition={{ delay: idx * 0.05 }}
                 >
-                  <Icon className="w-6 h-6" />
-                </Button>
-              </motion.div>
-            );
-          })}
-        </div>
-      </div>
+                  <Button
+                    className={`w-full bg-gradient-to-r ${action.color} text-white shadow-xl rounded-2xl justify-start`}
+                  >
+                    <Icon className="w-5 h-5 mr-3" />
+                    {action.label}
+                  </Button>
+                </motion.div>
+              );
+            })}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <Button
+        onClick={() => setIsOpen(!isOpen)}
+        size="lg"
+        className="rounded-full w-16 h-16 p-0 bg-gradient-to-br from-blue-600 to-indigo-700 text-white shadow-2xl hover:shadow-3xl"
+      >
+        {isOpen ? <X className="w-8 h-8" /> : <Plus className="w-8 h-8" />}
+      </Button>
     </div>
   );
 }

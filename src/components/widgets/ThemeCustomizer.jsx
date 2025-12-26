@@ -1,63 +1,63 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Palette, Check } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 export default function ThemeCustomizer() {
   const [selectedTheme, setSelectedTheme] = useState('default');
 
   const themes = [
-    { id: 'default', name: 'Classic', colors: ['#1e293b', '#3b82f6', '#f59e0b'] },
-    { id: 'forest', name: 'Forest', colors: ['#064e3b', '#10b981', '#84cc16'] },
-    { id: 'ocean', name: 'Ocean', colors: ['#0c4a6e', '#0ea5e9', '#06b6d4'] },
-    { id: 'sunset', name: 'Sunset', colors: ['#7c2d12', '#f97316', '#fb923c'] },
-    { id: 'royal', name: 'Royal', colors: ['#3730a3', '#8b5cf6', '#a78bfa'] },
+    { id: 'default', name: 'Classic', primary: '#3b82f6', secondary: '#8b5cf6' },
+    { id: 'warm', name: 'Warm Torah', primary: '#f59e0b', secondary: '#ef4444' },
+    { id: 'forest', name: 'Forest Study', primary: '#10b981', secondary: '#059669' },
+    { id: 'royal', name: 'Royal Purple', primary: '#8b5cf6', secondary: '#a855f7' },
+    { id: 'ocean', name: 'Ocean Blue', primary: '#0ea5e9', secondary: '#06b6d4' }
   ];
 
+  const applyTheme = (theme) => {
+    setSelectedTheme(theme.id);
+    // In production, apply CSS variables
+    document.documentElement.style.setProperty('--primary', theme.primary);
+  };
+
   return (
-    <Card className="glass-effect border-0 premium-shadow-lg rounded-[2rem]">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Palette className="w-5 h-5 text-pink-600" />
-          Theme Customizer
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-2 gap-3">
-          {themes.map((theme, idx) => (
-            <motion.button
-              key={theme.id}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: idx * 0.1 }}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setSelectedTheme(theme.id)}
-              className={`relative p-4 rounded-xl transition-all ${
-                selectedTheme === theme.id
-                  ? 'ring-2 ring-blue-500 bg-blue-50'
-                  : 'bg-white hover:bg-slate-50'
-              }`}
-            >
-              {selectedTheme === theme.id && (
-                <div className="absolute top-2 right-2 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
-                  <Check className="w-4 h-4 text-white" />
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm" className="rounded-full">
+          <Palette className="w-4 h-4 mr-2" />
+          Theme
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-64">
+        <div className="space-y-3">
+          <div className="font-bold text-slate-900">Choose Theme</div>
+          <div className="grid gap-2">
+            {themes.map(theme => (
+              <button
+                key={theme.id}
+                onClick={() => applyTheme(theme)}
+                className={`p-3 rounded-xl border-2 flex items-center justify-between transition-all ${
+                  selectedTheme === theme.id
+                    ? 'bg-blue-50 border-blue-500'
+                    : 'bg-white border-slate-200 hover:border-slate-300'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex gap-1">
+                    <div className="w-6 h-6 rounded" style={{ backgroundColor: theme.primary }} />
+                    <div className="w-6 h-6 rounded" style={{ backgroundColor: theme.secondary }} />
+                  </div>
+                  <span className="text-sm font-bold text-slate-900">{theme.name}</span>
                 </div>
-              )}
-              <div className="flex gap-1 mb-2">
-                {theme.colors.map((color, i) => (
-                  <div
-                    key={i}
-                    className="w-8 h-8 rounded-lg shadow-sm"
-                    style={{ backgroundColor: color }}
-                  />
-                ))}
-              </div>
-              <div className="text-sm font-bold text-slate-900">{theme.name}</div>
-            </motion.button>
-          ))}
+                {selectedTheme === theme.id && (
+                  <Check className="w-5 h-5 text-blue-600" />
+                )}
+              </button>
+            ))}
+          </div>
         </div>
-      </CardContent>
-    </Card>
+      </PopoverContent>
+    </Popover>
   );
 }

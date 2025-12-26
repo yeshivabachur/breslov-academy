@@ -8,7 +8,11 @@ export default function BackToTop() {
 
   useEffect(() => {
     const toggleVisibility = () => {
-      setIsVisible(window.pageYOffset > 300);
+      if (window.pageYOffset > 300) {
+        setIsVisible(true);
+      } else {
+        setIsVisible(false);
+      }
     };
 
     window.addEventListener('scroll', toggleVisibility);
@@ -16,23 +20,26 @@ export default function BackToTop() {
   }, []);
 
   const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
   };
 
   return (
     <AnimatePresence>
       {isVisible && (
         <motion.div
-          initial={{ opacity: 0, scale: 0.8, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.8, y: 20 }}
-          className="fixed bottom-6 left-6 z-40"
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.8 }}
+          className="fixed bottom-24 right-6 z-40"
         >
           <Button
             onClick={scrollToTop}
-            className="w-14 h-14 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 shadow-2xl hover:shadow-3xl"
+            className="rounded-full w-12 h-12 p-0 bg-gradient-to-br from-slate-700 to-slate-900 text-white shadow-xl"
           >
-            <ArrowUp className="w-6 h-6" />
+            <ArrowUp className="w-5 h-5" />
           </Button>
         </motion.div>
       )}

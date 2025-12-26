@@ -1,8 +1,6 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 
-export default function ProgressCircle({ percentage, size = 100, label, color = '#3b82f6' }) {
-  const strokeWidth = 8;
+export default function ProgressCircle({ percentage = 0, size = 120, strokeWidth = 12, color = '#3b82f6' }) {
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
   const offset = circumference - (percentage / 100) * circumference;
@@ -14,28 +12,25 @@ export default function ProgressCircle({ percentage, size = 100, label, color = 
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke="currentColor"
+          stroke="#e2e8f0"
           strokeWidth={strokeWidth}
           fill="none"
-          className="text-slate-200"
         />
-        <motion.circle
+        <circle
           cx={size / 2}
           cy={size / 2}
           r={radius}
           stroke={color}
           strokeWidth={strokeWidth}
           fill="none"
-          strokeLinecap="round"
           strokeDasharray={circumference}
-          initial={{ strokeDashoffset: circumference }}
-          animate={{ strokeDashoffset: offset }}
-          transition={{ duration: 1, ease: 'easeOut' }}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          className="transition-all duration-1000 ease-out"
         />
       </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-2xl font-black text-slate-900">{percentage}%</span>
-        {label && <span className="text-xs text-slate-600 font-medium">{label}</span>}
+      <div className="absolute text-2xl font-black text-slate-900">
+        {Math.round(percentage)}%
       </div>
     </div>
   );

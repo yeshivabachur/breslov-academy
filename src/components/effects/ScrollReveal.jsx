@@ -1,37 +1,40 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { motion, useInView } from 'framer-motion';
+import { motion } from 'framer-motion';
 
-export default function ScrollReveal({ children, delay = 0, direction = 'up', className = '' }) {
+export default function ScrollReveal({ children, delay = 0 }) {
+  const [isVisible, setIsVisible] = useState(false);
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: '-100px' });
 
-  const variants = {
-    hidden: {
-      opacity: 0,
-      y: direction === 'up' ? 40 : direction === 'down' ? -40 : 0,
-      x: direction === 'left' ? 40 : direction === 'right' ? -40 : 0,
-    },
-    visible: {
-      opacity: 1,
-      y: 0,
-      x: 0,
-    },
-  };
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (ref.current) {
+      observer.observe(ref.current);
+    }
+
+    return () => {
+      if (ref.current) {
+        observer.unobserve(ref.current);
+      }
+    };
+  }, []);
 
   return (
-    <motion.div
-      ref={ref}
-      initial="hidden"
-      animate={isInView ? 'visible' : 'hidden'}
-      variants={variants}
-      transition={{
-        duration: 0.8,
-        delay,
-        ease: [0.22, 1, 0.36, 1],
-      }}
-      className={className}
-    >
-      {children}
-    </motion.div>
+    <div ref={ref}>
+      <motion.div
+        initial={{ opacity: 0, y: 50 }}
+        animate={isVisible ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
+        transition={{ duration: 0.6, delay }}
+      >
+        {children}
+      </motion.div>
+    </div>
   );
 }
