@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { base44 } from '@/api/base44Client';
 import { createPageUrl } from '@/utils';
 import { Button } from '@/components/ui/button';
@@ -7,21 +7,7 @@ import { BookOpen, Star, Users, Award } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function StudentLogin() {
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const user = await base44.auth.me();
-        if (user.role === 'admin') {
-          window.location.href = createPageUrl('InstructorDashboard');
-        } else {
-          window.location.href = createPageUrl('Dashboard');
-        }
-      } catch (error) {
-        // Not logged in, show login page
-      }
-    };
-    checkAuth();
-  }, []);
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/20 flex items-center justify-center p-4">
