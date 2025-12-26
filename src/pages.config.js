@@ -7,6 +7,10 @@ import MyProgress from './pages/MyProgress';
 import LearningPaths from './pages/LearningPaths';
 import Community from './pages/Community';
 import Achievements from './pages/Achievements';
+import LanguageLearning from './pages/LanguageLearning';
+import Languages from './pages/Languages';
+import Analytics from './pages/Analytics';
+import AffiliateProgram from './pages/AffiliateProgram';
 import __Layout from './Layout.jsx';
 
 
@@ -20,6 +24,10 @@ export const PAGES = {
     "LearningPaths": LearningPaths,
     "Community": Community,
     "Achievements": Achievements,
+    "LanguageLearning": LanguageLearning,
+    "Languages": Languages,
+    "Analytics": Analytics,
+    "AffiliateProgram": AffiliateProgram,
 }
 
 export const pagesConfig = {

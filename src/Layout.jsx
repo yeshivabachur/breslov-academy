@@ -26,11 +26,10 @@ export default function Layout({ children, currentPageName }) {
   const navigation = [
     { name: 'Dashboard', path: 'Dashboard', icon: BookOpen },
     { name: 'Courses', path: 'Courses', icon: GraduationCap },
-    { name: 'Learning Paths', path: 'LearningPaths', icon: Menu },
+    { name: 'Languages', path: 'Languages', icon: Menu },
     { name: 'Community', path: 'Community', icon: Menu },
-    { name: 'My Progress', path: 'MyProgress', icon: TrendingUp },
-    { name: 'Achievements', path: 'Achievements', icon: Trophy },
-    { name: 'Subscription', path: 'Subscription', icon: Crown },
+    { name: 'Analytics', path: 'Analytics', icon: TrendingUp },
+    { name: 'Affiliate', path: 'AffiliateProgram', icon: Crown },
   ];
 
   return (
