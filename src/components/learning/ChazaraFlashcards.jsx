@@ -156,7 +156,7 @@ export default function ChazaraFlashcards({ courseId, userEmail, onComplete }) {
                   <div className="text-center">
                     <X className="w-6 h-6 text-red-600 mx-auto mb-2" />
                     <div className="font-bold text-red-700 text-sm">Again</div>
-                    <div className="text-xs text-slate-600">< 1 min</div>
+                    <div className="text-xs text-slate-600">&lt; 1 min</div>
                   </div>
                 </Button>
 
