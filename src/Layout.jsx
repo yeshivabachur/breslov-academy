@@ -33,7 +33,7 @@ export default function Layout({ children, currentPageName }) {
     { name: 'Messages', path: 'TeacherMessaging', icon: MessageCircle },
   ] : [
     { name: 'Dashboard', path: 'Dashboard', icon: BookOpen },
-    { name: 'Seder Halimud', path: 'SederPaths', icon: BookOpen },
+    { name: 'Languages', path: 'LanguageVariants', icon: BookOpen },
     { name: 'My Learning', path: 'MyLearning', icon: FileText },
     { name: 'Marketplace', path: 'Marketplace', icon: Award },
   ];

@@ -61,6 +61,8 @@ import Webinars from './pages/Webinars';
 import SederPaths from './pages/SederPaths';
 import StudentLogin from './pages/StudentLogin';
 import TeacherLogin from './pages/TeacherLogin';
+import LanguageVariants from './pages/LanguageVariants';
+import RosettaStoneLesson from './pages/RosettaStoneLesson';
 import __Layout from './Layout.jsx';
 
 
@@ -128,6 +130,8 @@ export const PAGES = {
     "SederPaths": SederPaths,
     "StudentLogin": StudentLogin,
     "TeacherLogin": TeacherLogin,
+    "LanguageVariants": LanguageVariants,
+    "RosettaStoneLesson": RosettaStoneLesson,
 }
 
 export const pagesConfig = {
