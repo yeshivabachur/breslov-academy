@@ -29,13 +29,14 @@ export default function Layout({ children, currentPageName }) {
 
   const navigation = isInstructor ? [
     { name: 'Dashboard', path: 'InstructorDashboard', icon: GraduationCap },
+    { name: 'My Courses', path: 'Courses', icon: BookOpen },
     { name: 'Analytics', path: 'InstructorAnalytics', icon: BarChart3 },
     { name: 'Messages', path: 'TeacherMessaging', icon: MessageCircle },
   ] : [
     { name: 'Dashboard', path: 'Dashboard', icon: BookOpen },
-    { name: 'Languages', path: 'LanguageVariants', icon: BookOpen },
-    { name: 'My Learning', path: 'MyLearning', icon: FileText },
-    { name: 'Marketplace', path: 'Marketplace', icon: Award },
+    { name: 'Torah Paths', path: 'Courses', icon: BookOpen },
+    { name: 'Languages', path: 'LanguageVariants', icon: Award },
+    { name: 'My Progress', path: 'MyLearning', icon: FileText },
   ];
 
   return (
