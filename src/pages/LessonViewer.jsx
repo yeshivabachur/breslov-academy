@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, CheckCircle, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react';
 import DiscussionThread from '../components/learning/DiscussionThread';
+import AITutor from '../components/ai/AITutor';
 import AdvancedVideoPlayer from '../components/video/AdvancedVideoPlayer';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';

@@ -17,6 +17,10 @@ import Marketplace from './pages/Marketplace';
 import Events from './pages/Events';
 import Messages from './pages/Messages';
 import Downloads from './pages/Downloads';
+import Leaderboard from './pages/Leaderboard';
+import Challenges from './pages/Challenges';
+import RewardsShop from './pages/RewardsShop';
+import Mentorship from './pages/Mentorship';
 import __Layout from './Layout.jsx';
 
 
@@ -40,6 +44,10 @@ export const PAGES = {
     "Events": Events,
     "Messages": Messages,
     "Downloads": Downloads,
+    "Leaderboard": Leaderboard,
+    "Challenges": Challenges,
+    "RewardsShop": RewardsShop,
+    "Mentorship": Mentorship,
 }
 
 export const pagesConfig = {

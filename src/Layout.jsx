@@ -26,9 +26,9 @@ export default function Layout({ children, currentPageName }) {
   const navigation = [
     { name: 'Dashboard', path: 'Dashboard', icon: BookOpen },
     { name: 'Marketplace', path: 'Marketplace', icon: GraduationCap },
-    { name: 'Study Sets', path: 'StudySets', icon: BookOpen },
-    { name: 'Events', path: 'Events', icon: Menu },
-    { name: 'Messages', path: 'Messages', icon: Menu },
+    { name: 'Leaderboard', path: 'Leaderboard', icon: Trophy },
+    { name: 'Challenges', path: 'Challenges', icon: TrendingUp },
+    { name: 'Rewards', path: 'RewardsShop', icon: Crown },
   ];
 
   return (

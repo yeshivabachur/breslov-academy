@@ -8,6 +8,7 @@ import { createPageUrl } from '@/utils';
 import StatCard from '../components/dashboard/StatCard';
 import CourseCard from '../components/courses/CourseCard';
 import CourseRecommendations from '../components/ai/CourseRecommendations';
+import LearningInsights from '../components/insights/LearningInsights';
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -42,7 +43,11 @@ export default function Dashboard() {
 
   const { data: progress = [] } = useQuery({
     queryKey: ['progress', user?.email],
-    queryFn: () => base44.entities.UserProgress.filter({ user_email: user.email }),
+    queryFn: async () => {
+      const courseProgress = await base44.entities.UserProgress.filter({ user_email: user.email });
+      const insights = await base44.entities.LearningInsight.filter({ user_email: user.email, is_read: false });
+      return { courseProgress, insights };
+    },
     enabled: !!user?.email
   });
 
@@ -52,8 +57,8 @@ export default function Dashboard() {
     }
   }, [subscription]);
 
-  const completedLessons = progress.filter(p => p.completed).length;
-  const inProgressCourses = [...new Set(progress.filter(p => !p.completed).map(p => p.course_id))].length;
+  const completedLessons = progress?.courseProgress?.filter(p => p.completed).length || 0;
+  const inProgressCourses = [...new Set(progress?.courseProgress?.filter(p => !p.completed).map(p => p.course_id) || [])].length;
 
   const tierBenefits = {
     free: { name: 'Free', color: 'text-slate-600', icon: Star },
