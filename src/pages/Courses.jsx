@@ -57,11 +57,18 @@ export default function Courses() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div>
-        <h1 className="text-4xl font-bold text-slate-900 mb-2">Course Library</h1>
-        <p className="text-slate-600 text-lg">
-          Explore the wisdom of Rebbe Nachman through our comprehensive courses
-        </p>
+      <div className="space-y-4">
+        <div>
+          <h1 className="text-5xl font-black text-slate-900 mb-2 tracking-tight">Torah Course Library</h1>
+          <p className="text-xl text-slate-600 font-light leading-relaxed">
+            Journey through the profound teachings of Rebbe Nachman of Breslov זי"ע
+          </p>
+        </div>
+        <div className="inline-flex items-center space-x-2 bg-amber-100 px-4 py-2 rounded-xl">
+          <span className="text-amber-800 font-bold text-sm">ספריית קורסים</span>
+          <span className="text-amber-600">•</span>
+          <span className="text-amber-700 text-sm font-semibold">Likutey Moharan & Sacred Teachings</span>
+        </div>
       </div>
 
       {/* Advanced Search */}

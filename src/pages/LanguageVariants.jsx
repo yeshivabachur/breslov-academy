@@ -133,12 +133,13 @@ export default function LanguageVariants() {
           </div>
           
           <h1 className="text-5xl md:text-7xl font-black text-slate-900 tracking-tight">
-            Master <span className="bg-gradient-to-r from-blue-600 to-purple-600 text-transparent bg-clip-text">Sacred Languages</span>
+            Master <span className="bg-gradient-to-r from-blue-600 to-purple-600 text-transparent bg-clip-text">Lashon Hakodesh</span>
           </h1>
-          
+          <h2 className="text-3xl text-amber-700 font-serif" dir="rtl">לימוד לשונות הקודש</h2>
+
           <p className="text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed">
-            Learn Hebrew, Aramaic, and Yiddish through our revolutionary Rosetta Stone-inspired method. 
-            Immersive, image-based learning without translation.
+            Master Hebrew, Aramaic, and Yiddish - the sacred languages of Torah study - through our revolutionary immersive method. 
+            Learn as our ancestors did, through visual association and pattern recognition.
           </p>
         </motion.div>
 
@@ -152,7 +153,7 @@ export default function LanguageVariants() {
             <CardHeader>
               <CardTitle className="text-2xl font-black text-slate-900 flex items-center gap-3">
                 <Sparkles className="w-6 h-6 text-amber-500" />
-                Rosetta Stone Method
+                Immersive Torah Language Method
               </CardTitle>
             </CardHeader>
             <CardContent>

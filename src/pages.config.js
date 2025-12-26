@@ -12,7 +12,6 @@ import CourseBuilder from './pages/CourseBuilder';
 import CourseDetail from './pages/CourseDetail';
 import CourseSalesPage from './pages/CourseSalesPage';
 import Courses from './pages/Courses';
-import Dashboard from './pages/Dashboard';
 import Downloads from './pages/Downloads';
 import Events from './pages/Events';
 import Feed from './pages/Feed';
@@ -21,7 +20,6 @@ import GradeBook from './pages/GradeBook';
 import HabitTracker from './pages/HabitTracker';
 import HalachaGuide from './pages/HalachaGuide';
 import InstructorAnalytics from './pages/InstructorAnalytics';
-import InstructorDashboard from './pages/InstructorDashboard';
 import InstructorPayouts from './pages/InstructorPayouts';
 import Jobs from './pages/Jobs';
 import KabbalahStudy from './pages/KabbalahStudy';
@@ -62,6 +60,8 @@ import SederPaths from './pages/SederPaths';
 import StudentLogin from './pages/StudentLogin';
 import TeacherLogin from './pages/TeacherLogin';
 import LanguageVariants from './pages/LanguageVariants';
+import Dashboard from './pages/Dashboard';
+import InstructorDashboard from './pages/InstructorDashboard';
 import RosettaStoneLesson from './pages/RosettaStoneLesson';
 import __Layout from './Layout.jsx';
 
@@ -81,7 +81,6 @@ export const PAGES = {
     "CourseDetail": CourseDetail,
     "CourseSalesPage": CourseSalesPage,
     "Courses": Courses,
-    "Dashboard": Dashboard,
     "Downloads": Downloads,
     "Events": Events,
     "Feed": Feed,
@@ -90,7 +89,6 @@ export const PAGES = {
     "HabitTracker": HabitTracker,
     "HalachaGuide": HalachaGuide,
     "InstructorAnalytics": InstructorAnalytics,
-    "InstructorDashboard": InstructorDashboard,
     "InstructorPayouts": InstructorPayouts,
     "Jobs": Jobs,
     "KabbalahStudy": KabbalahStudy,
@@ -131,6 +129,8 @@ export const PAGES = {
     "StudentLogin": StudentLogin,
     "TeacherLogin": TeacherLogin,
     "LanguageVariants": LanguageVariants,
+    "Dashboard": Dashboard,
+    "InstructorDashboard": InstructorDashboard,
     "RosettaStoneLesson": RosettaStoneLesson,
 }
 

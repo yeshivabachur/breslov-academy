@@ -158,7 +158,7 @@ export default function Dashboard() {
                     </span>
                   </h1>
                   <p className="text-slate-300 text-lg md:text-xl font-light leading-relaxed max-w-2xl">
-                    Continue your scholarly journey through the profound wisdom of Rebbe Nachman of Breslov
+                    Continue your sacred journey through the profound wisdom of Rebbe Nachman of Breslov זי"ע
                   </p>
                 </motion.div>
               </div>

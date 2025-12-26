@@ -56,7 +56,7 @@ export default function Layout({ children, currentPageName }) {
               </motion.div>
               <div>
                 <h1 className="text-xl font-black text-white tracking-tight">Breslov Academy</h1>
-                <p className="text-xs text-amber-400 font-semibold">Torah of Rebbe Nachman</p>
+                <p className="text-xs text-amber-400 font-semibold" dir="rtl">תורת רבי נחמן מברסלב</p>
               </div>
             </Link>
 
@@ -203,9 +203,12 @@ export default function Layout({ children, currentPageName }) {
           </div>
           <div className="text-center border-t border-white/10 pt-8">
             <p className="text-slate-300 font-semibold mb-2">
-              © 2025 Breslov Academy • Spreading the Torah of Rebbe Nachman of Breslov
+              © 2025 Breslov Academy • Digital Yeshiva for the Torah of Rebbe Nachman מ"ברסלב
             </p>
-            <p className="text-slate-400 italic">
+            <p className="text-slate-400 italic" dir="rtl">
+              "מצוה גדולה להיות בשמחה תמיד" - ליקוטי מוהר"ן ב:כד
+            </p>
+            <p className="text-slate-400 text-sm mt-1">
               "It is a great mitzvah to always be happy" - Likutey Moharan II:24
             </p>
           </div>

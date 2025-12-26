@@ -129,7 +129,7 @@ export default function CourseDetail() {
             <div className="flex items-center space-x-6 text-slate-300">
               <div className="flex items-center space-x-2">
                 <BookOpen className="w-5 h-5" />
-                <span>By {course.instructor}</span>
+                <span>Taught by {course.instructor}</span>
               </div>
               {course.duration_hours && (
                 <div className="flex items-center space-x-2">
