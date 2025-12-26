@@ -34,6 +34,8 @@ import StudySet from './pages/StudySet';
 import StudySets from './pages/StudySets';
 import Subscription from './pages/Subscription';
 import Tournaments from './pages/Tournaments';
+import TalmudStudy from './pages/TalmudStudy';
+import KabbalahStudy from './pages/KabbalahStudy';
 import __Layout from './Layout.jsx';
 
 
@@ -74,6 +76,8 @@ export const PAGES = {
     "StudySets": StudySets,
     "Subscription": Subscription,
     "Tournaments": Tournaments,
+    "TalmudStudy": TalmudStudy,
+    "KabbalahStudy": KabbalahStudy,
 }
 
 export const pagesConfig = {
