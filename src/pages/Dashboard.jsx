@@ -367,7 +367,7 @@ export default function Dashboard() {
           </div>
         </motion.div>
 
-        {/* Jewish Time & Zmanim */}
+        {/* Sacred Learning & Jewish Living */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -375,7 +375,7 @@ export default function Dashboard() {
           className="grid md:grid-cols-2 gap-6"
         >
           <div className="space-y-6">
-            <Link to={createPageUrl('Languages')}>
+            <Link to={createPageUrl('LanguageVariants')}>
               <Card className="card-modern border-white/60 premium-shadow hover:premium-shadow-xl transition-all duration-500 cursor-pointer rounded-[2.5rem] overflow-hidden group">
                 <div className="relative bg-gradient-to-br from-purple-900 via-indigo-900 to-slate-900 p-8">
                   <div className="absolute inset-0 opacity-20">
@@ -413,9 +413,41 @@ export default function Dashboard() {
           </div>
 
           <div className="space-y-6">
-            <div id="zmanim-widget">
-              {/* Zmanim will be rendered here */}
-            </div>
+            <Card className="card-modern border-white/60 premium-shadow rounded-[2.5rem] overflow-hidden">
+              <div className="relative bg-gradient-to-br from-blue-900 via-indigo-900 to-purple-900 p-8">
+                <CardContent className="relative p-0">
+                  <div className="text-center space-y-4">
+                    <div className="text-6xl">🕍</div>
+                    <div>
+                      <h3 className="text-3xl font-black text-white mb-2">Virtual Beit Midrash</h3>
+                      <p className="text-blue-300 font-serif" dir="rtl">בית מדרש וירטואלי</p>
+                      <p className="text-slate-300 mt-3">Join live study sessions with chavrutas worldwide</p>
+                    </div>
+                    <Badge className="bg-green-100 text-green-800 animate-pulse">
+                      3 Live Now
+                    </Badge>
+                  </div>
+                </CardContent>
+              </div>
+            </Card>
+
+            <Card className="card-modern border-white/60 premium-shadow rounded-[2.5rem] overflow-hidden">
+              <div className="relative bg-gradient-to-br from-green-900 via-emerald-900 to-teal-900 p-8">
+                <CardContent className="relative p-0">
+                  <div className="text-center space-y-4">
+                    <div className="text-6xl">📖</div>
+                    <div>
+                      <h3 className="text-3xl font-black text-white mb-2">Daf Yomi</h3>
+                      <p className="text-green-300 font-serif" dir="rtl">דף יומי</p>
+                      <p className="text-slate-300 mt-3">Daily Talmud study with worldwide Jewish community</p>
+                    </div>
+                    <Badge className="bg-white/20 text-white border-white/30">
+                      Berachot 2a Today
+                    </Badge>
+                  </div>
+                </CardContent>
+              </div>
+            </Card>
           </div>
         </motion.div>
       </div>
