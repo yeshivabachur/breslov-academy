@@ -48,21 +48,29 @@ export default function TalmudStudy() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen gradient-mesh bg-slate-50">
+      <div className="max-w-7xl mx-auto space-y-10">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-3xl p-8 md:p-12 shadow-2xl"
+          className="relative overflow-hidden rounded-[2rem] premium-shadow-lg"
         >
-          <div className="flex items-center space-x-3 mb-4">
-            <BookOpen className="w-10 h-10 text-amber-400" />
-            <h1 className="text-4xl md:text-5xl font-bold text-white">Talmud Study</h1>
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900" />
+          <div className="absolute inset-0 opacity-30">
+            <div className="absolute top-20 right-20 w-96 h-96 bg-blue-500 rounded-full blur-[120px]" />
           </div>
-          <p className="text-slate-300 text-lg">
-            Explore the depths of Torah wisdom through systematic Gemara study
-          </p>
+          <div className="relative p-10 md:p-14">
+            <div className="flex items-center space-x-4 mb-4">
+              <div className="p-3 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl shadow-xl">
+                <BookOpen className="w-10 h-10 text-white" />
+              </div>
+              <h1 className="text-5xl md:text-6xl font-black text-white">Talmud Study</h1>
+            </div>
+            <p className="text-slate-200 text-xl font-light leading-relaxed">
+              Explore the depths of Torah wisdom through systematic Gemara study
+            </p>
+          </div>
         </motion.div>
 
         {/* Daf Yomi Progress */}
@@ -72,7 +80,7 @@ export default function TalmudStudy() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
           >
-            <Card className="glass-card border-0 shadow-xl">
+            <Card className="glass-effect border-0 premium-shadow rounded-[2rem]">
               <CardHeader>
                 <CardTitle className="flex items-center space-x-3 text-2xl">
                   <Calendar className="w-6 h-6 text-blue-600" />
@@ -118,7 +126,10 @@ export default function TalmudStudy() {
 
         {/* Six Orders */}
         <div>
-          <h2 className="text-3xl font-bold text-slate-900 mb-6">Six Orders of Mishnah</h2>
+          <div className="flex items-center space-x-4 mb-8">
+            <div className="h-1.5 w-16 bg-gradient-to-r from-blue-500 to-transparent rounded-full" />
+            <h2 className="text-4xl font-black text-slate-900">Six Orders of Mishnah</h2>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {sdarim.map((seder, idx) => {
               const masechtoInSeder = masechtot.filter(m => m.seder === seder.name);
@@ -129,17 +140,19 @@ export default function TalmudStudy() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 + idx * 0.1 }}
+
+                  whileHover={{ y: -8 }}
                 >
-                  <Card className="glass-card border-0 shadow-xl hover:shadow-2xl transition-all group">
+                  <Card className="glass-effect border-0 premium-shadow hover:premium-shadow-lg transition-all duration-500 group rounded-[2rem]">
                     <CardHeader>
-                      <div className={`w-16 h-16 bg-gradient-to-r ${seder.color} rounded-2xl flex items-center justify-center text-4xl mb-4 group-hover:scale-110 transition-transform`}>
+                      <div className={`w-20 h-20 bg-gradient-to-br ${seder.color} rounded-3xl flex items-center justify-center text-5xl mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-xl`}>
                         {seder.icon}
                       </div>
-                      <CardTitle className="text-2xl">Seder {seder.name}</CardTitle>
-                      <p className="text-slate-600">{masechtoInSeder.length} Masechtot</p>
+                      <CardTitle className="text-3xl font-black">Seder {seder.name}</CardTitle>
+                      <p className="text-slate-600 font-semibold">{masechtoInSeder.length} Masechtot</p>
                     </CardHeader>
                     <CardContent>
-                      <Button className="w-full bg-gradient-to-r from-slate-900 to-slate-800 hover:from-slate-800 hover:to-slate-700">
+                      <Button className={`w-full bg-gradient-to-r ${seder.color} text-white font-bold shadow-lg hover:shadow-xl transition-all`}>
                         Explore {seder.name}
                       </Button>
                     </CardContent>

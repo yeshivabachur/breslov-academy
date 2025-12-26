@@ -50,25 +50,33 @@ export default function HalachaGuide() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen gradient-mesh bg-slate-50">
+      <div className="max-w-7xl mx-auto space-y-10">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-3xl p-8 md:p-12 shadow-2xl"
+          className="relative overflow-hidden rounded-[2rem] premium-shadow-lg"
         >
-          <div className="flex items-center space-x-3 mb-4">
-            <Scale className="w-10 h-10 text-amber-400" />
-            <h1 className="text-4xl md:text-5xl font-bold text-white">Halacha Guide</h1>
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-amber-900 to-slate-900" />
+          <div className="absolute inset-0 opacity-30">
+            <div className="absolute top-20 right-20 w-96 h-96 bg-amber-500 rounded-full blur-[120px]" />
           </div>
-          <p className="text-slate-300 text-lg">
-            Practical Jewish law for contemporary life
-          </p>
+          <div className="relative p-10 md:p-14">
+            <div className="flex items-center space-x-4 mb-4">
+              <div className="p-3 bg-gradient-to-br from-amber-400 to-amber-600 rounded-2xl shadow-xl">
+                <Scale className="w-10 h-10 text-white" />
+              </div>
+              <h1 className="text-5xl md:text-6xl font-black text-white">Halacha Guide</h1>
+            </div>
+            <p className="text-slate-200 text-xl font-light leading-relaxed">
+              Practical Jewish law for contemporary life
+            </p>
+          </div>
         </motion.div>
 
         {/* Search */}
-        <Card className="glass-card border-0 shadow-xl">
+        <Card className="glass-effect border-0 premium-shadow rounded-[2rem]">
           <CardContent className="p-6">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -84,7 +92,10 @@ export default function HalachaGuide() {
 
         {/* Categories */}
         <div>
-          <h2 className="text-3xl font-bold text-slate-900 mb-6">Categories</h2>
+          <div className="flex items-center space-x-4 mb-8">
+            <div className="h-1.5 w-16 bg-gradient-to-r from-amber-500 to-transparent rounded-full" />
+            <h2 className="text-4xl font-black text-slate-900">Categories</h2>
+          </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {categories.map((cat, idx) => (
               <motion.div
@@ -92,14 +103,15 @@ export default function HalachaGuide() {
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: idx * 0.05 }}
+
+              whileHover={{ y: -4 }}
               >
-                <Card className="glass-card border-0 shadow-lg hover:shadow-xl transition-all group cursor-pointer">
-                  <CardContent className="p-4 text-center">
-                    <div className={`w-12 h-12 bg-gradient-to-r ${cat.color} rounded-xl flex items-center justify-center text-2xl mb-2 mx-auto group-hover:scale-110 transition-transform`}>
+                <Card className="glass-effect border-0 premium-shadow hover:premium-shadow-lg transition-all duration-300 group cursor-pointer rounded-2xl">
+                  <CardContent className="p-6 text-center">
+                    <div className={`w-16 h-16 bg-gradient-to-br ${cat.color} rounded-2xl flex items-center justify-center text-3xl mb-4 mx-auto group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-lg`}>
                       {cat.icon}
                     </div>
-                    <h3 className="font-bold text-sm text-slate-900">{cat.name.replace('_', ' ')}</h3>
-                    <p className="text-xs text-slate-600">{cat.desc}</p>
+                    <h3 className="font-black text-base text-slate-900">{cat.name.replace('_', ' ')}</h3>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -109,9 +121,12 @@ export default function HalachaGuide() {
 
         {/* Rulings */}
         <div>
-          <h2 className="text-3xl font-bold text-slate-900 mb-6">
-            {searchQuery ? 'Search Results' : 'Recent Rulings'}
-          </h2>
+          <div className="flex items-center space-x-4 mb-8">
+            <div className="h-1.5 w-16 bg-gradient-to-r from-blue-500 to-transparent rounded-full" />
+            <h2 className="text-4xl font-black text-slate-900">
+              {searchQuery ? 'Search Results' : 'Recent Rulings'}
+            </h2>
+          </div>
           {filteredRulings.length > 0 ? (
             <div className="space-y-4">
               {filteredRulings.map((ruling) => (
@@ -119,8 +134,9 @@ export default function HalachaGuide() {
                   key={ruling.id}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
+
                 >
-                  <Card className="glass-card border-0 shadow-lg hover:shadow-xl transition-all">
+                  <Card className="glass-effect border-0 premium-shadow hover:premium-shadow-lg transition-all rounded-[2rem]">
                     <CardContent className="p-6">
                       <div className="flex flex-wrap gap-2 mb-3">
                         <Badge className="bg-slate-900 text-white">{ruling.category}</Badge>

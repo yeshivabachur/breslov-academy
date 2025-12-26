@@ -36,26 +36,37 @@ export default function TorahStudy() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen gradient-mesh bg-slate-50">
+      <div className="max-w-7xl mx-auto space-y-10">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-3xl p-8 md:p-12 shadow-2xl"
+          className="relative overflow-hidden rounded-[2rem] premium-shadow-lg"
         >
-          <div className="flex items-center space-x-3 mb-4">
-            <ScrollText className="w-10 h-10 text-amber-400" />
-            <h1 className="text-4xl md:text-5xl font-bold text-white">Torah Study</h1>
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-green-900 to-slate-900" />
+          <div className="absolute inset-0 opacity-30">
+            <div className="absolute top-20 right-20 w-96 h-96 bg-green-500 rounded-full blur-[120px]" />
           </div>
-          <p className="text-slate-300 text-lg">
-            Weekly Parsha, Commentaries & Deep Textual Analysis
-          </p>
+          <div className="relative p-10 md:p-14">
+            <div className="flex items-center space-x-4 mb-4">
+              <div className="p-3 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl shadow-xl">
+                <ScrollText className="w-10 h-10 text-white" />
+              </div>
+              <h1 className="text-5xl md:text-6xl font-black text-white">Torah Study</h1>
+            </div>
+            <p className="text-slate-200 text-xl font-light leading-relaxed">
+              Weekly Parsha, Commentaries & Deep Textual Analysis
+            </p>
+          </div>
         </motion.div>
 
         {/* Five Books of Torah */}
         <div>
-          <h2 className="text-3xl font-bold text-slate-900 mb-6">Chamisha Chumshei Torah</h2>
+          <div className="flex items-center space-x-4 mb-8">
+            <div className="h-1.5 w-16 bg-gradient-to-r from-green-500 to-transparent rounded-full" />
+            <h2 className="text-4xl font-black text-slate-900">Chamisha Chumshei Torah</h2>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             {books.map((book, idx) => (
               <motion.div
@@ -63,15 +74,17 @@ export default function TorahStudy() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 + idx * 0.1 }}
+
+              whileHover={{ y: -8 }}
               >
-                <Card className="glass-card border-0 shadow-xl hover:shadow-2xl transition-all group h-full">
-                  <CardContent className="p-6 text-center">
-                    <div className={`w-20 h-20 bg-gradient-to-r ${book.color} rounded-2xl flex items-center justify-center text-4xl mb-4 mx-auto group-hover:scale-110 transition-transform`}>
+                <Card className="glass-effect border-0 premium-shadow hover:premium-shadow-lg transition-all duration-500 group h-full rounded-[2rem]">
+                  <CardContent className="p-8 text-center">
+                    <div className={`w-24 h-24 bg-gradient-to-br ${book.color} rounded-3xl flex items-center justify-center text-5xl mb-6 mx-auto group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-xl`}>
                       {book.icon}
                     </div>
-                    <h3 className="text-xl font-bold text-slate-900 mb-1">{book.name}</h3>
-                    <p className="text-2xl text-amber-700 font-bold mb-3" dir="rtl">{book.hebrew}</p>
-                    <Button variant="outline" className="w-full font-semibold">Study</Button>
+                    <h3 className="text-2xl font-black text-slate-900 mb-2">{book.name}</h3>
+                    <p className="text-3xl text-amber-700 font-black mb-6" dir="rtl">{book.hebrew}</p>
+                    <Button className={`w-full bg-gradient-to-r ${book.color} text-white font-bold shadow-lg`}>Begin Study</Button>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -85,7 +98,7 @@ export default function TorahStudy() {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
         >
-          <Card className="glass-card border-0 shadow-xl">
+          <Card className="glass-effect border-0 premium-shadow rounded-[2rem]">
             <CardHeader>
               <CardTitle className="flex items-center space-x-3 text-2xl">
                 <Calendar className="w-6 h-6 text-blue-600" />
