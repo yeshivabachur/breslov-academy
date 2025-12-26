@@ -1,23 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, CheckCircle, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react';
-import DiscussionThread from '../components/learning/DiscussionThread';
-import AITutor from '../components/ai/AITutor';
-import TranscriptViewer from '../components/video/TranscriptViewer';
-import Whiteboard from '../components/collaboration/Whiteboard';
-import OfflineMode from '../components/mobile/OfflineMode';
-import VideoPlayer from '../components/video/VideoPlayer';
+import { 
+  ArrowLeft, CheckCircle, Maximize2, Minimize2, LayoutGrid, 
+  Users, FileText, MessageSquare, BookOpen, Menu
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import ReactMarkdown from 'react-markdown';
 import { toast } from 'sonner';
+import VideoPlayer from '../components/video/VideoPlayer';
+import ChavrutaAI from '../components/learning/ChavrutaAI';
+import SourceTextPanel from '../components/learning/SourceTextPanel';
+import StudyNotebook from '../components/learning/StudyNotebook';
+import DiscussionThread from '../components/learning/DiscussionThread';
 
 export default function LessonViewer() {
   const [user, setUser] = useState(null);
-  const [notes, setNotes] = useState('');
+  const [layout, setLayout] = useState('theater');
+  const [activePanel, setActivePanel] = useState('video');
+  const [fullscreen, setFullscreen] = useState(false);
+  
   const queryClient = useQueryClient();
   const urlParams = new URLSearchParams(window.location.search);
   const lessonId = urlParams.get('id');
@@ -79,12 +82,6 @@ export default function LessonViewer() {
     enabled: !!lesson?.course_id
   });
 
-  useEffect(() => {
-    if (progress?.notes) {
-      setNotes(progress.notes);
-    }
-  }, [progress]);
-
   const markCompleteMutation = useMutation({
     mutationFn: async () => {
       if (progress) {
@@ -104,20 +101,20 @@ export default function LessonViewer() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['progress']);
-      toast.success('Lesson marked as complete!');
+      toast.success('Lesson completed! 🎉');
     }
   });
 
   const saveNotesMutation = useMutation({
-    mutationFn: async (noteContent) => {
+    mutationFn: async (noteData) => {
       if (progress) {
-        return await base44.entities.UserProgress.update(progress.id, { notes: noteContent });
+        return await base44.entities.UserProgress.update(progress.id, { notes: noteData });
       } else {
         return await base44.entities.UserProgress.create({
           user_email: user.email,
           lesson_id: lessonId,
           course_id: lesson.course_id,
-          notes: noteContent,
+          notes: noteData,
           completed: false,
           progress_percentage: 0
         });
@@ -125,15 +122,17 @@ export default function LessonViewer() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['progress']);
-      toast.success('Notes saved!');
+      toast.success('Notes saved');
     }
   });
 
   if (!lesson || !course) {
     return (
-      <div className="text-center py-20">
-        <BookOpen className="w-16 h-16 text-slate-400 mx-auto mb-4 animate-pulse" />
-        <p className="text-slate-600">Loading lesson...</p>
+      <div className="flex items-center justify-center min-h-screen bg-slate-50">
+        <div className="text-center">
+          <BookOpen className="w-16 h-16 text-slate-400 animate-pulse mx-auto mb-4" />
+          <p className="text-slate-600 font-serif">Loading lesson...</p>
+        </div>
       </div>
     );
   }
@@ -142,147 +141,264 @@ export default function LessonViewer() {
   const previousLesson = currentIndex > 0 ? allLessons[currentIndex - 1] : null;
   const nextLesson = currentIndex < allLessons.length - 1 ? allLessons[currentIndex + 1] : null;
 
+  const sourceText = {
+    hebrew: lesson.content_hebrew,
+    english: lesson.content,
+    commentary: lesson.instructor_notes
+  };
+
+  const renderPanel = (panel) => {
+    switch(panel) {
+      case 'video':
+        return lesson.video_url ? (
+          <VideoPlayer
+            src={lesson.video_url}
+            onTimeUpdate={(time) => {
+              if (progress) {
+                base44.entities.UserProgress.update(progress.id, {
+                  last_position_seconds: Math.floor(time)
+                });
+              }
+            }}
+            onEnded={() => {
+              if (!progress?.completed) {
+                markCompleteMutation.mutate();
+              }
+            }}
+            initialTime={progress?.last_position_seconds || 0}
+            bookmarks={lesson.bookmarks || []}
+            transcript={lesson.transcript || []}
+          />
+        ) : (
+          <div className="aspect-video bg-slate-900 rounded-2xl flex items-center justify-center">
+            <p className="text-white font-serif">No video available</p>
+          </div>
+        );
+      case 'text':
+        return (
+          <SourceTextPanel
+            sourceText={sourceText}
+            onAnnotate={(text) => console.log('Annotate:', text)}
+            onDiscuss={(text) => console.log('Discuss:', text)}
+          />
+        );
+      case 'notes':
+        return (
+          <StudyNotebook
+            lessonId={lessonId}
+            userEmail={user?.email}
+            notes={progress?.notes}
+            onSave={(noteData) => saveNotesMutation.mutate(noteData)}
+          />
+        );
+      case 'chavruta':
+        return (
+          <ChavrutaAI
+            lessonId={lessonId}
+            sourceText={sourceText?.english || lesson?.content}
+          />
+        );
+      case 'discussion':
+        return (
+          <div className="bg-white rounded-2xl h-full overflow-y-auto">
+            <DiscussionThread
+              discussions={discussions || []}
+              courseId={lesson.course_id}
+              lessonId={lessonId}
+              user={user}
+            />
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      {/* Header */}
-      <div>
-        <Link to={createPageUrl(`CourseDetail?id=${course.id}`)}>
-          <Button variant="ghost" className="group mb-4">
-            <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
-            Back to {course.title}
-          </Button>
-        </Link>
+    <div className={`${fullscreen ? 'fixed inset-0 z-50 bg-slate-900' : 'bg-slate-50'}`}>
+      {/* Premium Academic Header */}
+      <div className={`border-b border-slate-200 bg-white/95 backdrop-blur-sm ${fullscreen ? 'hidden' : ''}`}>
+        <div className="max-w-[1800px] mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Link to={createPageUrl(`CourseDetail?id=${course.id}`)}>
+                <Button variant="ghost" size="sm" className="rounded-lg font-serif">
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Course
+                </Button>
+              </Link>
+              <div className="h-6 w-px bg-slate-300" />
+              <div>
+                <h1 className="text-lg font-bold text-slate-900 font-serif">{lesson.title}</h1>
+                {lesson.title_hebrew && (
+                  <p className="text-sm text-amber-700 font-serif" dir="rtl">{lesson.title_hebrew}</p>
+                )}
+              </div>
+            </div>
 
-        <div className="bg-gradient-to-r from-slate-900 to-slate-800 rounded-xl p-6 shadow-lg">
-          <p className="text-amber-400 text-sm mb-2">{course.title}</p>
-          <h1 className="text-3xl font-bold text-white mb-2">{lesson.title}</h1>
-          {lesson.title_hebrew && (
-            <h2 className="text-xl text-amber-300" dir="rtl">{lesson.title_hebrew}</h2>
-          )}
+            {/* Layout Controls */}
+            <div className="flex items-center gap-2">
+              <Button
+                variant={layout === 'theater' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setLayout('theater')}
+                className="rounded-lg"
+                title="Theater Mode"
+              >
+                <Maximize2 className="w-4 h-4" />
+              </Button>
+              <Button
+                variant={layout === 'split' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setLayout('split')}
+                className="rounded-lg"
+                title="Split View"
+              >
+                <LayoutGrid className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setFullscreen(!fullscreen)}
+                className="rounded-lg"
+              >
+                {fullscreen ? <Minimize2 className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Video Player */}
-      {lesson.video_url && (
-        <VideoPlayer
-          src={lesson.video_url}
-          onTimeUpdate={(time) => {
-            if (progress) {
-              base44.entities.UserProgress.update(progress.id, {
-                last_position_seconds: Math.floor(time)
-              });
-            }
-          }}
-          onEnded={() => {
-            if (!progress?.completed) {
-              markCompleteMutation.mutate();
-            }
-          }}
-          initialTime={progress?.last_position_seconds || 0}
-          bookmarks={lesson.bookmarks || []}
-          onAddBookmark={(time) => {
-            // Add bookmark functionality
-            console.log('Bookmark added at', time);
-          }}
-          transcript={lesson.transcript || []}
-        />
-      )}
+      {/* Main Learning Interface */}
+      <div className={`${fullscreen ? 'h-screen' : 'min-h-screen'}`}>
+        {layout === 'theater' && (
+          <div className="max-w-[1400px] mx-auto p-6 space-y-6">
+            {/* Primary Content Area */}
+            <div className="rounded-2xl overflow-hidden premium-shadow-xl">
+              {renderPanel(activePanel)}
+            </div>
 
-      {lesson.audio_url && !lesson.video_url && (
-        <div className="bg-slate-100 rounded-xl p-6">
-          <audio controls className="w-full" src={lesson.audio_url}>
-            Your browser does not support audio playback.
-          </audio>
-        </div>
-      )}
-
-      {/* Lesson Content */}
-      {lesson.content && (
-        <div className="bg-white rounded-xl shadow-md p-8">
-          <ReactMarkdown className="prose prose-slate max-w-none prose-headings:font-serif">
-            {lesson.content}
-          </ReactMarkdown>
-        </div>
-      )}
-
-      {/* Discussion Section */}
-      <div className="bg-white rounded-xl shadow-md p-6">
-        <DiscussionThread
-          discussions={discussions || []}
-          courseId={lesson.course_id}
-          lessonId={lessonId}
-          user={user}
-        />
-      </div>
-
-      {/* Notes Section */}
-      <div className="bg-white rounded-xl shadow-md p-6">
-        <h3 className="font-bold text-lg text-slate-900 mb-3">Personal Study Notes</h3>
-        <Textarea
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          placeholder="Write your thoughts, questions, and insights here..."
-          className="min-h-32 mb-3"
-        />
-        <Button 
-          onClick={() => saveNotesMutation.mutate(notes)}
-          variant="outline"
-          disabled={saveNotesMutation.isPending}
-        >
-          Save Notes
-        </Button>
-      </div>
-
-      {/* Complete Button */}
-      {!progress?.completed && (
-        <div className="bg-green-50 border border-green-200 rounded-xl p-6 text-center">
-          <Button
-            onClick={() => markCompleteMutation.mutate()}
-            disabled={markCompleteMutation.isPending}
-            className="bg-green-600 hover:bg-green-700 text-white font-semibold px-8"
-          >
-            <CheckCircle className="w-5 h-5 mr-2" />
-            Mark as Complete
-          </Button>
-        </div>
-      )}
-
-      {progress?.completed && (
-        <div className="bg-green-50 border border-green-200 rounded-xl p-6 text-center">
-          <CheckCircle className="w-8 h-8 text-green-600 mx-auto mb-2" />
-          <p className="text-green-900 font-semibold">Lesson Completed!</p>
-        </div>
-      )}
-
-      {/* Navigation */}
-      <div className="flex justify-between items-center pt-6 border-t">
-        {previousLesson ? (
-          <Link to={createPageUrl(`LessonViewer?id=${previousLesson.id}`)}>
-            <Button variant="outline" className="group">
-              <ChevronLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
-              Previous Lesson
-            </Button>
-          </Link>
-        ) : (
-          <div />
+            {/* Study Tool Palette - Academic Style */}
+            <div className="flex items-center justify-center gap-3">
+              {[
+                { id: 'video', label: 'Lecture', icon: Maximize2, enabled: !!lesson.video_url },
+                { id: 'text', label: 'Source Text', icon: BookOpen, enabled: !!(sourceText?.hebrew || sourceText?.english) },
+                { id: 'notes', label: 'Notes', icon: FileText, enabled: true },
+                { id: 'chavruta', label: 'Chavruta AI', icon: Users, enabled: true },
+                { id: 'discussion', label: 'Forum', icon: MessageSquare, enabled: true }
+              ].filter(t => t.enabled).map(tool => {
+                const Icon = tool.icon;
+                return (
+                  <Button
+                    key={tool.id}
+                    onClick={() => setActivePanel(tool.id)}
+                    variant={activePanel === tool.id ? 'default' : 'outline'}
+                    className={`rounded-xl font-serif transition-all ${
+                      activePanel === tool.id 
+                        ? 'bg-gradient-to-r from-blue-600 to-indigo-700 text-white shadow-lg scale-105' 
+                        : 'hover:scale-105'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4 mr-2" />
+                    {tool.label}
+                  </Button>
+                );
+              })}
+            </div>
+          </div>
         )}
 
-        {nextLesson ? (
-          <Link to={createPageUrl(`LessonViewer?id=${nextLesson.id}`)}>
-            <Button className="bg-blue-600 hover:bg-blue-700 group">
-              Next Lesson
-              <ChevronRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-            </Button>
-          </Link>
-        ) : (
-          <Link to={createPageUrl(`CourseDetail?id=${course.id}`)}>
-            <Button className="bg-green-600 hover:bg-green-700">
-              <CheckCircle className="w-4 h-4 mr-2" />
-              Course Complete
-            </Button>
-          </Link>
+        {layout === 'split' && (
+          <div className="h-full grid grid-cols-2 gap-4 p-6 max-w-[1800px] mx-auto">
+            {/* Left Panel - Primary Learning */}
+            <div className="space-y-4">
+              {lesson.video_url ? renderPanel('video') : renderPanel('text')}
+              
+              {/* Quick Access Tools */}
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  onClick={() => setActivePanel('chavruta')}
+                  variant="outline"
+                  className="rounded-xl font-serif hover:scale-105 transition-transform"
+                >
+                  <Users className="w-4 h-4 mr-2" />
+                  Chavruta Partner
+                </Button>
+                <Button
+                  onClick={() => setActivePanel('discussion')}
+                  variant="outline"
+                  className="rounded-xl font-serif hover:scale-105 transition-transform"
+                >
+                  <MessageSquare className="w-4 h-4 mr-2" />
+                  Class Forum
+                </Button>
+              </div>
+            </div>
+
+            {/* Right Panel - Study Materials */}
+            <div className="grid grid-rows-2 gap-4 h-[calc(100vh-120px)]">
+              {lesson.video_url ? renderPanel('text') : renderPanel('video')}
+              {renderPanel('notes')}
+            </div>
+          </div>
         )}
       </div>
+
+      {/* Academic Progress Footer */}
+      {!fullscreen && (
+        <div className="border-t border-slate-200 bg-white/95 backdrop-blur-sm sticky bottom-0">
+          <div className="max-w-[1800px] mx-auto px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                {!progress?.completed ? (
+                  <Button
+                    onClick={() => markCompleteMutation.mutate()}
+                    className="bg-gradient-to-r from-green-600 to-emerald-700 text-white font-bold rounded-xl font-serif hover:shadow-lg transition-shadow"
+                  >
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Mark Complete
+                  </Button>
+                ) : (
+                  <div className="flex items-center gap-2 px-4 py-2 bg-green-50 rounded-xl border border-green-200">
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                    <span className="text-green-700 font-serif font-bold">Completed</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Lesson Navigation */}
+              <div className="flex items-center gap-3">
+                {previousLesson && (
+                  <Link to={createPageUrl(`LessonViewer?id=${previousLesson.id}`)}>
+                    <Button variant="outline" size="sm" className="rounded-lg font-serif">
+                      <ArrowLeft className="w-4 h-4 mr-2" />
+                      Previous
+                    </Button>
+                  </Link>
+                )}
+                <span className="text-sm text-slate-600 font-serif">
+                  Lesson {currentIndex + 1} of {allLessons.length}
+                </span>
+                {nextLesson ? (
+                  <Link to={createPageUrl(`LessonViewer?id=${nextLesson.id}`)}>
+                    <Button size="sm" className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-lg font-serif">
+                      Next Lesson
+                      <ArrowLeft className="w-4 h-4 ml-2 rotate-180" />
+                    </Button>
+                  </Link>
+                ) : (
+                  <Link to={createPageUrl(`CourseDetail?id=${course.id}`)}>
+                    <Button size="sm" className="bg-gradient-to-r from-green-600 to-emerald-700 text-white rounded-lg font-serif">
+                      Course Complete
+                      <CheckCircle className="w-4 h-4 ml-2" />
+                    </Button>
+                  </Link>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
