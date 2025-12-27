@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from './utils';
 import { base44 } from '@/api/base44Client';
-import { BookOpen, GraduationCap, TrendingUp, Crown, Menu, X, LogOut, Trophy } from 'lucide-react';
+import { BookOpen, GraduationCap, Users, Menu, X, LogOut, User, Plug, Beaker, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
 import ThemeToggle from '@/components/theme/ThemeToggle';
 import NotificationCenter from '@/components/notifications/NotificationCenter';
 
@@ -23,12 +24,22 @@ export default function Layout({ children, currentPageName }) {
     loadUser();
   }, []);
 
-  const navigation = [
+  // Core navigation - minimal and focused
+  const coreNavigation = [
     { name: 'Dashboard', path: 'Dashboard', icon: BookOpen },
-    { name: 'Marketplace', path: 'Marketplace', icon: GraduationCap },
-    { name: 'Feed', path: 'Feed', icon: Menu },
-    { name: 'Leaderboard', path: 'Leaderboard', icon: Trophy },
-    { name: 'Portfolio', path: 'Portfolio', icon: Menu },
+    { name: 'Courses', path: 'Courses', icon: GraduationCap },
+    { name: 'Community', path: 'Feed', icon: Users },
+  ];
+
+  // Labs features - advanced/experimental
+  const labsFeatures = [
+    { name: 'Language Learning', path: 'Languages', icon: BookOpen },
+    { name: 'Study Sets', path: 'StudySets', icon: BookOpen },
+    { name: 'Challenges', path: 'Challenges', icon: BookOpen },
+    { name: 'Achievements', path: 'Achievements', icon: BookOpen },
+    { name: 'Live Streams', path: 'LiveStreams', icon: BookOpen },
+    { name: 'Analytics', path: 'Analytics', icon: BookOpen },
+    { name: 'Career Paths', path: 'CareerPaths', icon: BookOpen },
   ];
 
   return (
@@ -67,7 +78,7 @@ export default function Layout({ children, currentPageName }) {
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center space-x-1">
-              {navigation.map((item) => {
+              {coreNavigation.map((item) => {
                 const Icon = item.icon;
                 const isActive = currentPageName === item.path;
                 return (
@@ -85,6 +96,53 @@ export default function Layout({ children, currentPageName }) {
                   </Link>
                 );
               })}
+
+              {/* Labs Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="text-slate-300 hover:text-white hover:bg-slate-700">
+                    <Beaker className="w-4 h-4 mr-2" />
+                    Labs
+                    <ChevronDown className="w-3 h-3 ml-1" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end">
+                  <DropdownMenuLabel>Experimental Features</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {labsFeatures.map((feature) => (
+                    <DropdownMenuItem key={feature.name} asChild>
+                      <Link to={createPageUrl(feature.path)} className="cursor-pointer">
+                        {feature.name}
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Integrations & Profile */}
+              <Link
+                to={createPageUrl('Integrations')}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all ${
+                  currentPageName === 'Integrations'
+                    ? 'bg-amber-500 text-slate-900 shadow-lg'
+                    : 'text-slate-300 hover:text-white hover:bg-slate-700'
+                }`}
+              >
+                <Plug className="w-4 h-4" />
+                <span className="font-medium text-sm">Integrations</span>
+              </Link>
+
+              <Link
+                to={createPageUrl('Portfolio')}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all ${
+                  currentPageName === 'Portfolio'
+                    ? 'bg-amber-500 text-slate-900 shadow-lg'
+                    : 'text-slate-300 hover:text-white hover:bg-slate-700'
+                }`}
+              >
+                <User className="w-4 h-4" />
+                <span className="font-medium text-sm">Profile</span>
+              </Link>
             </nav>
 
             {/* User Menu */}
@@ -123,7 +181,7 @@ export default function Layout({ children, currentPageName }) {
         {mobileMenuOpen && (
           <div className="md:hidden bg-slate-800 border-t border-slate-700">
             <div className="px-4 py-4 space-y-2">
-              {navigation.map((item) => {
+              {coreNavigation.map((item) => {
                 const Icon = item.icon;
                 const isActive = currentPageName === item.path;
                 return (
@@ -142,6 +200,41 @@ export default function Layout({ children, currentPageName }) {
                   </Link>
                 );
               })}
+
+              {/* Labs Section */}
+              <div className="pt-2 pb-1 px-4">
+                <p className="text-xs text-slate-500 font-semibold">LABS</p>
+              </div>
+              {labsFeatures.map((feature) => (
+                <Link
+                  key={feature.name}
+                  to={createPageUrl(feature.path)}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-700"
+                >
+                  <Beaker className="w-5 h-5" />
+                  <span className="font-medium">{feature.name}</span>
+                </Link>
+              ))}
+
+              {/* Other Links */}
+              <Link
+                to={createPageUrl('Integrations')}
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-700"
+              >
+                <Plug className="w-5 h-5" />
+                <span className="font-medium">Integrations</span>
+              </Link>
+              <Link
+                to={createPageUrl('Portfolio')}
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-700"
+              >
+                <User className="w-5 h-5" />
+                <span className="font-medium">Profile</span>
+              </Link>
+
               {user && (
                 <button
                   onClick={() => base44.auth.logout()}

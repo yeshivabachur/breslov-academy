@@ -36,6 +36,7 @@ import Subscription from './pages/Subscription';
 import Tournaments from './pages/Tournaments';
 import oauth2callback from './pages/oauth2callback';
 import Integrations from './pages/Integrations';
+import Vault from './pages/Vault';
 import __Layout from './Layout.jsx';
 
 
@@ -78,6 +79,7 @@ export const PAGES = {
     "Tournaments": Tournaments,
     "oauth2callback": oauth2callback,
     "Integrations": Integrations,
+    "Vault": Vault,
 }
 
 export const pagesConfig = {
