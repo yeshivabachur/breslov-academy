@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 export default function Feed() {
   const [user, setUser] = useState(null);
   const [newPost, setNewPost] = useState('');
+  const [activeSchoolId, setActiveSchoolId] = useState(null);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -17,6 +18,10 @@ export default function Feed() {
       try {
         const currentUser = await base44.auth.me();
         setUser(currentUser);
+        
+        // Get active school
+        const schoolId = localStorage.getItem('active_school_id');
+        setActiveSchoolId(schoolId);
       } catch (error) {
         base44.auth.redirectToLogin();
       }
@@ -25,12 +30,19 @@ export default function Feed() {
   }, []);
 
   const { data: posts = [] } = useQuery({
-    queryKey: ['posts'],
-    queryFn: () => base44.entities.Post.list('-created_date', 50)
+    queryKey: ['posts', activeSchoolId],
+    queryFn: async () => {
+      if (!activeSchoolId) return [];
+      return await base44.entities.Post.filter({ school_id: activeSchoolId }, '-created_date', 50);
+    },
+    enabled: !!activeSchoolId
   });
 
   const createPostMutation = useMutation({
-    mutationFn: (data) => base44.entities.Post.create(data),
+    mutationFn: (data) => base44.entities.Post.create({
+      ...data,
+      school_id: activeSchoolId
+    }),
     onSuccess: () => {
       queryClient.invalidateQueries(['posts']);
       setNewPost('');
