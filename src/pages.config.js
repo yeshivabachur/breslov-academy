@@ -47,6 +47,8 @@ import Teach from './pages/Teach';
 import TeachCourseNew from './pages/TeachCourseNew';
 import TeachCourse from './pages/TeachCourse';
 import TeachLesson from './pages/TeachLesson';
+import LessonViewerPremium from './pages/LessonViewerPremium';
+import Reader from './pages/Reader';
 import __Layout from './Layout.jsx';
 
 
@@ -100,6 +102,8 @@ export const PAGES = {
     "TeachCourseNew": TeachCourseNew,
     "TeachCourse": TeachCourse,
     "TeachLesson": TeachLesson,
+    "LessonViewerPremium": LessonViewerPremium,
+    "Reader": Reader,
 }
 
 export const pagesConfig = {
