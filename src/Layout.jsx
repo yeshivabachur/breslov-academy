@@ -85,6 +85,7 @@ export default function Layout({ children, currentPageName }) {
     { name: 'Courses', path: 'Courses', icon: GraduationCap },
     { name: 'Community', path: 'Feed', icon: Users },
     ...(canTeach ? [{ name: 'Teach', path: 'Teach', icon: BookMarked }] : []),
+    ...(canTeach ? [{ name: 'Analytics', path: 'TeachAnalytics', icon: BookMarked }] : []),
   ];
 
   // Labs features - advanced/experimental

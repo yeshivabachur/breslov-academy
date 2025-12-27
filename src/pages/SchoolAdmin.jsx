@@ -16,6 +16,7 @@ import SchoolAnalytics from '../components/school/SchoolAnalytics';
 import SchoolAnnouncements from '../components/school/SchoolAnnouncements';
 import SchoolModeration from '../components/school/SchoolModeration';
 import SchoolAuditLog from '../components/school/SchoolAuditLog';
+import SchoolPayouts from '../components/school/SchoolPayouts';
 
 export default function SchoolAdmin() {
   const [user, setUser] = useState(null);
@@ -164,12 +165,13 @@ export default function SchoolAdmin() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-9">
+        <TabsList className="grid w-full grid-cols-10">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="branding">Branding</TabsTrigger>
           <TabsTrigger value="people">People</TabsTrigger>
           <TabsTrigger value="invites">Invites</TabsTrigger>
+          <TabsTrigger value="payouts">Payouts</TabsTrigger>
           <TabsTrigger value="announcements">Announcements</TabsTrigger>
           <TabsTrigger value="moderation">Moderation</TabsTrigger>
           <TabsTrigger value="audit">Audit</TabsTrigger>
@@ -374,6 +376,10 @@ export default function SchoolAdmin() {
 
         <TabsContent value="analytics">
           <SchoolAnalytics />
+        </TabsContent>
+
+        <TabsContent value="payouts">
+          <SchoolPayouts school={school} user={user} />
         </TabsContent>
 
         <TabsContent value="announcements">

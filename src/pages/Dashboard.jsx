@@ -9,6 +9,7 @@ import StatCard from '../components/dashboard/StatCard';
 import CourseCard from '../components/courses/CourseCard';
 import CourseRecommendations from '../components/ai/CourseRecommendations';
 import LearningInsights from '../components/insights/LearningInsights';
+import AnnouncementsPanel from '../components/announcements/AnnouncementsPanel';
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -152,6 +153,9 @@ export default function Dashboard() {
         </p>
         <p className="text-slate-600 font-semibold">— Likutey Moharan I:25</p>
       </div>
+
+      {/* Announcements */}
+      <AnnouncementsPanel user={user} schoolId={activeSchoolId} />
 
       {/* AI Recommendations */}
       <CourseRecommendations 
