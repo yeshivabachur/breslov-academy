@@ -1,79 +1,81 @@
-import Dashboard from './pages/Dashboard';
-import Courses from './pages/Courses';
-import Subscription from './pages/Subscription';
-import CourseDetail from './pages/CourseDetail';
-import LessonViewer from './pages/LessonViewer';
-import MyProgress from './pages/MyProgress';
-import LearningPaths from './pages/LearningPaths';
-import Community from './pages/Community';
 import Achievements from './pages/Achievements';
+import AdaptiveLearning from './pages/AdaptiveLearning';
+import AffiliateProgram from './pages/AffiliateProgram';
+import AlumniNetwork from './pages/AlumniNetwork';
+import Analytics from './pages/Analytics';
+import CareerPaths from './pages/CareerPaths';
+import Challenges from './pages/Challenges';
+import Community from './pages/Community';
+import CourseDetail from './pages/CourseDetail';
+import Courses from './pages/Courses';
+import Dashboard from './pages/Dashboard';
+import Downloads from './pages/Downloads';
+import Events from './pages/Events';
+import Feed from './pages/Feed';
+import Forums from './pages/Forums';
+import HabitTracker from './pages/HabitTracker';
 import LanguageLearning from './pages/LanguageLearning';
 import Languages from './pages/Languages';
-import Analytics from './pages/Analytics';
-import AffiliateProgram from './pages/AffiliateProgram';
-import StudySets from './pages/StudySets';
-import StudySet from './pages/StudySet';
-import Marketplace from './pages/Marketplace';
-import Events from './pages/Events';
-import Messages from './pages/Messages';
-import Downloads from './pages/Downloads';
 import Leaderboard from './pages/Leaderboard';
-import Challenges from './pages/Challenges';
-import RewardsShop from './pages/RewardsShop';
+import LearningPaths from './pages/LearningPaths';
+import LessonViewer from './pages/LessonViewer';
+import LiveStreams from './pages/LiveStreams';
+import Marketplace from './pages/Marketplace';
 import Mentorship from './pages/Mentorship';
-import Feed from './pages/Feed';
+import Messages from './pages/Messages';
+import Microlearning from './pages/Microlearning';
+import MyProgress from './pages/MyProgress';
 import Portfolio from './pages/Portfolio';
-import AdaptiveLearning from './pages/AdaptiveLearning';
-import Tournaments from './pages/Tournaments';
+import RewardsShop from './pages/RewardsShop';
+import Scholarships from './pages/Scholarships';
 import Skills from './pages/Skills';
 import StudyBuddies from './pages/StudyBuddies';
-import CareerPaths from './pages/CareerPaths';
-import LiveStreams from './pages/LiveStreams';
-import Forums from './pages/Forums';
-import Scholarships from './pages/Scholarships';
-import Microlearning from './pages/Microlearning';
-import AlumniNetwork from './pages/AlumniNetwork';
-import HabitTracker from './pages/HabitTracker';
+import StudySet from './pages/StudySet';
+import StudySets from './pages/StudySets';
+import Subscription from './pages/Subscription';
+import Tournaments from './pages/Tournaments';
+import oauth2callback from './pages/oauth2callback';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
-    "Dashboard": Dashboard,
-    "Courses": Courses,
-    "Subscription": Subscription,
-    "CourseDetail": CourseDetail,
-    "LessonViewer": LessonViewer,
-    "MyProgress": MyProgress,
-    "LearningPaths": LearningPaths,
-    "Community": Community,
     "Achievements": Achievements,
+    "AdaptiveLearning": AdaptiveLearning,
+    "AffiliateProgram": AffiliateProgram,
+    "AlumniNetwork": AlumniNetwork,
+    "Analytics": Analytics,
+    "CareerPaths": CareerPaths,
+    "Challenges": Challenges,
+    "Community": Community,
+    "CourseDetail": CourseDetail,
+    "Courses": Courses,
+    "Dashboard": Dashboard,
+    "Downloads": Downloads,
+    "Events": Events,
+    "Feed": Feed,
+    "Forums": Forums,
+    "HabitTracker": HabitTracker,
     "LanguageLearning": LanguageLearning,
     "Languages": Languages,
-    "Analytics": Analytics,
-    "AffiliateProgram": AffiliateProgram,
-    "StudySets": StudySets,
-    "StudySet": StudySet,
-    "Marketplace": Marketplace,
-    "Events": Events,
-    "Messages": Messages,
-    "Downloads": Downloads,
     "Leaderboard": Leaderboard,
-    "Challenges": Challenges,
-    "RewardsShop": RewardsShop,
+    "LearningPaths": LearningPaths,
+    "LessonViewer": LessonViewer,
+    "LiveStreams": LiveStreams,
+    "Marketplace": Marketplace,
     "Mentorship": Mentorship,
-    "Feed": Feed,
+    "Messages": Messages,
+    "Microlearning": Microlearning,
+    "MyProgress": MyProgress,
     "Portfolio": Portfolio,
-    "AdaptiveLearning": AdaptiveLearning,
-    "Tournaments": Tournaments,
+    "RewardsShop": RewardsShop,
+    "Scholarships": Scholarships,
     "Skills": Skills,
     "StudyBuddies": StudyBuddies,
-    "CareerPaths": CareerPaths,
-    "LiveStreams": LiveStreams,
-    "Forums": Forums,
-    "Scholarships": Scholarships,
-    "Microlearning": Microlearning,
-    "AlumniNetwork": AlumniNetwork,
-    "HabitTracker": HabitTracker,
+    "StudySet": StudySet,
+    "StudySets": StudySets,
+    "Subscription": Subscription,
+    "Tournaments": Tournaments,
+    "oauth2callback": oauth2callback,
 }
 
 export const pagesConfig = {
