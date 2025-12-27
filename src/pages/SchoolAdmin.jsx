@@ -12,7 +12,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Building2, Users, Mail, Settings, Trash2, Copy, DollarSign } from 'lucide-react';
 import { toast } from 'sonner';
-import SchoolMonetization from './SchoolMonetization';
+import SchoolAnalytics from '../components/school/SchoolAnalytics';
+import SchoolAnnouncements from '../components/school/SchoolAnnouncements';
+import SchoolModeration from '../components/school/SchoolModeration';
+import SchoolAuditLog from '../components/school/SchoolAuditLog';
 
 export default function SchoolAdmin() {
   const [user, setUser] = useState(null);
@@ -161,12 +164,15 @@ export default function SchoolAdmin() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-9">
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="branding">Branding</TabsTrigger>
           <TabsTrigger value="people">People</TabsTrigger>
           <TabsTrigger value="invites">Invites</TabsTrigger>
-          <TabsTrigger value="monetization">Monetization</TabsTrigger>
+          <TabsTrigger value="announcements">Announcements</TabsTrigger>
+          <TabsTrigger value="moderation">Moderation</TabsTrigger>
+          <TabsTrigger value="audit">Audit</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
 
@@ -366,8 +372,20 @@ export default function SchoolAdmin() {
           </div>
         </TabsContent>
 
-        <TabsContent value="monetization">
-          <SchoolMonetization school={school} />
+        <TabsContent value="analytics">
+          <SchoolAnalytics />
+        </TabsContent>
+
+        <TabsContent value="announcements">
+          <SchoolAnnouncements school={school} user={user} />
+        </TabsContent>
+
+        <TabsContent value="moderation">
+          <SchoolModeration school={school} user={user} membership={membership} />
+        </TabsContent>
+
+        <TabsContent value="audit">
+          <SchoolAuditLog school={school} />
         </TabsContent>
 
         <TabsContent value="settings">

@@ -49,6 +49,8 @@ import TeachCourse from './pages/TeachCourse';
 import TeachLesson from './pages/TeachLesson';
 import LessonViewerPremium from './pages/LessonViewerPremium';
 import Reader from './pages/Reader';
+import SchoolAnalytics from './pages/SchoolAnalytics';
+import TeachAnalytics from './pages/TeachAnalytics';
 import __Layout from './Layout.jsx';
 
 
@@ -104,6 +106,8 @@ export const PAGES = {
     "TeachLesson": TeachLesson,
     "LessonViewerPremium": LessonViewerPremium,
     "Reader": Reader,
+    "SchoolAnalytics": SchoolAnalytics,
+    "TeachAnalytics": TeachAnalytics,
 }
 
 export const pagesConfig = {
