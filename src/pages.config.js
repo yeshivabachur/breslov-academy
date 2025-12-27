@@ -43,6 +43,10 @@ import SchoolJoin from './pages/SchoolJoin';
 import SchoolAdmin from './pages/SchoolAdmin';
 import LegacyMigration from './pages/LegacyMigration';
 import SchoolMonetization from './pages/SchoolMonetization';
+import Teach from './pages/Teach';
+import TeachCourseNew from './pages/TeachCourseNew';
+import TeachCourse from './pages/TeachCourse';
+import TeachLesson from './pages/TeachLesson';
 import __Layout from './Layout.jsx';
 
 
@@ -92,6 +96,10 @@ export const PAGES = {
     "SchoolAdmin": SchoolAdmin,
     "LegacyMigration": LegacyMigration,
     "SchoolMonetization": SchoolMonetization,
+    "Teach": Teach,
+    "TeachCourseNew": TeachCourseNew,
+    "TeachCourse": TeachCourse,
+    "TeachLesson": TeachLesson,
 }
 
 export const pagesConfig = {

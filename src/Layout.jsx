@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from './utils';
 import { base44 } from '@/api/base44Client';
-import { BookOpen, GraduationCap, Users, Menu, X, LogOut, User, Plug, Beaker, ChevronDown, Settings } from 'lucide-react';
+import { BookOpen, GraduationCap, Users, Menu, X, LogOut, User, Plug, Beaker, ChevronDown, Settings, BookMarked } from 'lucide-react';
+import { canCreateCourses } from '@/components/utils/permissions';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
 import ThemeToggle from '@/components/theme/ThemeToggle';
@@ -15,6 +16,7 @@ export default function Layout({ children, currentPageName }) {
   const [activeSchool, setActiveSchool] = useState(null);
   const [memberships, setMemberships] = useState([]);
   const [isSchoolAdmin, setIsSchoolAdmin] = useState(false);
+  const [canTeach, setCanTeach] = useState(false);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -81,6 +83,7 @@ export default function Layout({ children, currentPageName }) {
     { name: 'Dashboard', path: 'Dashboard', icon: BookOpen },
     { name: 'Courses', path: 'Courses', icon: GraduationCap },
     { name: 'Community', path: 'Feed', icon: Users },
+    ...(canTeach ? [{ name: 'Teach', path: 'Teach', icon: BookMarked }] : []),
   ];
 
   // Labs features - advanced/experimental
@@ -287,6 +290,16 @@ export default function Layout({ children, currentPageName }) {
               ))}
 
               {/* Other Links */}
+              {canTeach && (
+                <Link
+                  to={createPageUrl('Teach')}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-700"
+                >
+                  <BookMarked className="w-5 h-5" />
+                  <span className="font-medium">Teach</span>
+                </Link>
+              )}
               <Link
                 to={createPageUrl('Integrations')}
                 onClick={() => setMobileMenuOpen(false)}
