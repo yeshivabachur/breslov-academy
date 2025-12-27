@@ -12,12 +12,17 @@ export default function Courses() {
   const [user, setUser] = useState(null);
   const [userTier, setUserTier] = useState('free');
   const [filteredCourses, setFilteredCourses] = useState([]);
+  const [activeSchoolId, setActiveSchoolId] = useState(null);
 
   useEffect(() => {
     const loadUser = async () => {
       try {
         const currentUser = await base44.auth.me();
         setUser(currentUser);
+        
+        // Get active school
+        const schoolId = localStorage.getItem('active_school_id');
+        setActiveSchoolId(schoolId);
       } catch (error) {
         base44.auth.redirectToLogin();
       }
@@ -36,8 +41,28 @@ export default function Courses() {
   });
 
   const { data: courses = [], isLoading } = useQuery({
-    queryKey: ['courses'],
-    queryFn: () => base44.entities.Course.filter({ is_published: true }, 'sort_order')
+    queryKey: ['courses', activeSchoolId],
+    queryFn: async () => {
+      if (!activeSchoolId) return [];
+      let schoolCourses = await base44.entities.Course.filter({ 
+        is_published: true, 
+        school_id: activeSchoolId 
+      }, 'sort_order');
+      
+      // Fallback to legacy school if no courses found
+      if (schoolCourses.length === 0) {
+        const legacySchools = await base44.entities.School.filter({ slug: 'legacy' });
+        if (legacySchools.length > 0) {
+          schoolCourses = await base44.entities.Course.filter({ 
+            is_published: true, 
+            school_id: legacySchools[0].id 
+          }, 'sort_order');
+        }
+      }
+      
+      return schoolCourses;
+    },
+    enabled: !!activeSchoolId
   });
 
   useEffect(() => {
