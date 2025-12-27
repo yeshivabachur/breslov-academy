@@ -41,6 +41,7 @@ import SchoolSelect from './pages/SchoolSelect';
 import SchoolNew from './pages/SchoolNew';
 import SchoolJoin from './pages/SchoolJoin';
 import SchoolAdmin from './pages/SchoolAdmin';
+import LegacyMigration from './pages/LegacyMigration';
 import __Layout from './Layout.jsx';
 
 
@@ -88,6 +89,7 @@ export const PAGES = {
     "SchoolNew": SchoolNew,
     "SchoolJoin": SchoolJoin,
     "SchoolAdmin": SchoolAdmin,
+    "LegacyMigration": LegacyMigration,
 }
 
 export const pagesConfig = {
