@@ -99,28 +99,23 @@ export default function CourseDetail() {
       </Link>
 
       {/* Course Header */}
-      <div className="relative overflow-hidden rounded-[2.5rem] premium-shadow-xl">
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950" />
-        <div className="absolute inset-0 opacity-20">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500 rounded-full blur-[120px]" />
-        </div>
-        <div className="relative p-10">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-            <div className="md:col-span-2">
-            <div className="flex items-center flex-wrap gap-2 mb-6">
-              <Badge className="bg-amber-500 text-white badge-modern hover:bg-amber-600">
+      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-8 shadow-2xl">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="md:col-span-2">
+            <div className="flex items-center space-x-3 mb-4">
+              <Badge className="bg-amber-500 text-white">
                 {course.category?.replace(/_/g, ' ')}
               </Badge>
-              <Badge className="bg-slate-700 text-white badge-modern hover:bg-slate-800">
+              <Badge className="bg-slate-700 text-white">
                 {course.level}
               </Badge>
-              <Badge className="bg-slate-700 text-white flex items-center space-x-1 badge-modern hover:bg-slate-800">
+              <Badge className="bg-slate-700 text-white flex items-center space-x-1">
                 <Crown className="w-3 h-3" />
                 <span>{course.access_tier}</span>
               </Badge>
             </div>
 
-            <h1 className="text-4xl md:text-5xl font-black text-white mb-3 tracking-tight">{course.title}</h1>
+            <h1 className="text-4xl font-bold text-white mb-3">{course.title}</h1>
             {course.title_hebrew && (
               <h2 className="text-2xl text-amber-400 mb-4" dir="rtl">{course.title_hebrew}</h2>
             )}
@@ -129,7 +124,7 @@ export default function CourseDetail() {
             <div className="flex items-center space-x-6 text-slate-300">
               <div className="flex items-center space-x-2">
                 <BookOpen className="w-5 h-5" />
-                <span>Taught by {course.instructor}</span>
+                <span>By {course.instructor}</span>
               </div>
               {course.duration_hours && (
                 <div className="flex items-center space-x-2">
@@ -142,12 +137,12 @@ export default function CourseDetail() {
                 <span>{lessons.length} lessons</span>
               </div>
             </div>
-            </div>
+          </div>
 
-            <div className="flex items-center justify-center">
+          <div className="flex items-center justify-center">
             {hasAccess ? (
-              <Card className="w-full bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200/60 rounded-3xl premium-shadow-lg">
-                <CardContent className="p-8 text-center space-y-4">
+              <Card className="w-full bg-green-50 border-green-200">
+                <CardContent className="p-6 text-center">
                   <CheckCircle className="w-12 h-12 text-green-600 mx-auto mb-3" />
                   <h3 className="font-bold text-green-900 mb-2">You have access!</h3>
                   <div className="mb-4">
@@ -163,8 +158,8 @@ export default function CourseDetail() {
                 </CardContent>
               </Card>
             ) : (
-              <Card className="w-full bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200/60 rounded-3xl premium-shadow-lg">
-                <CardContent className="p-8 text-center space-y-4">
+              <Card className="w-full bg-amber-50 border-amber-200">
+                <CardContent className="p-6 text-center">
                   <Crown className="w-12 h-12 text-amber-600 mx-auto mb-3" />
                   <h3 className="font-bold text-amber-900 mb-2">
                     {course.access_tier === 'premium' ? 'Premium' : 'Elite'} Required
@@ -181,7 +176,6 @@ export default function CourseDetail() {
               </Card>
             )}
           </div>
-          </div>
         </div>
       </div>
 
@@ -196,11 +190,11 @@ export default function CourseDetail() {
             return (
               <Card 
                 key={lesson.id}
-                className={`card-modern border-white/60 rounded-2xl transition-all duration-300 ${
-                  canAccess ? 'premium-shadow hover:premium-shadow-lg hover:-translate-y-1 cursor-pointer' : 'opacity-60'
+                className={`transition-all ${
+                  canAccess ? 'hover:shadow-lg cursor-pointer' : 'opacity-60'
                 }`}
               >
-                <CardContent className="p-8">
+                <CardContent className="p-6">
                   <Link 
                     to={canAccess ? createPageUrl(`LessonViewer?id=${lesson.id}`) : '#'}
                     className="block"

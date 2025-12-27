@@ -1,15 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Brain, Plus, Star } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { motion } from 'framer-motion';
-import StudyModes from '../components/study/StudyModes';
-import ChazaraFlashcards from '../components/learning/ChazaraFlashcards';
+import { Plus, BookOpen } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
 
 export default function StudySets() {
   const [user, setUser] = useState(null);
-  const [selectedSet, setSelectedSet] = useState(null);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -25,97 +24,39 @@ export default function StudySets() {
 
   const { data: studySets = [] } = useQuery({
     queryKey: ['study-sets'],
-    queryFn: () => base44.entities.StudySet.list('-created_date')
+    queryFn: () => base44.entities.StudySet.filter({ is_public: true }, '-created_date', 50)
   });
 
-  if (selectedSet) {
-    return (
-      <div className="min-h-screen gradient-mesh bg-slate-50">
-        <div className="max-w-6xl mx-auto space-y-8">
-          <Button
-            onClick={() => setSelectedSet(null)}
-            variant="ghost"
-            className="font-serif"
-          >
-            ← Back to Study Sets
+  return (
+    <div className="space-y-8">
+      <div className="bg-gradient-to-r from-purple-900 to-indigo-900 rounded-2xl p-8 text-white">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold mb-2">Study Sets</h1>
+            <p className="text-purple-200 text-lg">Quizlet-style learning tools</p>
+          </div>
+          <Button className="bg-white text-purple-900 hover:bg-purple-50">
+            <Plus className="w-5 h-5 mr-2" />
+            Create Set
           </Button>
-          
-          <StudyModes
-            studySet={selectedSet}
-            onComplete={(results) => {
-              console.log('Study session complete:', results);
-              setSelectedSet(null);
-            }}
-          />
         </div>
       </div>
-    );
-  }
 
-  return (
-    <div className="min-h-screen gradient-mesh bg-slate-50">
-      <div className="max-w-6xl mx-auto space-y-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-4">
-              <div className="p-4 bg-gradient-to-br from-purple-600 to-pink-600 rounded-2xl shadow-xl">
-                <Brain className="w-10 h-10 text-white" />
-              </div>
-              <div>
-                <h1 className="text-5xl font-black text-slate-900 font-serif">Study Sets</h1>
-                <p className="text-xl text-slate-600 font-serif">Master Torah concepts through active recall</p>
-              </div>
-            </div>
-            <Button className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white font-bold rounded-2xl font-serif">
-              <Plus className="w-5 h-5 mr-2" />
-              Create Set
-            </Button>
-          </div>
-        </motion.div>
-
-        <div className="grid md:grid-cols-3 gap-6">
-          {studySets.map((set, idx) => (
-            <motion.div
-              key={set.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.05 }}
-              whileHover={{ y: -4 }}
-              onClick={() => setSelectedSet(set)}
-            >
-              <Card className="card-modern border-white/60 premium-shadow hover:premium-shadow-lg transition-all rounded-2xl cursor-pointer">
-                <CardContent className="p-6 space-y-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h3 className="font-black text-lg text-slate-900 font-serif mb-1">
-                        {set.title}
-                      </h3>
-                      <p className="text-sm text-slate-600 font-serif">
-                        {set.term_count || 0} terms
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-1 text-amber-500">
-                      <Star className="w-4 h-4 fill-current" />
-                      <span className="text-sm font-bold">4.8</span>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Badge className="bg-blue-100 text-blue-800 font-serif">
-                      {set.category}
-                    </Badge>
-                    <Badge variant="outline" className="font-serif">
-                      {set.language || 'Hebrew/English'}
-                    </Badge>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {studySets.map((set) => (
+          <Link key={set.id} to={createPageUrl(`StudySet?id=${set.id}`)}>
+            <Card className="hover:shadow-xl transition-shadow cursor-pointer">
+              <CardContent className="p-6">
+                <h3 className="font-bold text-lg text-slate-900 mb-2">{set.title}</h3>
+                <p className="text-slate-600 text-sm mb-4">{set.description}</p>
+                <div className="flex items-center justify-between text-sm text-slate-500">
+                  <span>{set.terms?.length || 0} terms</span>
+                  <span>{set.total_studies || 0} studies</span>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+        ))}
       </div>
     </div>
   );

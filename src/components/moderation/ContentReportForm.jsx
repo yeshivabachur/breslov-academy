@@ -1,62 +1,75 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertCircle, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Flag } from 'lucide-react';
+import { base44 } from '@/api/base44Client';
+import { toast } from 'sonner';
 
-export default function ContentReportForm({ contentId, contentType }) {
+export default function ContentReportForm({ contentId, contentType, userEmail, onClose }) {
   const [reason, setReason] = useState('');
-  const [details, setDetails] = useState('');
+  const [description, setDescription] = useState('');
 
-  const reasons = [
-    'Inappropriate content',
-    'Spam or misleading',
-    'Harassment',
-    'Incorrect information',
-    'Other'
-  ];
+  const handleSubmit = async () => {
+    try {
+      await base44.entities.ContentModeration.create({
+        content_id: contentId,
+        content_type: contentType,
+        reported_by: userEmail,
+        reason,
+        description
+      });
+      toast.success('Report submitted. Thank you for helping keep our community safe.');
+      onClose?.();
+    } catch (error) {
+      toast.error('Failed to submit report');
+    }
+  };
 
   return (
-    <Card className="glass-effect border-0 premium-shadow-lg rounded-[2rem]">
+    <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 font-serif">
-          <AlertCircle className="w-5 h-5 text-red-600" />
-          Report Content
+        <CardTitle className="flex items-center space-x-2">
+          <Flag className="w-5 h-5" />
+          <span>Report Content</span>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div>
-          <label className="block text-sm font-bold text-slate-700 mb-2">Reason</label>
+          <label className="block text-sm font-medium mb-2">Reason</label>
           <Select value={reason} onValueChange={setReason}>
-            <SelectTrigger className="rounded-xl">
-              <SelectValue placeholder="Select reason..." />
+            <SelectTrigger>
+              <SelectValue placeholder="Select a reason..." />
             </SelectTrigger>
             <SelectContent>
-              {reasons.map((r, idx) => (
-                <SelectItem key={idx} value={r}>{r}</SelectItem>
-              ))}
+              <SelectItem value="spam">Spam</SelectItem>
+              <SelectItem value="harassment">Harassment</SelectItem>
+              <SelectItem value="inappropriate">Inappropriate Content</SelectItem>
+              <SelectItem value="plagiarism">Plagiarism</SelectItem>
+              <SelectItem value="misinformation">Misinformation</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         <div>
-          <label className="block text-sm font-bold text-slate-700 mb-2">Additional Details</label>
+          <label className="block text-sm font-medium mb-2">Additional Details</label>
           <Textarea
-            value={details}
-            onChange={(e) => setDetails(e.target.value)}
-            placeholder="Provide more context..."
-            className="min-h-[100px] rounded-xl"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Please provide more details..."
+            rows={4}
           />
         </div>
 
-        <Button
-          disabled={!reason}
-          className="w-full bg-gradient-to-r from-red-600 to-red-700 text-white rounded-2xl"
-        >
-          <Send className="w-4 h-4 mr-2" />
-          Submit Report
-        </Button>
+        <div className="flex space-x-2">
+          <Button onClick={onClose} variant="outline" className="flex-1">
+            Cancel
+          </Button>
+          <Button onClick={handleSubmit} disabled={!reason} className="flex-1">
+            Submit Report
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

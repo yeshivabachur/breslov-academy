@@ -1,45 +1,33 @@
-import React, { useEffect } from 'react';
+import React from 'react';
+import { Helmet } from 'react-helmet-async';
 
-export default function MetaTags({ title, description, image, url }) {
-  useEffect(() => {
-    if (title) {
-      document.title = `${title} | Breslov Academy`;
-    }
-
-    const metaTags = [
-      { name: 'description', content: description },
-      { property: 'og:title', content: title },
-      { property: 'og:description', content: description },
-      { property: 'og:image', content: image },
-      { property: 'og:url', content: url },
-      { name: 'twitter:card', content: 'summary_large_image' },
-      { name: 'twitter:title', content: title },
-      { name: 'twitter:description', content: description },
-      { name: 'twitter:image', content: image }
-    ];
-
-    metaTags.forEach(tag => {
-      if (tag.content) {
-        let element = document.querySelector(
-          tag.property 
-            ? `meta[property="${tag.property}"]` 
-            : `meta[name="${tag.name}"]`
-        );
-        
-        if (!element) {
-          element = document.createElement('meta');
-          if (tag.property) {
-            element.setAttribute('property', tag.property);
-          } else {
-            element.setAttribute('name', tag.name);
-          }
-          document.head.appendChild(element);
-        }
-        
-        element.setAttribute('content', tag.content);
-      }
-    });
-  }, [title, description, image, url]);
-
-  return null;
+export default function MetaTags({ 
+  title, 
+  description, 
+  image, 
+  url,
+  type = 'website'
+}) {
+  const fullTitle = title ? `${title} | Breslov Academy` : 'Breslov Academy - Torah Learning Platform';
+  const fullDescription = description || 'World-class Torah courses from expert Breslov instructors';
+  
+  return (
+    <Helmet>
+      <title>{fullTitle}</title>
+      <meta name="description" content={fullDescription} />
+      
+      {/* Open Graph */}
+      <meta property="og:title" content={fullTitle} />
+      <meta property="og:description" content={fullDescription} />
+      <meta property="og:type" content={type} />
+      {url && <meta property="og:url" content={url} />}
+      {image && <meta property="og:image" content={image} />}
+      
+      {/* Twitter */}
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:title" content={fullTitle} />
+      <meta name="twitter:description" content={fullDescription} />
+      {image && <meta name="twitter:image" content={image} />}
+    </Helmet>
+  );
 }

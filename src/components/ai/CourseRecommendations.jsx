@@ -1,84 +1,150 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Sparkles, TrendingUp, BookOpen } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
-import { createPageUrl } from '@/utils';
+import { Sparkles, TrendingUp, Star } from 'lucide-react';
+import { base44 } from '@/api/base44Client';
+import CourseCard from '../courses/CourseCard';
 
-export default function CourseRecommendations({ userProfile }) {
-  const recommendations = [
-    {
-      courseId: 'advanced-azamra',
-      title: 'Advanced Azamra Studies',
-      reason: 'Based on your interest in Likutey Moharan',
-      match: 95,
-      level: 'Intermediate'
-    },
-    {
-      courseId: 'aramaic-talmud',
-      title: 'Talmudic Aramaic',
-      reason: 'Complements your Hebrew studies',
-      match: 88,
-      level: 'Advanced'
-    },
-    {
-      courseId: 'hitbodedut-practice',
-      title: 'Hitbodedut in Practice',
-      reason: 'Perfect for your spiritual growth path',
-      match: 92,
-      level: 'Beginner'
+export default function CourseRecommendations({ user, userProgress, courses }) {
+  const [recommendations, setRecommendations] = useState([]);
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  useEffect(() => {
+    generateRecommendations();
+  }, [user, userProgress, courses]);
+
+  const generateRecommendations = async () => {
+    if (!user || !courses || courses.length === 0) return;
+
+    setIsGenerating(true);
+
+    try {
+      // Get completed courses
+      const completedCourseIds = [...new Set(
+        userProgress
+          .filter(p => p.completed)
+          .map(p => p.course_id)
+      )];
+
+      const completedCourses = courses.filter(c => completedCourseIds.includes(c.id));
+      
+      // Simple recommendation algorithm
+      // 1. Recommend courses in same category as completed ones
+      // 2. Recommend next level courses
+      // 3. Recommend popular courses
+      
+      const recommended = [];
+
+      // Same category recommendations
+      if (completedCourses.length > 0) {
+        const categories = [...new Set(completedCourses.map(c => c.category))];
+        const sameCategoryCourses = courses.filter(c => 
+          categories.includes(c.category) && 
+          !completedCourseIds.includes(c.id)
+        ).slice(0, 2);
+        
+        sameCategoryCourses.forEach(c => {
+          recommended.push({
+            course: c,
+            reason: 'Based on your interest in ' + c.category.replace(/_/g, ' '),
+            confidence: 85
+          });
+        });
+      }
+
+      // Next level recommendations
+      const userLevels = completedCourses.map(c => c.level);
+      if (userLevels.includes('beginner')) {
+        const intermediateCourses = courses.filter(c => 
+          c.level === 'intermediate' && 
+          !completedCourseIds.includes(c.id)
+        ).slice(0, 2);
+        
+        intermediateCourses.forEach(c => {
+          recommended.push({
+            course: c,
+            reason: 'Ready for intermediate level',
+            confidence: 80
+          });
+        });
+      }
+
+      // Popular courses (for new users)
+      if (completedCourses.length === 0) {
+        const popularCourses = courses
+          .filter(c => c.access_tier === 'free')
+          .slice(0, 3);
+        
+        popularCourses.forEach(c => {
+          recommended.push({
+            course: c,
+            reason: 'Great for beginners',
+            confidence: 75
+          });
+        });
+      }
+
+      // Remove duplicates and limit to 3
+      const uniqueRecommendations = recommended
+        .filter((r, idx, self) => 
+          idx === self.findIndex(t => t.course.id === r.course.id)
+        )
+        .slice(0, 3);
+
+      setRecommendations(uniqueRecommendations);
+
+      // Save recommendations to database
+      for (const rec of uniqueRecommendations) {
+        await base44.entities.Recommendation.create({
+          user_email: user.email,
+          course_id: rec.course.id,
+          reason: rec.reason,
+          confidence_score: rec.confidence,
+          based_on: completedCourseIds,
+          shown: true,
+          clicked: false
+        });
+      }
+
+    } catch (error) {
+      console.error('Error generating recommendations:', error);
+    } finally {
+      setIsGenerating(false);
     }
-  ];
+  };
+
+  if (recommendations.length === 0) return null;
 
   return (
-    <Card className="glass-effect border-0 premium-shadow-lg rounded-[2rem]">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 font-serif">
-          <Sparkles className="w-5 h-5 text-purple-600" />
-          <div>
-            <div>Recommended for You</div>
-            <div className="text-sm text-slate-600 font-normal" dir="rtl">מומלץ עבורך</div>
-          </div>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {recommendations.map((rec, idx) => (
-          <div
-            key={idx}
-            className="p-4 bg-white rounded-xl border-2 border-slate-200 hover:border-purple-300 transition-all"
-          >
-            <div className="flex items-start justify-between mb-2">
-              <div className="flex-1">
-                <div className="font-bold text-slate-900 mb-1">{rec.title}</div>
-                <div className="text-xs text-purple-600 mb-2">{rec.reason}</div>
-                <Badge className="bg-blue-100 text-blue-800 text-xs">
-                  {rec.level}
-                </Badge>
-              </div>
-              <Badge className="bg-green-100 text-green-800">
-                {rec.match}% match
-              </Badge>
-            </div>
+    <div className="space-y-6">
+      <Card className="bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Sparkles className="w-6 h-6 text-purple-600" />
+            <span>Recommended For You</span>
+          </CardTitle>
+          <p className="text-slate-600 text-sm">
+            Personalized course suggestions based on your learning journey
+          </p>
+        </CardHeader>
+      </Card>
 
-            <Link to={createPageUrl(`CourseDetail?id=${rec.courseId}`)}>
-              <Button
-                size="sm"
-                className="w-full mt-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl"
-              >
-                <BookOpen className="w-4 h-4 mr-2" />
-                View Course
-              </Button>
-            </Link>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {recommendations.map((rec) => (
+          <div key={rec.course.id} className="relative">
+            <div className="absolute -top-3 left-3 z-10">
+              <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-bold px-3 py-1 rounded-full flex items-center space-x-1 shadow-lg">
+                <Star className="w-3 h-3" />
+                <span>{rec.confidence}% match</span>
+              </div>
+            </div>
+            <CourseCard course={rec.course} />
+            <p className="text-sm text-slate-600 mt-2 text-center italic">
+              {rec.reason}
+            </p>
           </div>
         ))}
-
-        <div className="p-4 bg-purple-50 rounded-xl border border-purple-200">
-          <div className="text-sm text-purple-900 font-serif">
-            🤖 AI analyzes your learning patterns to suggest the perfect next steps
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
