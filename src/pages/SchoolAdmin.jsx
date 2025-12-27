@@ -10,8 +10,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Building2, Users, Mail, Settings, Trash2, Copy } from 'lucide-react';
+import { Building2, Users, Mail, Settings, Trash2, Copy, DollarSign } from 'lucide-react';
 import { toast } from 'sonner';
+import SchoolMonetization from './SchoolMonetization';
 
 export default function SchoolAdmin() {
   const [user, setUser] = useState(null);
@@ -160,11 +161,12 @@ export default function SchoolAdmin() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="branding">Branding</TabsTrigger>
           <TabsTrigger value="people">People</TabsTrigger>
           <TabsTrigger value="invites">Invites</TabsTrigger>
+          <TabsTrigger value="monetization">Monetization</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
 
@@ -362,6 +364,10 @@ export default function SchoolAdmin() {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="monetization">
+          <SchoolMonetization school={school} />
         </TabsContent>
 
         <TabsContent value="settings">
