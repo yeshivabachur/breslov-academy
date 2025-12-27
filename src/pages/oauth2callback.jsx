@@ -45,7 +45,7 @@ export default function OAuth2Callback() {
         // 4. Enable required APIs in Google Cloud Console
         
         const CLIENT_ID = '467836355270-lc5rpg2sfufl3m9dov7ab9okppvrrl33.apps.googleusercontent.com';
-        const CLIENT_SECRET = '${google_oauth_client_secret}'; // Set in Base44 secrets
+        const CLIENT_SECRET = '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';
         const REDIRECT_URI = 'https://breslov.base44.app/oauth2callback';
         
         // Service-specific scope configurations
