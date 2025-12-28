@@ -68,8 +68,18 @@ export default function Affiliate() {
     .filter(r => r.status === 'completed')
     .reduce((sum, r) => sum + (r.commission_cents || 0), 0);
 
+  const { data: school } = useQuery({
+    queryKey: ['active-school', activeSchoolId],
+    queryFn: async () => {
+      const schools = await base44.entities.School.filter({ id: activeSchoolId });
+      return schools[0];
+    },
+    enabled: !!activeSchoolId
+  });
+
   const copyAffiliateLink = () => {
-    const link = `${window.location.origin}${createPageUrl('SchoolLanding')}?slug=YOUR_SCHOOL&ref=${affiliateCode}`;
+    const slug = school?.slug || 'school';
+    const link = `${window.location.origin}${createPageUrl('SchoolLanding')}?slug=${slug}&ref=${affiliateCode}`;
     navigator.clipboard.writeText(link);
     toast.success('Affiliate link copied!');
   };
@@ -121,10 +131,10 @@ export default function Affiliate() {
         <CardContent>
           <div className="flex space-x-2">
             <Input 
-              value={`${window.location.origin}/schoollanding?ref=${affiliateCode}`} 
+              value={school ? `${window.location.origin}${createPageUrl('SchoolLanding')}?slug=${school.slug}&ref=${affiliateCode}` : 'Loading...'} 
               readOnly 
             />
-            <Button onClick={copyAffiliateLink}>
+            <Button onClick={copyAffiliateLink} disabled={!school}>
               <Copy className="w-4 h-4" />
             </Button>
           </div>

@@ -155,3 +155,57 @@ export async function createEntitlementsForSubscription(subscription, offer, sch
     }
   }
 }
+
+/**
+ * Check if user has copy license
+ * @param {Array} entitlements - User entitlements
+ * @returns {boolean}
+ */
+export function hasCopyLicense(entitlements) {
+  return entitlements.some(e => e.entitlement_type === 'COPY_LICENSE' || e.type === 'COPY_LICENSE');
+}
+
+/**
+ * Check if user has download license
+ * @param {Array} entitlements - User entitlements
+ * @returns {boolean}
+ */
+export function hasDownloadLicense(entitlements) {
+  return entitlements.some(e => e.entitlement_type === 'DOWNLOAD_LICENSE' || e.type === 'DOWNLOAD_LICENSE');
+}
+
+/**
+ * Determine if user can copy content
+ * @param {object} params - { policy, entitlements, accessLevel }
+ * @returns {boolean}
+ */
+export function canCopy({ policy, entitlements, accessLevel }) {
+  if (!policy || accessLevel === 'LOCKED') return false;
+  if (accessLevel === 'PREVIEW') return false;
+  
+  if (policy.copy_mode === 'INCLUDED_WITH_ACCESS') {
+    return accessLevel === 'FULL';
+  } else if (policy.copy_mode === 'ADDON') {
+    return hasCopyLicense(entitlements);
+  }
+  
+  return false;
+}
+
+/**
+ * Determine if user can download content
+ * @param {object} params - { policy, entitlements, accessLevel }
+ * @returns {boolean}
+ */
+export function canDownload({ policy, entitlements, accessLevel }) {
+  if (!policy || accessLevel === 'LOCKED') return false;
+  if (accessLevel === 'PREVIEW') return false;
+  
+  if (policy.download_mode === 'INCLUDED_WITH_ACCESS') {
+    return accessLevel === 'FULL';
+  } else if (policy.download_mode === 'ADDON') {
+    return hasDownloadLicense(entitlements);
+  }
+  
+  return false;
+}

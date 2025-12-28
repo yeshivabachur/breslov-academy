@@ -4,16 +4,32 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Download, FileText, BookOpen, Headphones } from 'lucide-react';
+import { Download, FileText, BookOpen, Headphones, Lock } from 'lucide-react';
+import { scopedFilter } from '../components/api/scoped';
+import { toast } from 'sonner';
 
 export default function Downloads() {
   const [user, setUser] = useState(null);
+  const [activeSchoolId, setActiveSchoolId] = useState(null);
+  const [entitlements, setEntitlements] = useState([]);
 
   useEffect(() => {
     const loadUser = async () => {
       try {
         const currentUser = await base44.auth.me();
         setUser(currentUser);
+        
+        const schoolId = localStorage.getItem('active_school_id');
+        setActiveSchoolId(schoolId);
+        
+        // Load entitlements
+        if (schoolId && currentUser) {
+          const ents = await base44.entities.Entitlement.filter({
+            school_id: schoolId,
+            user_email: currentUser.email
+          });
+          setEntitlements(ents);
+        }
       } catch (error) {
         base44.auth.redirectToLogin();
       }
@@ -22,8 +38,18 @@ export default function Downloads() {
   }, []);
 
   const { data: downloads = [] } = useQuery({
-    queryKey: ['downloads'],
-    queryFn: () => base44.entities.Download.list()
+    queryKey: ['downloads', activeSchoolId],
+    queryFn: () => scopedFilter('Download', activeSchoolId, {}),
+    enabled: !!activeSchoolId
+  });
+
+  const { data: policy } = useQuery({
+    queryKey: ['protection-policy', activeSchoolId],
+    queryFn: async () => {
+      const policies = await base44.entities.ContentProtectionPolicy.filter({ school_id: activeSchoolId });
+      return policies[0] || { download_mode: 'DISALLOW' };
+    },
+    enabled: !!activeSchoolId
   });
 
   const iconMap = {
@@ -50,6 +76,26 @@ export default function Downloads() {
         {downloads.map((download) => {
           const Icon = iconMap[download.type] || FileText;
           
+          // Check download access
+          const hasDownloadLicense = entitlements.some(e => e.entitlement_type === 'DOWNLOAD_LICENSE');
+          const hasCourseAccess = download.course_id 
+            ? entitlements.some(e => 
+                (e.entitlement_type === 'COURSE' && e.course_id === download.course_id) ||
+                e.entitlement_type === 'ALL_COURSES'
+              )
+            : true;
+          
+          const canDownload = policy?.download_mode === 'INCLUDED_WITH_ACCESS' 
+            ? hasCourseAccess
+            : policy?.download_mode === 'ADDON'
+            ? hasDownloadLicense
+            : policy?.download_mode === 'DISALLOW'
+            ? false
+            : true; // Free downloads or no policy
+          
+          const isFree = !download.course_id || download.price === 0;
+          const finalCanDownload = isFree || canDownload;
+          
           return (
             <Card key={download.id} className="hover:shadow-xl transition-shadow">
               <CardContent className="p-6">
@@ -65,15 +111,28 @@ export default function Downloads() {
 
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-slate-500">
-                    {download.download_count} downloads
+                    {download.download_count || 0} downloads
                   </span>
-                  <Button
-                    onClick={() => window.open(download.file_url, '_blank')}
-                    className="bg-green-600 hover:bg-green-700"
-                  >
-                    <Download className="w-4 h-4 mr-2" />
-                    {download.price > 0 ? `$${download.price}` : 'Free'}
-                  </Button>
+                  {finalCanDownload ? (
+                    <Button
+                      onClick={() => {
+                        window.open(download.file_url, '_blank');
+                        // Log download
+                        base44.entities.Download.update(download.id, {
+                          download_count: (download.download_count || 0) + 1
+                        }).catch(() => {});
+                      }}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      {isFree ? 'Free' : 'Download'}
+                    </Button>
+                  ) : (
+                    <Button variant="outline" disabled>
+                      <Lock className="w-4 h-4 mr-2" />
+                      License Required
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>

@@ -54,30 +54,60 @@ export default function SchoolMonetization() {
   const approveMutation = useMutation({
     mutationFn: async (transactionId) => {
       const transaction = transactions.find(t => t.id === transactionId);
+      const offer = offers.find(o => o.id === transaction.offer_id);
       
       // Update transaction
       await base44.entities.Transaction.update(transactionId, {
         status: 'completed'
       });
 
-      // Grant entitlement
-      const offer = offers.find(o => o.id === transaction.offer_id);
+      // Grant entitlements using helper
       if (offer) {
-        await base44.entities.Entitlement.create({
+        // Create purchase record for tracking
+        const purchase = await base44.entities.Purchase.create({
           school_id: activeSchoolId,
           user_email: transaction.user_email,
-          entitlement_type: offer.offer_type,
-          course_id: offer.courses?.[0],
-          expires_at: offer.billing_cycle ? null : undefined
+          offer_id: offer.id,
+          price_cents: transaction.amount_cents
         });
+        
+        // Grant entitlements
+        await createEntitlementsForPurchase(purchase, offer, activeSchoolId);
+        
+        // Process referral if present
+        if (transaction.metadata?.referral_code) {
+          const affiliates = await base44.entities.Affiliate.filter({
+            school_id: activeSchoolId,
+            code: transaction.metadata.referral_code
+          });
+          
+          if (affiliates[0]) {
+            const commissionCents = Math.floor(transaction.amount_cents * (affiliates[0].commission_rate / 100));
+            
+            await base44.entities.Referral.create({
+              school_id: activeSchoolId,
+              affiliate_id: affiliates[0].id,
+              referred_email: transaction.user_email,
+              transaction_id: transactionId,
+              commission_cents: commissionCents,
+              status: 'completed',
+              converted_at: new Date().toISOString()
+            });
+            
+            await base44.entities.Affiliate.update(affiliates[0].id, {
+              total_earnings_cents: (affiliates[0].total_earnings_cents || 0) + commissionCents,
+              total_referrals: (affiliates[0].total_referrals || 0) + 1
+            });
+          }
+        }
       }
 
       // Log event
-      await base44.entities.EventLog.create({
+      await base44.entities.AuditLog.create({
         school_id: activeSchoolId,
         user_email: user.email,
-        event_type: 'purchase_completed',
-        entity_type: 'TRANSACTION',
+        action: 'APPROVE_TRANSACTION',
+        entity_type: 'Transaction',
         entity_id: transactionId
       });
     },

@@ -65,10 +65,11 @@ export default function SchoolSearch() {
     queryKey: ['search-lessons', activeSchoolId, debouncedQuery],
     queryFn: async () => {
       if (!debouncedQuery) return [];
+      // SECURITY: Only search lesson titles/metadata, never content (prevents leakage)
       const results = await base44.entities.Lesson.filter({ school_id: activeSchoolId });
       return results.filter(l => 
         l.title?.toLowerCase().includes(debouncedQuery.toLowerCase()) ||
-        l.content?.toLowerCase().includes(debouncedQuery.toLowerCase())
+        l.title_hebrew?.includes(debouncedQuery)
       ).slice(0, 20);
     },
     enabled: !!activeSchoolId && debouncedQuery.length > 2
@@ -158,7 +159,12 @@ export default function SchoolSearch() {
                         <FileText className="w-5 h-5 text-green-600 mt-1" />
                         <div className="flex-1">
                           <h3 className="font-semibold mb-1">{lesson.title}</h3>
-                          <p className="text-sm text-slate-600 line-clamp-2">{lesson.content?.substring(0, 150)}</p>
+                          {lesson.title_hebrew && (
+                            <p className="text-sm text-amber-700 mb-1" dir="rtl">{lesson.title_hebrew}</p>
+                          )}
+                          {lesson.is_preview && (
+                            <Badge variant="secondary" className="mt-2">Preview Available</Badge>
+                          )}
                           <Badge variant="outline" className="mt-2">Lesson</Badge>
                         </div>
                       </div>
@@ -227,7 +233,12 @@ export default function SchoolSearch() {
                   <Card className="hover:shadow-md transition-shadow">
                     <CardContent className="p-4">
                       <h3 className="font-semibold mb-2">{lesson.title}</h3>
-                      <p className="text-sm text-slate-600 line-clamp-2">{lesson.content?.substring(0, 150)}</p>
+                      {lesson.title_hebrew && (
+                        <p className="text-sm text-amber-700" dir="rtl">{lesson.title_hebrew}</p>
+                      )}
+                      {lesson.is_preview && (
+                        <Badge variant="secondary" className="mt-2">Preview Available</Badge>
+                      )}
                     </CardContent>
                   </Card>
                 </Link>

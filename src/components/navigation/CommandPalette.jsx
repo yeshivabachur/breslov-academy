@@ -5,7 +5,7 @@ import { FEATURES } from '../config/features';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Command } from 'lucide-react';
+import { Command, Zap } from 'lucide-react';
 
 export default function CommandPalette({ audience = 'student' }) {
   const [open, setOpen] = useState(false);
@@ -34,7 +34,7 @@ export default function CommandPalette({ audience = 'student' }) {
   );
 
   const handleSelect = (feature) => {
-    navigate(createPageUrl(feature.key));
+    navigate(feature.route || createPageUrl(feature.key));
     setOpen(false);
     setSearch('');
   };
@@ -70,13 +70,18 @@ export default function CommandPalette({ audience = 'student' }) {
                   onClick={() => handleSelect(feature)}
                   className="w-full text-left p-3 hover:bg-slate-50 rounded-lg flex items-center justify-between group"
                 >
-                  <div>
+                  <div className="flex-1">
                     <div className="font-medium">{feature.label}</div>
-                    <div className="text-xs text-slate-500">{feature.area}</div>
+                    <div className="flex items-center space-x-2 mt-1">
+                      <Badge variant="outline" className="text-xs">{feature.area}</Badge>
+                      {feature.vaultOnly && (
+                        <Badge variant="secondary" className="text-xs">Vault</Badge>
+                      )}
+                    </div>
                   </div>
-                  <Badge variant="outline" className="opacity-0 group-hover:opacity-100">
-                    {feature.route}
-                  </Badge>
+                  {feature.icon && (
+                    <Zap className="w-4 h-4 text-slate-400 opacity-0 group-hover:opacity-100" />
+                  )}
                 </button>
               ))}
               
