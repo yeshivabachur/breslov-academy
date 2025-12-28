@@ -3,14 +3,14 @@ import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
+import useStorefrontContext from '../components/hooks/useStorefrontContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Star, BookOpen, Users, ArrowRight } from 'lucide-react';
 
 export default function SchoolLanding() {
   const [user, setUser] = useState(null);
-  const urlParams = new URLSearchParams(window.location.search);
-  const slug = urlParams.get('slug');
+  const { schoolSlug: slug } = useStorefrontContext();
 
   useEffect(() => {
     const loadUser = async () => {

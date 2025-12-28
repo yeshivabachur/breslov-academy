@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
+import useStorefrontContext from '../components/hooks/useStorefrontContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -12,9 +13,7 @@ export default function CourseSales() {
   const [user, setUser] = useState(null);
   const [hasAccess, setHasAccess] = useState(false);
   
-  const urlParams = new URLSearchParams(window.location.search);
-  const slug = urlParams.get('slug');
-  const courseId = urlParams.get('courseId');
+  const { schoolSlug: slug, courseId } = useStorefrontContext();
 
   useEffect(() => {
     const loadUser = async () => {

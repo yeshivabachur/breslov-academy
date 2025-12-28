@@ -18,9 +18,7 @@ export default function SchoolCheckout() {
   const [discount, setDiscount] = useState(0);
   const navigate = useNavigate();
   
-  const urlParams = new URLSearchParams(window.location.search);
-  const slug = urlParams.get('slug');
-  const offerId = urlParams.get('offerId');
+  const { schoolSlug: slug, offerId, refCode } = useStorefrontContext();
 
   useEffect(() => {
     const loadUser = async () => {
@@ -119,6 +117,9 @@ export default function SchoolCheckout() {
     const finalAmount = Math.max(0, offer.price_cents - discount);
     const discountAmount = discount;
     
+    // Attach referral code to transaction metadata
+    const metadata = refCode ? { referral_code: refCode } : {};
+    
     createTransactionMutation.mutate({
       school_id: school.id,
       user_email: email,
@@ -127,7 +128,8 @@ export default function SchoolCheckout() {
       discount_cents: discountAmount,
       coupon_code: couponCode || undefined,
       provider: 'MANUAL',
-      status: 'pending'
+      status: 'pending',
+      metadata
     });
   };
 

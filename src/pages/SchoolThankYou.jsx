@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
+import useStorefrontContext from '../components/hooks/useStorefrontContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,9 +13,7 @@ import confetti from 'canvas-confetti';
 
 export default function SchoolThankYou() {
   const [user, setUser] = useState(null);
-  const urlParams = new URLSearchParams(window.location.search);
-  const slug = urlParams.get('slug');
-  const transactionId = urlParams.get('transactionId');
+  const { schoolSlug: slug, transactionId } = useStorefrontContext();
 
   useEffect(() => {
     const loadUser = async () => {
