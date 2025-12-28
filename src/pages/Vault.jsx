@@ -1,11 +1,42 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { FEATURES, getFeaturesByArea } from '../components/utils/featureRegistry';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Archive, Search } from 'lucide-react';
+
+// Inline feature registry to avoid import issues
+const FEATURES = {
+  dashboard: { key: 'dashboard', label: 'Dashboard', area: 'core', audiences: ['student', 'teacher', 'admin'] },
+  courses: { key: 'courses', label: 'Courses', area: 'core', audiences: ['student', 'teacher', 'admin'] },
+  courseDetail: { key: 'coursedetail', label: 'Course Detail', area: 'core', audiences: ['student', 'teacher', 'admin'], hidden: true },
+  lessonViewer: { key: 'lessonviewerpremium', label: 'Lesson Viewer', area: 'core', audiences: ['student', 'teacher', 'admin'], hidden: true },
+  reader: { key: 'reader', label: 'Smart Reader', area: 'core', audiences: ['student', 'teacher', 'admin'] },
+  feed: { key: 'feed', label: 'Community', area: 'core', audiences: ['student', 'teacher', 'admin'] },
+  search: { key: 'schoolsearch', label: 'Search', area: 'core', audiences: ['student', 'teacher', 'admin'] },
+  teach: { key: 'teach', label: 'Teach', area: 'teach', audiences: ['teacher', 'admin'] },
+  teachCourse: { key: 'teachcourse', label: 'Course Builder', area: 'teach', audiences: ['teacher', 'admin'], hidden: true },
+  teachLesson: { key: 'teachlesson', label: 'Lesson Editor', area: 'teach', audiences: ['teacher', 'admin'], hidden: true },
+  teachAnalytics: { key: 'teachanalytics', label: 'Teaching Analytics', area: 'teach', audiences: ['teacher', 'admin'] },
+  schoolAdmin: { key: 'schooladmin', label: 'School Admin', area: 'admin', audiences: ['admin'] },
+  schoolAnalytics: { key: 'schoolanalytics', label: 'School Analytics', area: 'admin', audiences: ['admin'] },
+  schoolLanding: { key: 'schoollanding', label: 'School Landing', area: 'marketing', audiences: ['public', 'student', 'teacher', 'admin'] },
+  schoolCourses: { key: 'schoolcourses', label: 'Course Catalog', area: 'marketing', audiences: ['public', 'student', 'teacher', 'admin'] },
+  courseSales: { key: 'coursesales', label: 'Course Sales', area: 'marketing', audiences: ['public', 'student', 'teacher', 'admin'] },
+  schoolCheckout: { key: 'schoolcheckout', label: 'Checkout', area: 'marketing', audiences: ['public', 'student', 'teacher', 'admin'] },
+  languageLearning: { key: 'languagelearning', label: 'Language Learning', area: 'labs', audiences: ['student', 'teacher', 'admin'] },
+  studySets: { key: 'studysets', label: 'Study Sets', area: 'labs', audiences: ['student', 'teacher', 'admin'] },
+  cohorts: { key: 'cohorts', label: 'Cohorts', area: 'labs', audiences: ['student', 'teacher', 'admin'] },
+  offline: { key: 'offline', label: 'Offline Mode', area: 'labs', audiences: ['student', 'teacher', 'admin'] },
+  schoolSelect: { key: 'schoolselect', label: 'School Select', area: 'system', audiences: ['student', 'teacher', 'admin'], hidden: true },
+  integrations: { key: 'integrations', label: 'Integrations', area: 'system', audiences: ['student', 'teacher', 'admin'] },
+  portfolio: { key: 'portfolio', label: 'Profile', area: 'system', audiences: ['student', 'teacher', 'admin'] },
+  vault: { key: 'vault', label: 'Vault', area: 'system', audiences: ['student', 'teacher', 'admin'] },
+  adminHardening: { key: 'adminhardening', label: 'Admin Hardening', area: 'admin', audiences: ['admin'] }
+};
+
+const getFeaturesByArea = (area) => Object.values(FEATURES).filter(f => f.area === area);
 
 export default function Vault() {
   const [searchQuery, setSearchQuery] = useState('');
