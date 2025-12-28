@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 import { ShoppingCart, Tag } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -65,17 +66,28 @@ export default function SchoolCheckout() {
 
   const createTransactionMutation = useMutation({
     mutationFn: async (data) => {
-      const transaction = await base44.entities.Transaction.create(data);
+      // Store referral code in metadata if present
+      const refCode = localStorage.getItem('referral_code');
+      const metadata = refCode ? { referral_code: refCode } : {};
+      
+      const transaction = await base44.entities.Transaction.create({
+        ...data,
+        metadata
+      });
       
       // Log event
-      await base44.entities.EventLog.create({
-        school_id: school.id,
-        user_email: user.email,
-        event_type: 'purchase_initiated',
-        entity_type: 'TRANSACTION',
-        entity_id: transaction.id,
-        metadata: { offer_id: offer.id }
-      });
+      try {
+        await base44.entities.EventLog.create({
+          school_id: school.id,
+          user_email: user.email,
+          event_type: 'purchase_initiated',
+          entity_type: 'TRANSACTION',
+          entity_id: transaction.id,
+          metadata: { offer_id: offer.id }
+        });
+      } catch (e) {
+        // EventLog optional
+      }
       
       return transaction;
     },
@@ -98,13 +110,14 @@ export default function SchoolCheckout() {
 
   const handleCheckout = () => {
     const finalAmount = Math.max(0, offer.price_cents - discount);
+    const discountAmount = discount;
     
     createTransactionMutation.mutate({
       school_id: school.id,
       user_email: user.email,
       offer_id: offer.id,
       amount_cents: finalAmount,
-      discount_cents: discount,
+      discount_cents: discountAmount,
       coupon_code: couponCode || undefined,
       provider: 'MANUAL',
       status: 'pending'

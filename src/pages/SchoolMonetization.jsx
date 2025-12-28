@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { DollarSign, Tag, ShoppingCart, TrendingUp } from 'lucide-react';
 import { toast } from 'sonner';
+import { createEntitlementsForPurchase } from '../components/utils/entitlements';
 
 export default function SchoolMonetization() {
   const [user, setUser] = useState(null);
