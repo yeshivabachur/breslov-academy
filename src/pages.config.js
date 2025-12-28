@@ -1,12 +1,15 @@
 import Achievements from './pages/Achievements';
 import AdaptiveLearning from './pages/AdaptiveLearning';
+import AdminHardening from './pages/AdminHardening';
 import AffiliateProgram from './pages/AffiliateProgram';
 import AlumniNetwork from './pages/AlumniNetwork';
 import Analytics from './pages/Analytics';
 import CareerPaths from './pages/CareerPaths';
 import Challenges from './pages/Challenges';
+import Cohorts from './pages/Cohorts';
 import Community from './pages/Community';
 import CourseDetail from './pages/CourseDetail';
+import CourseSales from './pages/CourseSales';
 import Courses from './pages/Courses';
 import Dashboard from './pages/Dashboard';
 import Downloads from './pages/Downloads';
@@ -14,66 +17,66 @@ import Events from './pages/Events';
 import Feed from './pages/Feed';
 import Forums from './pages/Forums';
 import HabitTracker from './pages/HabitTracker';
+import Integrations from './pages/Integrations';
 import LanguageLearning from './pages/LanguageLearning';
 import Languages from './pages/Languages';
 import Leaderboard from './pages/Leaderboard';
 import LearningPaths from './pages/LearningPaths';
+import LegacyMigration from './pages/LegacyMigration';
 import LessonViewer from './pages/LessonViewer';
+import LessonViewerPremium from './pages/LessonViewerPremium';
 import LiveStreams from './pages/LiveStreams';
 import Marketplace from './pages/Marketplace';
 import Mentorship from './pages/Mentorship';
 import Messages from './pages/Messages';
 import Microlearning from './pages/Microlearning';
 import MyProgress from './pages/MyProgress';
+import Offline from './pages/Offline';
 import Portfolio from './pages/Portfolio';
+import Reader from './pages/Reader';
 import RewardsShop from './pages/RewardsShop';
 import Scholarships from './pages/Scholarships';
+import SchoolAdmin from './pages/SchoolAdmin';
+import SchoolAnalytics from './pages/SchoolAnalytics';
+import SchoolCheckout from './pages/SchoolCheckout';
+import SchoolCourses from './pages/SchoolCourses';
+import SchoolJoin from './pages/SchoolJoin';
+import SchoolLanding from './pages/SchoolLanding';
+import SchoolMonetization from './pages/SchoolMonetization';
+import SchoolNew from './pages/SchoolNew';
+import SchoolSearch from './pages/SchoolSearch';
+import SchoolSelect from './pages/SchoolSelect';
+import SchoolThankYou from './pages/SchoolThankYou';
 import Skills from './pages/Skills';
 import StudyBuddies from './pages/StudyBuddies';
 import StudySet from './pages/StudySet';
+import StudySetPractice from './pages/StudySetPractice';
 import StudySets from './pages/StudySets';
 import Subscription from './pages/Subscription';
-import Tournaments from './pages/Tournaments';
-import oauth2callback from './pages/oauth2callback';
-import Integrations from './pages/Integrations';
-import Vault from './pages/Vault';
-import SchoolSelect from './pages/SchoolSelect';
-import SchoolNew from './pages/SchoolNew';
-import SchoolJoin from './pages/SchoolJoin';
-import SchoolAdmin from './pages/SchoolAdmin';
-import LegacyMigration from './pages/LegacyMigration';
-import SchoolMonetization from './pages/SchoolMonetization';
 import Teach from './pages/Teach';
-import TeachCourseNew from './pages/TeachCourseNew';
-import TeachCourse from './pages/TeachCourse';
-import TeachLesson from './pages/TeachLesson';
-import LessonViewerPremium from './pages/LessonViewerPremium';
-import Reader from './pages/Reader';
-import SchoolAnalytics from './pages/SchoolAnalytics';
 import TeachAnalytics from './pages/TeachAnalytics';
-import SchoolLanding from './pages/SchoolLanding';
-import SchoolCourses from './pages/SchoolCourses';
-import CourseSales from './pages/CourseSales';
-import SchoolCheckout from './pages/SchoolCheckout';
-import SchoolThankYou from './pages/SchoolThankYou';
-import SchoolSearch from './pages/SchoolSearch';
-import StudySetPractice from './pages/StudySetPractice';
-import Cohorts from './pages/Cohorts';
-import Offline from './pages/Offline';
-import AdminHardening from './pages/AdminHardening';
+import TeachCourse from './pages/TeachCourse';
+import TeachCourseNew from './pages/TeachCourseNew';
+import TeachLesson from './pages/TeachLesson';
+import Tournaments from './pages/Tournaments';
+import Vault from './pages/Vault';
+import oauth2callback from './pages/oauth2callback';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
     "Achievements": Achievements,
     "AdaptiveLearning": AdaptiveLearning,
+    "AdminHardening": AdminHardening,
     "AffiliateProgram": AffiliateProgram,
     "AlumniNetwork": AlumniNetwork,
     "Analytics": Analytics,
     "CareerPaths": CareerPaths,
     "Challenges": Challenges,
+    "Cohorts": Cohorts,
     "Community": Community,
     "CourseDetail": CourseDetail,
+    "CourseSales": CourseSales,
     "Courses": Courses,
     "Dashboard": Dashboard,
     "Downloads": Downloads,
@@ -81,53 +84,50 @@ export const PAGES = {
     "Feed": Feed,
     "Forums": Forums,
     "HabitTracker": HabitTracker,
+    "Integrations": Integrations,
     "LanguageLearning": LanguageLearning,
     "Languages": Languages,
     "Leaderboard": Leaderboard,
     "LearningPaths": LearningPaths,
+    "LegacyMigration": LegacyMigration,
     "LessonViewer": LessonViewer,
+    "LessonViewerPremium": LessonViewerPremium,
     "LiveStreams": LiveStreams,
     "Marketplace": Marketplace,
     "Mentorship": Mentorship,
     "Messages": Messages,
     "Microlearning": Microlearning,
     "MyProgress": MyProgress,
+    "Offline": Offline,
     "Portfolio": Portfolio,
+    "Reader": Reader,
     "RewardsShop": RewardsShop,
     "Scholarships": Scholarships,
+    "SchoolAdmin": SchoolAdmin,
+    "SchoolAnalytics": SchoolAnalytics,
+    "SchoolCheckout": SchoolCheckout,
+    "SchoolCourses": SchoolCourses,
+    "SchoolJoin": SchoolJoin,
+    "SchoolLanding": SchoolLanding,
+    "SchoolMonetization": SchoolMonetization,
+    "SchoolNew": SchoolNew,
+    "SchoolSearch": SchoolSearch,
+    "SchoolSelect": SchoolSelect,
+    "SchoolThankYou": SchoolThankYou,
     "Skills": Skills,
     "StudyBuddies": StudyBuddies,
     "StudySet": StudySet,
+    "StudySetPractice": StudySetPractice,
     "StudySets": StudySets,
     "Subscription": Subscription,
-    "Tournaments": Tournaments,
-    "oauth2callback": oauth2callback,
-    "Integrations": Integrations,
-    "Vault": Vault,
-    "SchoolSelect": SchoolSelect,
-    "SchoolNew": SchoolNew,
-    "SchoolJoin": SchoolJoin,
-    "SchoolAdmin": SchoolAdmin,
-    "LegacyMigration": LegacyMigration,
-    "SchoolMonetization": SchoolMonetization,
     "Teach": Teach,
-    "TeachCourseNew": TeachCourseNew,
-    "TeachCourse": TeachCourse,
-    "TeachLesson": TeachLesson,
-    "LessonViewerPremium": LessonViewerPremium,
-    "Reader": Reader,
-    "SchoolAnalytics": SchoolAnalytics,
     "TeachAnalytics": TeachAnalytics,
-    "SchoolLanding": SchoolLanding,
-    "SchoolCourses": SchoolCourses,
-    "CourseSales": CourseSales,
-    "SchoolCheckout": SchoolCheckout,
-    "SchoolThankYou": SchoolThankYou,
-    "SchoolSearch": SchoolSearch,
-    "StudySetPractice": StudySetPractice,
-    "Cohorts": Cohorts,
-    "Offline": Offline,
-    "AdminHardening": AdminHardening,
+    "TeachCourse": TeachCourse,
+    "TeachCourseNew": TeachCourseNew,
+    "TeachLesson": TeachLesson,
+    "Tournaments": Tournaments,
+    "Vault": Vault,
+    "oauth2callback": oauth2callback,
 }
 
 export const pagesConfig = {
