@@ -2,25 +2,24 @@ import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { BookOpen, Highlighter, StickyNote, Sparkles } from 'lucide-react';
-import { toast } from 'sonner';
+import { BookMarked, Search, Highlighter, FileText, Lock } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import { useLessonAccess } from '../components/hooks/useLessonAccess';
+import ProtectedContent from '../components/protection/ProtectedContent';
+import AccessGate from '../components/security/AccessGate';
+import AiTutorPanel from '../components/ai/AiTutorPanel';
 
 export default function Reader() {
   const [user, setUser] = useState(null);
   const [activeSchoolId, setActiveSchoolId] = useState(null);
+  const [activeSchool, setActiveSchool] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const [selectedText, setSelectedText] = useState(null);
-  const [showHighlightDialog, setShowHighlightDialog] = useState(false);
-  const [highlightNote, setHighlightNote] = useState('');
-  const [showExplainDialog, setShowExplainDialog] = useState(false);
   const queryClient = useQueryClient();
-
-  const urlParams = new URLSearchParams(window.location.search);
-  const textId = urlParams.get('id');
 
   useEffect(() => {
     const loadUser = async () => {
@@ -30,6 +29,11 @@ export default function Reader() {
         
         const schoolId = localStorage.getItem('active_school_id');
         setActiveSchoolId(schoolId);
+        
+        if (schoolId) {
+          const schools = await base44.entities.School.filter({ id: schoolId });
+          if (schools[0]) setActiveSchool(schools[0]);
+        }
       } catch (error) {
         base44.auth.redirectToLogin();
       }
@@ -37,258 +41,253 @@ export default function Reader() {
     loadUser();
   }, []);
 
-  const { data: text } = useQuery({
-    queryKey: ['text', textId],
+  const { data: texts = [] } = useQuery({
+    queryKey: ['texts', activeSchoolId, searchQuery],
     queryFn: async () => {
-      const texts = await base44.entities.Text.filter({ text_id: textId });
-      return texts[0];
+      const filter = { school_id: activeSchoolId };
+      if (searchQuery) {
+        // Note: Base44 doesn't support full-text search, so we fetch all and filter client-side
+        // In production, implement server-side search
+      }
+      return base44.entities.Text.filter(filter, '-created_date', 50);
     },
-    enabled: !!textId
+    enabled: !!activeSchoolId
   });
 
   const { data: highlights = [] } = useQuery({
-    queryKey: ['highlights', textId, user?.email],
+    queryKey: ['highlights', user?.email, activeSchoolId],
     queryFn: () => base44.entities.Highlight.filter({
-      text_id: textId,
+      school_id: activeSchoolId,
       user_email: user.email
     }),
-    enabled: !!textId && !!user
+    enabled: !!user && !!activeSchoolId
   });
 
-  const createHighlightMutation = useMutation({
-    mutationFn: (data) => base44.entities.Highlight.create(data),
+  const highlightMutation = useMutation({
+    mutationFn: (data) => base44.entities.Highlight.create({
+      school_id: activeSchoolId,
+      user_email: user.email,
+      ...data
+    }),
     onSuccess: () => {
       queryClient.invalidateQueries(['highlights']);
-      setShowHighlightDialog(false);
-      setHighlightNote('');
-      toast.success('Highlight saved!');
     }
   });
 
-  const requestExplanationMutation = useMutation({
-    mutationFn: (data) => base44.entities.ExplanationRequest.create(data),
-    onSuccess: () => {
-      setShowExplainDialog(false);
-      toast.success('Explanation request saved! Coming soon...');
-    }
-  });
+  const filteredTexts = searchQuery
+    ? texts.filter(t => 
+        t.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        t.content?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : texts;
 
-  const handleTextSelection = () => {
-    const selection = window.getSelection();
-    const selectedStr = selection.toString().trim();
+  // Access control for text content
+  const getTextAccess = (text) => {
+    if (!text.course_id) return { accessLevel: 'FULL', canCopy: true, canDownload: true };
     
-    if (selectedStr.length > 0) {
-      setSelectedText({
-        text: selectedStr,
-        start: 0, // Simplified - in production would calculate actual indices
-        end: selectedStr.length
-      });
-    }
+    // Use lesson access hook logic (texts tied to courses/lessons)
+    return useLessonAccess(text.course_id, text.lesson_id, user, activeSchoolId);
   };
-
-  const handleHighlight = () => {
-    if (!selectedText) return;
-    
-    createHighlightMutation.mutate({
-      school_id: activeSchoolId,
-      user_email: user.email,
-      text_id: textId,
-      start_idx: selectedText.start,
-      end_idx: selectedText.end,
-      color: 'yellow',
-      note: highlightNote,
-      visibility: 'PRIVATE'
-    });
-  };
-
-  const handleExplain = () => {
-    if (!selectedText) return;
-    
-    requestExplanationMutation.mutate({
-      school_id: activeSchoolId,
-      user_email: user.email,
-      text_id: textId,
-      excerpt: selectedText.text
-    });
-  };
-
-  if (!text) {
-    return (
-      <div className="text-center py-20">
-        <BookOpen className="w-16 h-16 text-slate-400 mx-auto mb-4 animate-pulse" />
-        <p className="text-slate-600">Loading text...</p>
-      </div>
-    );
-  }
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-amber-900 via-amber-800 to-amber-900 rounded-xl p-8 shadow-2xl">
-        <div className="flex items-center space-x-2 mb-2">
-          <BookOpen className="w-6 h-6 text-amber-300" />
-          <p className="text-amber-300 text-sm font-medium">{text.category || 'Sacred Text'}</p>
+    <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="mb-8">
+        <div className="flex items-center mb-4">
+          <BookMarked className="w-8 h-8 text-blue-600 mr-3" />
+          <h1 className="text-3xl font-bold">Smart Reader</h1>
         </div>
-        <h1 className="text-4xl font-bold text-white mb-2">{text.title}</h1>
-        {text.source_ref && (
-          <p className="text-amber-200">{text.source_ref}</p>
-        )}
+        <p className="text-slate-600 mb-6">
+          Read, highlight, and study sacred texts with AI-powered insights
+        </p>
+
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+          <Input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search texts..."
+            className="pl-10"
+          />
+        </div>
       </div>
 
-      {/* Selection Actions */}
-      {selectedText && (
-        <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-slate-900 rounded-lg shadow-2xl p-4 flex items-center space-x-2 z-50">
-          <Button size="sm" onClick={() => setShowHighlightDialog(true)}>
-            <Highlighter className="w-4 h-4 mr-2" />
-            Highlight
-          </Button>
-          <Button size="sm" variant="outline" onClick={() => setShowExplainDialog(true)}>
-            <Sparkles className="w-4 h-4 mr-2" />
-            Explain
-          </Button>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Text Library */}
+        <div className="lg:col-span-1">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Text Library</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {filteredTexts.map((text) => {
+                  const access = getTextAccess(text);
+                  const isLocked = access.accessLevel === 'LOCKED';
+                  
+                  return (
+                    <button
+                      key={text.id}
+                      onClick={() => !isLocked && setSelectedText(text)}
+                      disabled={isLocked}
+                      className={`w-full text-left p-3 rounded-lg border transition-all ${
+                        selectedText?.id === text.id
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                      } ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="font-medium text-sm">{text.title}</div>
+                          {text.title_hebrew && (
+                            <div className="text-xs text-amber-700 mt-1" dir="rtl">
+                              {text.title_hebrew}
+                            </div>
+                          )}
+                        </div>
+                        {isLocked && <Lock className="w-4 h-4 text-slate-400 flex-shrink-0" />}
+                      </div>
+                      {text.source && (
+                        <div className="text-xs text-slate-500 mt-1">{text.source}</div>
+                      )}
+                    </button>
+                  );
+                })}
+                
+                {filteredTexts.length === 0 && (
+                  <p className="text-slate-500 text-sm text-center py-8">
+                    No texts found
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </div>
-      )}
 
-      {/* Split View */}
-      <Tabs defaultValue="split" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="split">Split View</TabsTrigger>
-          <TabsTrigger value="english">English Only</TabsTrigger>
-          <TabsTrigger value="hebrew">Hebrew Only</TabsTrigger>
-        </TabsList>
+        {/* Reader View */}
+        <div className="lg:col-span-2">
+          {selectedText ? (
+            (() => {
+              const access = getTextAccess(selectedText);
+              
+              if (access.accessLevel === 'LOCKED') {
+                return (
+                  <AccessGate
+                    courseId={selectedText.course_id}
+                    schoolSlug={activeSchool?.slug}
+                    message="This text is only available to enrolled students"
+                  />
+                );
+              }
 
-        <TabsContent value="split">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* English */}
-            <Card>
-              <CardHeader>
-                <CardTitle>English</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div 
-                  onMouseUp={handleTextSelection}
-                  className="prose prose-slate max-w-none leading-loose text-lg"
-                >
-                  {text.english || 'No English translation available'}
+              const contentToShow = access.accessLevel === 'PREVIEW' && selectedText.content
+                ? selectedText.content.substring(0, access.maxPreviewChars || 1500) + '...'
+                : selectedText.content;
+
+              return (
+                <div className="space-y-6">
+                  <Card>
+                    <CardHeader className="bg-gradient-to-r from-slate-50 to-blue-50">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <CardTitle>{selectedText.title}</CardTitle>
+                          {selectedText.title_hebrew && (
+                            <p className="text-amber-700 mt-2" dir="rtl">{selectedText.title_hebrew}</p>
+                          )}
+                        </div>
+                        {access.accessLevel === 'PREVIEW' && (
+                          <Badge className="bg-amber-500">Preview</Badge>
+                        )}
+                      </div>
+                      {selectedText.source && (
+                        <p className="text-sm text-slate-600 mt-2">{selectedText.source}</p>
+                      )}
+                    </CardHeader>
+                    <CardContent className="pt-6">
+                      <ProtectedContent
+                        policy={access.policy}
+                        userEmail={user?.email}
+                        schoolName={activeSchool?.name}
+                        isEntitled={access.accessLevel === 'FULL'}
+                      >
+                        <Tabs defaultValue="text">
+                          <TabsList>
+                            <TabsTrigger value="text">
+                              <FileText className="w-4 h-4 mr-2" />
+                              Text
+                            </TabsTrigger>
+                            <TabsTrigger value="highlights">
+                              <Highlighter className="w-4 h-4 mr-2" />
+                              My Highlights
+                            </TabsTrigger>
+                          </TabsList>
+
+                          <TabsContent value="text" className="mt-6">
+                            <div className="prose prose-slate max-w-none">
+                              <ReactMarkdown>
+                                {contentToShow || 'No content available'}
+                              </ReactMarkdown>
+                            </div>
+                            
+                            {access.accessLevel === 'PREVIEW' && (
+                              <div className="mt-8 p-4 bg-amber-50 border border-amber-200 rounded-lg text-center">
+                                <p className="text-amber-800 mb-3">Preview limit reached</p>
+                                <Button className="bg-amber-500 hover:bg-amber-600">
+                                  Purchase Full Access
+                                </Button>
+                              </div>
+                            )}
+                          </TabsContent>
+
+                          <TabsContent value="highlights" className="mt-6">
+                            <div className="space-y-3">
+                              {highlights
+                                .filter(h => h.text_id === selectedText.id)
+                                .map((highlight) => (
+                                  <Card key={highlight.id} className="bg-amber-50">
+                                    <CardContent className="p-4">
+                                      <p className="text-sm italic mb-2">"{highlight.highlighted_text}"</p>
+                                      {highlight.note && (
+                                        <p className="text-xs text-slate-600">{highlight.note}</p>
+                                      )}
+                                    </CardContent>
+                                  </Card>
+                                ))}
+                              
+                              {highlights.filter(h => h.text_id === selectedText.id).length === 0 && (
+                                <p className="text-slate-500 text-sm text-center py-8">
+                                  No highlights yet. Select text to highlight.
+                                </p>
+                              )}
+                            </div>
+                          </TabsContent>
+                        </Tabs>
+                      </ProtectedContent>
+                    </CardContent>
+                  </Card>
+
+                  {/* AI Tutor */}
+                  <AiTutorPanel
+                    contextType="TEXT"
+                    contextId={selectedText.id}
+                    contextTitle={selectedText.title}
+                    contextContent={contentToShow}
+                    user={user}
+                    schoolId={activeSchoolId}
+                  />
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* Hebrew */}
-            <Card>
-              <CardHeader>
-                <CardTitle>עברית</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div 
-                  onMouseUp={handleTextSelection}
-                  className="prose prose-slate max-w-none leading-loose text-lg text-right"
-                  dir="rtl"
-                  style={{ fontFamily: "'Frank Ruhl Libre', serif" }}
-                >
-                  {text.hebrew || 'אין תרגום עברי זמין'}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="english">
-          <Card>
-            <CardContent className="p-8">
-              <div 
-                onMouseUp={handleTextSelection}
-                className="prose prose-slate prose-lg max-w-none"
-              >
-                {text.english || 'No English translation available'}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="hebrew">
-          <Card>
-            <CardContent className="p-8">
-              <div 
-                onMouseUp={handleTextSelection}
-                className="prose prose-slate prose-lg max-w-none text-right"
-                dir="rtl"
-                style={{ fontFamily: "'Frank Ruhl Libre', serif" }}
-              >
-                {text.hebrew || 'אין תרגום עברי זמין'}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-
-      {/* Highlights Sidebar */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <StickyNote className="w-5 h-5 mr-2" />
-            My Highlights & Notes
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {highlights.length === 0 ? (
-            <p className="text-sm text-slate-500 text-center py-4">No highlights yet</p>
+              );
+            })()
           ) : (
-            <div className="space-y-3">
-              {highlights.map((highlight) => (
-                <div key={highlight.id} className="p-3 bg-amber-50 rounded-lg border border-amber-200">
-                  <p className="text-sm font-medium text-slate-900">{highlight.note || 'Highlighted'}</p>
-                  <Badge variant="outline" className="mt-2">
-                    {highlight.visibility}
-                  </Badge>
-                </div>
-              ))}
-            </div>
+            <Card>
+              <CardContent className="p-12 text-center">
+                <BookMarked className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                <p className="text-slate-500">Select a text to begin reading</p>
+              </CardContent>
+            </Card>
           )}
-        </CardContent>
-      </Card>
-
-      {/* Dialogs */}
-      <Dialog open={showHighlightDialog} onOpenChange={setShowHighlightDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add Highlight</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="p-3 bg-amber-50 rounded border border-amber-200">
-              <p className="text-sm text-slate-700">{selectedText?.text}</p>
-            </div>
-            <Textarea
-              value={highlightNote}
-              onChange={(e) => setHighlightNote(e.target.value)}
-              placeholder="Add a note (optional)"
-              rows={3}
-            />
-            <Button onClick={handleHighlight} className="w-full">
-              Save Highlight
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={showExplainDialog} onOpenChange={setShowExplainDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Explain This Text</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="p-3 bg-slate-50 rounded border">
-              <p className="text-sm text-slate-700">{selectedText?.text}</p>
-            </div>
-            <p className="text-sm text-slate-600">
-              AI explanations are coming soon! We've saved your request.
-            </p>
-            <Button onClick={handleExplain} className="w-full">
-              Save Request
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      </div>
     </div>
   );
 }

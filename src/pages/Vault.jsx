@@ -5,38 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Archive, Search } from 'lucide-react';
-
-// Inline feature registry to avoid import issues
-const FEATURES = {
-  dashboard: { key: 'dashboard', label: 'Dashboard', area: 'core', audiences: ['student', 'teacher', 'admin'] },
-  courses: { key: 'courses', label: 'Courses', area: 'core', audiences: ['student', 'teacher', 'admin'] },
-  courseDetail: { key: 'coursedetail', label: 'Course Detail', area: 'core', audiences: ['student', 'teacher', 'admin'], hidden: true },
-  lessonViewer: { key: 'lessonviewerpremium', label: 'Lesson Viewer', area: 'core', audiences: ['student', 'teacher', 'admin'], hidden: true },
-  reader: { key: 'reader', label: 'Smart Reader', area: 'core', audiences: ['student', 'teacher', 'admin'] },
-  feed: { key: 'feed', label: 'Community', area: 'core', audiences: ['student', 'teacher', 'admin'] },
-  search: { key: 'schoolsearch', label: 'Search', area: 'core', audiences: ['student', 'teacher', 'admin'] },
-  teach: { key: 'teach', label: 'Teach', area: 'teach', audiences: ['teacher', 'admin'] },
-  teachCourse: { key: 'teachcourse', label: 'Course Builder', area: 'teach', audiences: ['teacher', 'admin'], hidden: true },
-  teachLesson: { key: 'teachlesson', label: 'Lesson Editor', area: 'teach', audiences: ['teacher', 'admin'], hidden: true },
-  teachAnalytics: { key: 'teachanalytics', label: 'Teaching Analytics', area: 'teach', audiences: ['teacher', 'admin'] },
-  schoolAdmin: { key: 'schooladmin', label: 'School Admin', area: 'admin', audiences: ['admin'] },
-  schoolAnalytics: { key: 'schoolanalytics', label: 'School Analytics', area: 'admin', audiences: ['admin'] },
-  schoolLanding: { key: 'schoollanding', label: 'School Landing', area: 'marketing', audiences: ['public', 'student', 'teacher', 'admin'] },
-  schoolCourses: { key: 'schoolcourses', label: 'Course Catalog', area: 'marketing', audiences: ['public', 'student', 'teacher', 'admin'] },
-  courseSales: { key: 'coursesales', label: 'Course Sales', area: 'marketing', audiences: ['public', 'student', 'teacher', 'admin'] },
-  schoolCheckout: { key: 'schoolcheckout', label: 'Checkout', area: 'marketing', audiences: ['public', 'student', 'teacher', 'admin'] },
-  languageLearning: { key: 'languagelearning', label: 'Language Learning', area: 'labs', audiences: ['student', 'teacher', 'admin'] },
-  studySets: { key: 'studysets', label: 'Study Sets', area: 'labs', audiences: ['student', 'teacher', 'admin'] },
-  cohorts: { key: 'cohorts', label: 'Cohorts', area: 'labs', audiences: ['student', 'teacher', 'admin'] },
-  offline: { key: 'offline', label: 'Offline Mode', area: 'labs', audiences: ['student', 'teacher', 'admin'] },
-  schoolSelect: { key: 'schoolselect', label: 'School Select', area: 'system', audiences: ['student', 'teacher', 'admin'], hidden: true },
-  integrations: { key: 'integrations', label: 'Integrations', area: 'system', audiences: ['student', 'teacher', 'admin'] },
-  portfolio: { key: 'portfolio', label: 'Profile', area: 'system', audiences: ['student', 'teacher', 'admin'] },
-  vault: { key: 'vault', label: 'Vault', area: 'system', audiences: ['student', 'teacher', 'admin'] },
-  adminHardening: { key: 'adminhardening', label: 'Admin Hardening', area: 'admin', audiences: ['admin'] }
-};
-
-const getFeaturesByArea = (area) => Object.values(FEATURES).filter(f => f.area === area);
+import { FEATURES, FEATURE_AREAS, getFeaturesByArea } from '../components/config/features';
 
 export default function Vault() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -47,14 +16,7 @@ export default function Vault() {
     f.area.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const areas = {
-    core: { label: 'Core Learning', color: 'bg-blue-100 text-blue-800' },
-    teach: { label: 'Teaching Tools', color: 'bg-green-100 text-green-800' },
-    admin: { label: 'Administration', color: 'bg-purple-100 text-purple-800' },
-    marketing: { label: 'Marketing & Sales', color: 'bg-amber-100 text-amber-800' },
-    labs: { label: 'Labs & Experiments', color: 'bg-pink-100 text-pink-800' },
-    system: { label: 'System & Utilities', color: 'bg-slate-100 text-slate-800' }
-  };
+  const areas = FEATURE_AREAS;
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
@@ -126,14 +88,19 @@ export default function Vault() {
                 {areaFeatures.map((feature) => (
                   <Link 
                     key={feature.key} 
-                    to={createPageUrl(feature.key)}
-                    className="p-3 border rounded-lg hover:bg-slate-50 hover:border-slate-300 transition-all"
+                    to={createPageUrl(feature.route || feature.key)}
+                    className="p-3 border rounded-lg hover:bg-slate-50 hover:border-slate-300 transition-all group"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-medium">{feature.label}</span>
-                      {feature.hidden && (
-                        <Badge variant="outline" className="text-xs">Hidden</Badge>
-                      )}
+                      <span className="font-medium group-hover:text-blue-600 transition-colors">{feature.label}</span>
+                      <div className="flex items-center space-x-1">
+                        {feature.hidden && (
+                          <Badge variant="outline" className="text-xs">Hidden</Badge>
+                        )}
+                        {feature.vaultOnly && (
+                          <Badge variant="secondary" className="text-xs">Vault</Badge>
+                        )}
+                      </div>
                     </div>
                     <div className="text-xs text-slate-500 mt-1">
                       {feature.audiences.join(', ')}
