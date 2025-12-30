@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Building2, Users, DollarSign, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { createPageUrl } from '@/utils';
+import VirtualizedList from '@/components/system/VirtualizedList';
 
 // GLOBAL ADMIN LIST (env var or hardcoded)
 const GLOBAL_ADMINS = (import.meta.env.VITE_GLOBAL_ADMINS || 'admin@breslov.com').split(',').map(e => e.trim());
@@ -108,6 +109,25 @@ export default function NetworkAdmin() {
   }
 
   const totalRevenue = allTransactions.reduce((sum, t) => sum + (t.amount_cents || 0), 0);
+
+  // Precompute per-school aggregates for O(1) lookups during render.
+  const membersCountBySchool = useMemo(() => {
+    const map = new Map();
+    for (const m of allMembers) {
+      if (!m?.school_id) continue;
+      map.set(m.school_id, (map.get(m.school_id) || 0) + 1);
+    }
+    return map;
+  }, [allMembers]);
+
+  const revenueCentsBySchool = useMemo(() => {
+    const map = new Map();
+    for (const t of allTransactions) {
+      if (!t?.school_id) continue;
+      map.set(t.school_id, (map.get(t.school_id) || 0) + (t.amount_cents || 0));
+    }
+    return map;
+  }, [allTransactions]);
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 space-y-6">
@@ -219,15 +239,18 @@ export default function NetworkAdmin() {
           <CardTitle>All Schools</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            {allSchools.map((school) => {
-              const schoolMembers = allMembers.filter(m => m.school_id === school.id);
-              const schoolRevenue = allTransactions
-                .filter(t => t.school_id === school.id)
-                .reduce((sum, t) => sum + (t.amount_cents || 0), 0);
+          <VirtualizedList
+            items={allSchools}
+            initialCount={24}
+            chunkSize={24}
+            className="space-y-3"
+            getKey={(s) => s.id}
+            renderItem={(school) => {
+              const memberCount = membersCountBySchool.get(school.id) || 0;
+              const schoolRevenue = revenueCentsBySchool.get(school.id) || 0;
 
               return (
-                <div key={school.id} className="p-4 border rounded-lg">
+                <div className="p-4 border rounded-lg">
                   <div className="flex items-start justify-between mb-2">
                     <div>
                       <h4 className="font-bold">{school.name}</h4>
@@ -238,7 +261,7 @@ export default function NetworkAdmin() {
                   <div className="grid grid-cols-3 gap-4 mt-3 text-sm">
                     <div>
                       <p className="text-slate-600">Members</p>
-                      <p className="font-semibold">{schoolMembers.length}</p>
+                      <p className="font-semibold">{memberCount}</p>
                     </div>
                     <div>
                       <p className="text-slate-600">Revenue</p>
@@ -251,8 +274,8 @@ export default function NetworkAdmin() {
                   </div>
                 </div>
               );
-            })}
-          </div>
+            }}
+          />
         </CardContent>
       </Card>
     </div>

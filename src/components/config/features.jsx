@@ -50,6 +50,10 @@ export const FEATURES = {
   
   // LABS
   languageLearning: { key: 'LanguageLearning', label: 'Languages', route: '/languagelearning', area: 'labs', audiences: ['student', 'teacher', 'admin'], icon: 'Globe' },
+  // Router parity: pages.config includes /languages (legacy) and additional labs pages.
+  languages: { key: 'Languages', label: 'Languages (Legacy)', route: '/languages', area: 'labs', audiences: ['student', 'teacher', 'admin'], icon: 'Globe', vaultOnly: true },
+  adaptiveLearning: { key: 'AdaptiveLearning', label: 'Adaptive Learning', route: '/adaptivelearning', area: 'labs', audiences: ['student', 'teacher', 'admin'], icon: 'Brain', vaultOnly: true },
+  alumniNetwork: { key: 'AlumniNetwork', label: 'Alumni Network', route: '/alumninetwork', area: 'labs', audiences: ['student', 'teacher', 'admin'], icon: 'Network', vaultOnly: true },
   studySets: { key: 'StudySets', label: 'Study Sets', route: '/studysets', area: 'labs', audiences: ['student', 'teacher', 'admin'], icon: 'Layers' },
   studySetNew: { key: 'StudySetNew', label: 'New Study Set', route: '/studysetnew', area: 'labs', audiences: ['student', 'teacher', 'admin'], hidden: true },
   studySetPractice: { key: 'StudySetPractice', label: 'Practice', route: '/studysetpractice', area: 'labs', audiences: ['student', 'teacher', 'admin'], hidden: true },
