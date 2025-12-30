@@ -1,358 +1,366 @@
-import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
-import { Link } from 'react-router-dom';
-import { createPageUrl } from '@/utils';
-import { FEATURES, FEATURE_AREAS } from '../components/config/features';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useEffect, useMemo, useState } from 'react';
+import { FEATURES, getAllRoutes } from '@/components/config/features';
+import { useSession } from '@/components/hooks/useSession';
+import { isSchoolAdmin } from '@/components/auth/roles';
+import PageShell from '@/components/ui/PageShell';
+import GlassCard from '@/components/ui/GlassCard';
+import SectionHeader from '@/components/ui/SectionHeader';
+import StatusBadge from '@/components/ui/StatusBadge';
+import EmptyState from '@/components/ui/EmptyState';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { CheckCircle, XCircle, AlertTriangle, Archive } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { AlertTriangle, CheckCircle2, ClipboardCopy, Download, RefreshCw } from 'lucide-react';
+
+/**
+ * /integrity (admin-only)
+ *
+ * Purpose:
+ * - Provide a fast, "red flag" diagnostics page for tenancy/security/nav regressions.
+ * - Keep checks best-effort: warnings not crashes.
+ *
+ * NOTE: This page intentionally does not fetch sensitive content.
+ * It uses runtime checks + small static scans (source-as-text) for regression patterns.
+ */
+
+function safeJson(value) {
+  try {
+    return JSON.stringify(value, null, 2);
+  } catch {
+    return JSON.stringify({ error: 'Could not serialize report' }, null, 2);
+  }
+}
+
+function iconFor(ok) {
+  return ok ? <CheckCircle2 className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />;
+}
+
+function statusFor(ok) {
+  return ok ? 'good' : 'warn';
+}
+
+function scanSchoolSearch(source) {
+  const lessonContentLeak = /scoped(Filter|List)\(\s*['"]Lesson['"][\s\S]*?\{[\s\S]*?\b(content|body)\b/m.test(source)
+    || /entities\.Lesson\.filter\(\{[\s\S]*?\b(content|body)\b/m.test(source);
+  const lessonLimitPresent = /scoped(Filter|List)\(\s*['"]Lesson['"][\s\S]*?,\s*(\d+)\s*\)/m.test(source)
+    || /entities\.Lesson\.filter\([\s\S]*?,\s*(\d+)\s*\)/m.test(source);
+  return {
+    key: 'scan_school_search',
+    label: 'Search leakage scan (SchoolSearch)',
+    ok: !lessonContentLeak && lessonLimitPresent,
+    detail: [
+      lessonContentLeak ? '❌ SchoolSearch appears to filter lessons by content/body (paid text leakage risk).' : '✅ No lesson content/body filter detected.',
+      lessonLimitPresent ? '✅ Lesson query includes an explicit limit.' : '⚠️ Lesson query missing explicit limit (performance risk).'
+    ]
+  };
+}
+
+function scanDownloads(source) {
+  const fileUrlReferenced = /\bfile_url\b/.test(source);
+  return {
+    key: 'scan_downloads',
+    label: 'Download URL exposure scan (Downloads)',
+    ok: !fileUrlReferenced,
+    detail: [
+      !fileUrlReferenced
+        ? '✅ No direct file_url references detected (should be retrieved via getSecureDownloadUrl).'
+        : '⚠️ file_url appears in Downloads page source. Verify it is NOT rendered/exposed before auth checks.'
+    ]
+  };
+}
+
+function scanReader(source) {
+  // Reader must NOT fetch all protected texts. We expect an entitlement-gated $or filter.
+  const hasEntitlementGate = /\$or\s*:\s*\[/.test(source) && /\$in/.test(source) && /allowedCourseIds/.test(source);
+  const textLimitPresent = /scopedFilter\('Text'[\s\S]*?,\s*50\)/m.test(source);
+  return {
+    key: 'scan_reader',
+    label: 'Reader text fetch scan (Reader)',
+    ok: hasEntitlementGate && textLimitPresent,
+    detail: [
+      hasEntitlementGate
+        ? '✅ Reader appears to gate Text retrieval by entitlements ($or + $in).' 
+        : '⚠️ Reader may fetch protected texts without entitlement gating. Gate at query-time to avoid client-side leakage.',
+      textLimitPresent ? '✅ Reader uses explicit limit for Text queries.' : '⚠️ Reader Text query missing explicit limit.'
+    ]
+  };
+}
+
+function scanScoped(source) {
+  const hasDownloadScoped = /['"]Download['"]/.test(source);
+  const hasBundleScoped = /['"]Bundle['"]/.test(source);
+  const hasAnalyticsScoped = /['"]AnalyticsEvent['"]/.test(source);
+  return {
+    key: 'scan_scoped',
+    label: 'Tenancy scope list scan (scoped module)',
+    ok: hasDownloadScoped && hasBundleScoped && hasAnalyticsScoped,
+    detail: [
+      hasDownloadScoped ? '✅ Download is in SCHOOL_SCOPED_ENTITIES.' : '⚠️ Download missing from SCHOOL_SCOPED_ENTITIES (tenant leakage risk).',
+      hasBundleScoped ? '✅ Bundle is in SCHOOL_SCOPED_ENTITIES.' : '⚠️ Bundle missing from SCHOOL_SCOPED_ENTITIES.',
+      hasAnalyticsScoped ? '✅ AnalyticsEvent is in SCHOOL_SCOPED_ENTITIES.' : '⚠️ AnalyticsEvent missing from SCHOOL_SCOPED_ENTITIES.'
+    ]
+  };
+}
 
 export default function Integrity() {
-  const [user, setUser] = useState(null);
-  const [membership, setMembership] = useState(null);
-  const [activeSchoolId, setActiveSchoolId] = useState(null);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [checks, setChecks] = useState({
-    featuresCount: 0,
-    routesCount: 0,
-    areasCount: 0,
-    tenancyOk: false,
-    sessionOk: false,
-    registryDeduplicated: false,
-    oauthSecure: false,
-    scopingCorrect: false,
-    protectionEnforced: false,
-    monetizationReady: false,
-    dripSupported: false,
-    certificatesReady: false,
-    attributionTracking: false,
-    idempotencyEnforced: false,
-    dataLevelProtection: false,
-    rbacNormalized: false,
-    staffManagement: false,
-    auditExpanded: false
-  });
+  const session = useSession();
+  const { user, role, activeSchoolId, isLoading } = session;
+
+  const [sources, setSources] = useState(null);
+  const [reloading, setReloading] = useState(false);
+  const [reloadNonce, setReloadNonce] = useState(0);
+
+  const canView = !!user && isSchoolAdmin(role);
 
   useEffect(() => {
-    const loadUser = async () => {
+    if (!canView) return;
+    let alive = true;
+
+    const loadSources = async () => {
       try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-        
-        const schoolId = localStorage.getItem('active_school_id');
-        setActiveSchoolId(schoolId);
-        
-        if (schoolId) {
-          const memberships = await base44.entities.SchoolMembership.filter({
-            school_id: schoolId,
-            user_email: currentUser.email
-          });
-          
-          if (memberships[0]) {
-            setMembership(memberships[0]);
-            setIsAdmin(memberships[0].role === 'OWNER' || memberships[0].role === 'ADMIN');
-          }
-        }
-        
-        runChecks(schoolId);
-      } catch (error) {
-        base44.auth.redirectToLogin();
+        setReloading(true);
+        const [schoolSearch, downloads, reader, scoped] = await Promise.all([
+          import('./SchoolSearch.jsx?raw'),
+          import('./Downloads.jsx?raw'),
+          import('./Reader.jsx?raw'),
+          import('../components/api/scoped.jsx?raw')
+        ]);
+        if (!alive) return;
+        setSources({
+          schoolSearch: schoolSearch.default,
+          downloads: downloads.default,
+          reader: reader.default,
+          scoped: scoped.default
+        });
+      } catch (e) {
+        console.warn('Integrity scans: failed to load source modules', e);
+        if (!alive) return;
+        setSources({ error: String(e) });
+      } finally {
+        if (alive) setReloading(false);
       }
     };
-    loadUser();
+
+    loadSources();
+    return () => {
+      alive = false;
+    };
+  }, [canView, reloadNonce]);
+
+  const registryStats = useMemo(() => {
+    const featureCount = Object.keys(FEATURES || {}).length;
+    const routes = getAllRoutes();
+    const duplicates = routes.filter((r, idx) => routes.indexOf(r) !== idx);
+    return {
+      featureCount,
+      routeCount: routes.length,
+      duplicates: Array.from(new Set(duplicates))
+    };
   }, []);
 
-  const runChecks = (schoolId) => {
-    const featuresCount = Object.keys(FEATURES).length;
-    const routesCount = Object.values(FEATURES).map(f => f.route).filter(Boolean).length;
-    const areasCount = Object.keys(FEATURE_AREAS).length;
-    const tenancyOk = !!schoolId;
-    const sessionOk = !!user;
-    
-    // Registry deduplication check
-    const registryDeduplicated = true; // components/config/features.js is canonical
-    
-    // OAuth security check
-    const oauthSecure = true; // CLIENT_SECRET removed, uses env vars
-    
-    // Scoping check
-    const scopingCorrect = true; // scopedFilter injects school_id
-    
-    // Protection check
-    const protectionEnforced = true; // LessonViewer, Premium, Reader use useLessonAccess + AccessGate
-    
-    // Monetization check
-    const monetizationReady = true; // Bundles, subscriptions, coupons, affiliates
-    
-    // v8.4 checks
-    const dripSupported = true;
-    const certificatesReady = true;
-    const attributionTracking = true;
-    const idempotencyEnforced = true;
-    
-    // v8.5 checks
-    const dataLevelProtection = true; // materialsEngine + secure download retrieval
-    const rbacNormalized = true; // roles.js + admin gates
-    const staffManagement = true; // StaffInvite + SchoolStaff + InviteAccept
-    const auditExpanded = true; // AuditLogViewer + expanded event types
+  const scans = useMemo(() => {
+    if (!sources || sources.error) return [];
+    return [
+      scanSchoolSearch(sources.schoolSearch),
+      scanDownloads(sources.downloads),
+      scanReader(sources.reader),
+      scanScoped(sources.scoped)
+    ];
+  }, [sources]);
 
-    setChecks({
-      featuresCount,
-      routesCount,
-      areasCount,
-      tenancyOk,
-      sessionOk,
-      registryDeduplicated,
-      oauthSecure,
-      scopingCorrect,
-      protectionEnforced,
-      monetizationReady
-    });
+  const coreChecks = useMemo(() => {
+    // IMPORTANT: Keep these checks lightweight and non-invasive.
+    const hasRegistry = !!FEATURES && Object.keys(FEATURES).length > 30;
+    const hasActiveSchool = !!activeSchoolId;
+    const hasVault = Object.values(FEATURES).some((f) => f?.key === 'Vault');
+    const hasIntegrity = Object.values(FEATURES).some((f) => f?.key === 'Integrity');
+
+    return [
+      {
+        key: 'registry_present',
+        label: 'Feature Registry loaded',
+        ok: hasRegistry,
+        detail: [`FEATURES count: ${Object.keys(FEATURES || {}).length}`]
+      },
+      {
+        key: 'vault_registered',
+        label: 'Vault registered',
+        ok: hasVault,
+        detail: [hasVault ? '✅ Vault is present in registry.' : '❌ Vault missing from registry.']
+      },
+      {
+        key: 'integrity_registered',
+        label: 'Integrity registered',
+        ok: hasIntegrity,
+        detail: [hasIntegrity ? '✅ Integrity is present in registry.' : '❌ Integrity missing from registry.']
+      },
+      {
+        key: 'active_school',
+        label: 'Active school selected',
+        ok: hasActiveSchool,
+        detail: [hasActiveSchool ? `activeSchoolId: ${activeSchoolId}` : '⚠️ No activeSchoolId found. Some scoped pages may fail.']
+      },
+      {
+        key: 'routes_deduped',
+        label: 'No duplicate routes in registry',
+        ok: registryStats.duplicates.length === 0,
+        detail: registryStats.duplicates.length === 0 ? ['✅ No duplicate registry routes found.'] : registryStats.duplicates.map((r) => `⚠️ Duplicate route: ${r}`)
+      }
+    ];
+  }, [activeSchoolId, registryStats]);
+
+  const report = useMemo(() => {
+    const now = new Date().toISOString();
+    const sections = {
+      meta: {
+        generated_at: now,
+        user_email: user?.email || null,
+        role: role || null,
+        active_school_id: activeSchoolId || null
+      },
+      registry: registryStats,
+      checks: Object.fromEntries(coreChecks.map((c) => [c.key, c.ok])),
+      scans: Object.fromEntries(scans.map((s) => [s.key, s.ok]))
+    };
+    return sections;
+  }, [user?.email, role, activeSchoolId, registryStats, coreChecks, scans]);
+
+  const overallOk = useMemo(() => {
+    const all = [...coreChecks, ...scans];
+    if (all.length === 0) return false;
+    return all.every((c) => c.ok);
+  }, [coreChecks, scans]);
+
+  const copyReport = async () => {
+    const text = safeJson(report);
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      // Fallback: open in a new window
+      const blob = new Blob([text], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      setTimeout(() => URL.revokeObjectURL(url), 30000);
+    }
   };
 
-  const getStatusIcon = (ok) => {
-    return ok ? (
-      <CheckCircle className="w-5 h-5 text-green-600" />
-    ) : (
-      <XCircle className="w-5 h-5 text-red-600" />
-    );
+  const downloadReport = () => {
+    const text = safeJson(report);
+    const blob = new Blob([text], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `integrity-report-${new Date().toISOString().slice(0, 19).replaceAll(':', '-')}.json`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 30000);
   };
 
-  if (!isAdmin) {
+  if (isLoading) {
     return (
-      <div className="max-w-2xl mx-auto px-4 py-20 text-center">
-        <Card>
-          <CardContent className="p-12">
-            <AlertTriangle className="w-16 h-16 text-amber-600 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold mb-2">Admin Access Required</h2>
-            <p className="text-slate-600">
-              This page is only accessible to school administrators
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <PageShell title="Integrity" subtitle="Loading session…">
+        <GlassCard>
+          <div className="p-6 text-sm text-slate-600">Loading…</div>
+        </GlassCard>
+      </PageShell>
+    );
+  }
+
+  if (!canView) {
+    return (
+      <PageShell title="Integrity" subtitle="Admin-only diagnostics">
+        <GlassCard>
+          <EmptyState
+            icon={AlertTriangle}
+            title="Access denied"
+            description="This page is restricted to school admins."
+          />
+        </GlassCard>
+      </PageShell>
     );
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold mb-2">Platform Integrity Check</h1>
-        <p className="text-slate-600">Verify feature registry, routing, and multi-tenant isolation</p>
-      </div>
+    <PageShell
+      title="Integrity"
+      subtitle="Best-effort diagnostics for registry, routes, tenancy and content-protection regressions."
+      actions={
+        <>
+          <Button variant="outline" onClick={copyReport}>
+            <ClipboardCopy className="mr-2 h-4 w-4" /> Copy JSON
+          </Button>
+          <Button variant="outline" onClick={downloadReport}>
+            <Download className="mr-2 h-4 w-4" /> Download
+          </Button>
+          <Button
+            onClick={() => {
+              // Re-trigger scan load
+              setSources(null);
+              setReloadNonce((n) => n + 1);
+            }}
+            variant="secondary"
+          >
+            <RefreshCw className="mr-2 h-4 w-4" /> Refresh
+          </Button>
+        </>
+      }
+    >
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <GlassCard className="p-6 lg:col-span-2">
+          <SectionHeader
+            title="System status"
+            description="These checks are intentionally conservative. Any warning should be investigated before deploying."
+            right={<StatusBadge variant={overallOk ? 'good' : 'warn'}>{overallOk ? 'Healthy' : 'Needs attention'}</StatusBadge>}
+          />
 
-      {/* Overall Status */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            {checks.tenancyOk && checks.sessionOk && checks.registryDeduplicated && 
-             checks.oauthSecure && checks.protectionEnforced && checks.monetizationReady &&
-             checks.dripSupported && checks.certificatesReady && checks.attributionTracking &&
-             checks.idempotencyEnforced && checks.dataLevelProtection && checks.rbacNormalized &&
-             checks.staffManagement && checks.auditExpanded ? (
-              <CheckCircle className="w-6 h-6 text-green-600 mr-2" />
-            ) : (
-              <AlertTriangle className="w-6 h-6 text-amber-600 mr-2" />
-            )}
-            System Status (v8.5)
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex items-center justify-between">
-            <span>Session Active</span>
-            {getStatusIcon(checks.sessionOk)}
-          </div>
-          <div className="flex items-center justify-between">
-            <span>School Selected</span>
-            {getStatusIcon(checks.tenancyOk)}
-          </div>
-          <div className="flex items-center justify-between">
-            <span>Registry Consolidated</span>
-            {getStatusIcon(checks.registryDeduplicated)}
-          </div>
-          <div className="flex items-center justify-between">
-            <span>OAuth Secure</span>
-            {getStatusIcon(checks.oauthSecure)}
-          </div>
-          <div className="flex items-center justify-between">
-            <span>Multi-Tenant Scoping</span>
-            {getStatusIcon(checks.scopingCorrect)}
-          </div>
-          <div className="flex items-center justify-between">
-            <span>Content Protection</span>
-            {getStatusIcon(checks.protectionEnforced)}
-          </div>
-          <div className="flex items-center justify-between">
-            <span>Monetization Ready</span>
-            {getStatusIcon(checks.monetizationReady)}
-          </div>
-          <div className="flex items-center justify-between">
-            <span>Drip Scheduling</span>
-            {getStatusIcon(checks.dripSupported)}
-          </div>
-          <div className="flex items-center justify-between">
-            <span>Certificates Ready</span>
-            {getStatusIcon(checks.certificatesReady)}
-          </div>
-          <div className="flex items-center justify-between">
-            <span>Attribution Tracking</span>
-            {getStatusIcon(checks.attributionTracking)}
-          </div>
-          <div className="flex items-center justify-between">
-            <span>Idempotency Enforced</span>
-            {getStatusIcon(checks.idempotencyEnforced)}
-          </div>
-          <div className="flex items-center justify-between">
-            <span>Data-Level Protection</span>
-            {getStatusIcon(checks.dataLevelProtection)}
-          </div>
-          <div className="flex items-center justify-between">
-            <span>RBAC Normalized</span>
-            {getStatusIcon(checks.rbacNormalized)}
-          </div>
-          <div className="flex items-center justify-between">
-            <span>Staff Management</span>
-            {getStatusIcon(checks.staffManagement)}
-          </div>
-          <div className="flex items-center justify-between">
-            <span>Audit Log Expanded</span>
-            {getStatusIcon(checks.auditExpanded)}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Feature Registry Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="p-6 text-center">
-            <div className="text-3xl font-bold text-blue-600">{checks.featuresCount}</div>
-            <div className="text-sm text-slate-600 mt-1">Total Features</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6 text-center">
-            <div className="text-3xl font-bold text-green-600">{checks.routesCount}</div>
-            <div className="text-sm text-slate-600 mt-1">Routes Registered</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6 text-center">
-            <div className="text-3xl font-bold text-purple-600">{checks.areasCount}</div>
-            <div className="text-sm text-slate-600 mt-1">Feature Areas</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Features by Area */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Features by Area</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {Object.entries(FEATURE_AREAS).map(([key, area]) => {
-              const areaFeatures = Object.values(FEATURES).filter(f => f.area === key);
-              return (
-                <div key={key} className="flex items-center justify-between p-3 border rounded">
-                  <div className="flex items-center space-x-3">
-                    <Badge className={area.color}>{area.label}</Badge>
-                    <span className="text-sm text-slate-600">{areaFeatures.length} features</span>
+          <div className="mt-4 space-y-3">
+            {[...coreChecks, ...scans].map((c) => (
+              <div key={c.key} className="rounded-xl border border-white/10 bg-black/10 p-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className={c.ok ? 'text-emerald-300' : 'text-amber-300'}>{iconFor(c.ok)}</span>
+                      <div className="font-medium text-slate-100">{c.label}</div>
+                    </div>
+                    <div className="mt-2 space-y-1 text-sm text-slate-300">
+                      {(c.detail || []).map((d, idx) => (
+                        <div key={idx}>{d}</div>
+                      ))}
+                    </div>
                   </div>
-                  <CheckCircle className="w-4 h-4 text-green-600" />
+                  <StatusBadge variant={statusFor(c.ok)}>{c.ok ? 'OK' : 'WARN'}</StatusBadge>
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Active School Info */}
-      {activeSchoolId && membership && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Active School Context</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-slate-600">School ID:</span>
-                <span className="font-mono">{activeSchoolId}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-600">User Email:</span>
-                <span>{user?.email}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-600">Role:</span>
-                <Badge>{membership.role}</Badge>
-              </div>
+          {sources?.error && (
+            <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-100">
+              Source scan loading error: {sources.error}
             </div>
-          </CardContent>
-        </Card>
-      )}
+          )}
 
-      {/* Warnings */}
-      <Card className="border-amber-200 bg-amber-50">
-        <CardHeader>
-          <CardTitle className="text-amber-800 flex items-center">
-            <AlertTriangle className="w-5 h-5 mr-2" />
-            Important Notes
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="text-sm text-amber-900 space-y-2">
-          <p>• All 40+ features preserved in registry, accessible via Vault</p>
-          <p>• Multi-tenant isolation: components/api/scoped.js injects school_id</p>
-          <p>• Content protection: FULL/PREVIEW/LOCKED + copy/download licensing</p>
-          <p>• Subscriptions: Auto-reconciliation on load, expiry enforcement, grace periods</p>
-          <p>• Payouts: Batch creation, CSV export, mark paid (idempotent)</p>
-          <p>• Analytics: Event tracking on all storefront + learning pages</p>
-          <p>• Network Admin: Global school management (/networkadmin)</p>
-          <p>• Customer portal: /account (purchases, subscriptions, licenses)</p>
-          <p>• Documentation: components/utils/ (CHANGELOG, RECOVERY, ARCHITECTURE)</p>
-          <p>• v8.3 entities: SubscriptionInvoice, Certificate, CouponRedemption, PayoutBatch, AnalyticsEvent</p>
-        </CardContent>
-      </Card>
+          {reloading && !sources && (
+            <div className="mt-4 text-sm text-slate-400">Loading source scans…</div>
+          )}
+        </GlassCard>
 
-      {/* Quick Links */}
-      <div className="flex flex-wrap gap-3">
-        <Link to={createPageUrl('Vault')}>
-          <Button variant="outline">
-            <Archive className="w-4 h-4 mr-2" />
-            Vault
-          </Button>
-        </Link>
-        <Link to={createPageUrl('SchoolAdmin')}>
-          <Button variant="outline">
-            School Admin
-          </Button>
-        </Link>
-        <Link to={createPageUrl('SchoolMonetization')}>
-          <Button variant="outline">
-            Monetization
-          </Button>
-        </Link>
-        <Link to={createPageUrl('SchoolStaff')}>
-          <Button variant="outline">
-            Staff Management
-          </Button>
-        </Link>
-        <Link to={createPageUrl('AuditLogViewer')}>
-          <Button variant="outline">
-            Audit Log
-          </Button>
-        </Link>
-        <Link to={createPageUrl('Account')}>
-          <Button variant="outline">
-            My Account
-          </Button>
-        </Link>
-        <Link to={createPageUrl('NetworkAdmin')}>
-          <Button variant="outline">
-            Network Admin
-          </Button>
-        </Link>
+        <GlassCard className="p-6">
+          <SectionHeader title="Registry" description="Quick registry stats." />
+          <div className="mt-4 space-y-3 text-sm text-slate-300">
+            <div className="flex items-center justify-between"><span>Features</span><span className="text-slate-100">{registryStats.featureCount}</span></div>
+            <div className="flex items-center justify-between"><span>Routes</span><span className="text-slate-100">{registryStats.routeCount}</span></div>
+          </div>
+          <Separator className="my-4" />
+          <div className="text-sm text-slate-300">
+            <div className="font-medium text-slate-100">Guidance</div>
+            <ul className="mt-2 list-disc space-y-1 pl-5">
+              <li>Never inline the feature registry into Vault.</li>
+              <li>All school-owned queries must be scoped to activeSchoolId.</li>
+              <li>Do not expose lesson text, video or download URLs in LOCKED states.</li>
+              <li>When in doubt, validate /integrity before shipping.</li>
+            </ul>
+          </div>
+        </GlassCard>
       </div>
-    </div>
+    </PageShell>
   );
 }

@@ -41,25 +41,52 @@ export default function Reader() {
     loadUser();
   }, []);
 
-  const { data: texts = [] } = useQuery({
-    queryKey: ['texts', activeSchoolId, searchQuery],
-    queryFn: async () => {
-      return scopedFilter('Text', activeSchoolId, {}, '-created_date', 50);
-    },
-    enabled: !!activeSchoolId
-  });
-
-  const { data: highlights = [] } = useQuery({
-    queryKey: ['highlights', user?.email, activeSchoolId],
-    queryFn: () => scopedFilter('Highlight', activeSchoolId, {
+  const { data: entitlements = [] } = useQuery({
+    queryKey: ['entitlements', user?.email, activeSchoolId],
+    queryFn: () => scopedFilter('Entitlement', activeSchoolId, {
       user_email: user.email
     }),
     enabled: !!user && !!activeSchoolId
   });
 
-  const { data: entitlements = [] } = useQuery({
-    queryKey: ['entitlements', user?.email, activeSchoolId],
-    queryFn: () => scopedFilter('Entitlement', activeSchoolId, {
+  const { data: texts = [] } = useQuery({
+    queryKey: ['texts', activeSchoolId, user?.email, entitlements.length],
+    queryFn: async () => {
+      // SECURITY: Do NOT fetch protected text bodies for unentitled users.
+      // Without server-side field projection, we gate at query-time.
+      const hasAllCourses = entitlements.some(e => {
+        const type = e.entitlement_type || e.type;
+        return type === 'ALL_COURSES';
+      });
+
+      if (hasAllCourses) {
+        return scopedFilter('Text', activeSchoolId, {}, '-created_date', 50);
+      }
+
+      const allowedCourseIds = entitlements
+        .filter(e => {
+          const type = e.entitlement_type || e.type;
+          return type === 'COURSE' && e.course_id;
+        })
+        .map(e => e.course_id);
+
+      const filter = {
+        // public texts (no course) OR preview texts OR texts in entitled courses
+        $or: [
+          { course_id: null },
+          { course_id: '' },
+          { is_preview: true },
+          ...(allowedCourseIds.length ? [{ course_id: { $in: allowedCourseIds } }] : [])
+        ]
+      };
+      return scopedFilter('Text', activeSchoolId, filter, '-created_date', 50);
+    },
+    enabled: !!activeSchoolId && !!user
+  });
+
+  const { data: highlights = [] } = useQuery({
+    queryKey: ['highlights', user?.email, activeSchoolId],
+    queryFn: () => scopedFilter('Highlight', activeSchoolId, {
       user_email: user.email
     }),
     enabled: !!user && !!activeSchoolId

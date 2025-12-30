@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,6 +12,7 @@ import ConversionFunnel from '../components/analytics/ConversionFunnel';
 import RevenueChart from '../components/analytics/RevenueChart';
 import PayoutBatchManager from '../components/payouts/PayoutBatchManager';
 import { createPageUrl } from '@/utils';
+import VirtualizedList from '@/components/system/VirtualizedList';
 
 export default function SchoolMonetization() {
   const [user, setUser] = useState(null);
@@ -183,9 +184,15 @@ export default function SchoolMonetization() {
               <CardTitle>Recent Transactions</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {transactions.map((transaction) => (
-                  <div key={transaction.id} className="flex items-center justify-between p-3 border rounded">
+              <VirtualizedList
+                items={transactions}
+                initialCount={24}
+                chunkSize={24}
+                className="space-y-3"
+                getKey={(t) => t.id}
+                empty={<p className="text-slate-500 text-center py-8">No transactions yet</p>}
+                renderItem={(transaction) => (
+                  <div className="flex items-center justify-between p-3 border rounded">
                     <div>
                       <p className="font-medium">{transaction.user_email}</p>
                       <p className="text-xs text-slate-500">
@@ -195,17 +202,21 @@ export default function SchoolMonetization() {
                     <div className="text-right flex items-center space-x-3">
                       <div>
                         <p className="font-semibold">${(transaction.amount_cents / 100).toFixed(2)}</p>
-                        <Badge variant={
-                          transaction.status === 'completed' ? 'default' : 
-                          transaction.status === 'pending' ? 'secondary' : 
-                          'destructive'
-                        }>
+                        <Badge
+                          variant={
+                            transaction.status === 'completed'
+                              ? 'default'
+                              : transaction.status === 'pending'
+                                ? 'secondary'
+                                : 'destructive'
+                          }
+                        >
                           {transaction.status}
                         </Badge>
                       </div>
                       {transaction.status === 'pending' && (
-                        <Button 
-                          size="sm" 
+                        <Button
+                          size="sm"
                           onClick={() => approveMutation.mutate(transaction.id)}
                           disabled={approveMutation.isPending}
                         >
@@ -214,11 +225,8 @@ export default function SchoolMonetization() {
                       )}
                     </div>
                   </div>
-                ))}
-                {transactions.length === 0 && (
-                  <p className="text-slate-500 text-center py-8">No transactions yet</p>
                 )}
-              </div>
+              />
             </CardContent>
           </Card>
         </TabsContent>

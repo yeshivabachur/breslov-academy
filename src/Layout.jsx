@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
 import { BookOpen, GraduationCap, Users, Menu, X, LogOut, User, Plug, Beaker, ChevronDown, Settings, BookMarked, Search, Archive } from 'lucide-react';
 import { canCreateCourses } from '@/components/utils/permissions';
+import { useSession } from '@/components/hooks/useSession';
+import IconButton from '@/components/ui/IconButton';
+import { tokens, cx } from '@/components/theme/tokens';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
 import ThemeToggle from '@/components/theme/ThemeToggle';
@@ -13,79 +16,34 @@ import CommandPalette from '@/components/navigation/CommandPalette';
 import { FEATURES, getNavGroupsForAudience } from '@/components/config/features';
 
 export default function Layout({ children, currentPageName }) {
-  const [user, setUser] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [activeSchool, setActiveSchool] = useState(null);
-  const [memberships, setMemberships] = useState([]);
-  const [isSchoolAdmin, setIsSchoolAdmin] = useState(false);
-  const [canTeach, setCanTeach] = useState(false);
+  const {
+    user,
+    memberships,
+    activeSchool,
+    audience,
+    isAdmin,
+    isTeacher,
+    isLoading,
+    changeActiveSchool,
+  } = useSession();
 
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-        loadSchoolData(currentUser);
-      } catch (error) {
-        setUser(null);
-      }
-    };
-    loadUser();
-  }, []);
+  const activeMembership = useMemo(() => {
+    if (!activeSchool) return null;
+    return memberships?.find(m => m.school_id === activeSchool.id) || null;
+  }, [memberships, activeSchool]);
 
-  const loadSchoolData = async (currentUser) => {
-    try {
-      // Get user memberships
-      const userMemberships = await base44.entities.SchoolMembership.filter({
-        user_email: currentUser.email
-      });
-      setMemberships(userMemberships);
-
-      // Get active school
-      const activeSchoolId = localStorage.getItem('active_school_id');
-      if (activeSchoolId) {
-        const schools = await base44.entities.School.filter({ id: activeSchoolId });
-        if (schools.length > 0) {
-          setActiveSchool(schools[0]);
-          
-          // Check if admin
-          const membership = userMemberships.find(m => m.school_id === activeSchoolId);
-          setIsSchoolAdmin(membership?.role === 'OWNER' || membership?.role === 'ADMIN');
-          setCanTeach(membership ? canCreateCourses(membership.role) : false);
-        }
-      }
-    } catch (error) {
-      console.error('Error loading school data:', error);
-    }
-  };
+  const canTeach = activeMembership ? canCreateCourses(activeMembership.role) : isTeacher;
+  const isSchoolAdmin = activeMembership ? ['OWNER', 'ADMIN'].includes(activeMembership.role) : isAdmin;
 
   const handleSchoolChange = async (schoolId) => {
-    // Update preference
-    const prefs = await base44.entities.UserSchoolPreference.filter({
-      user_email: user.email
-    });
-
-    if (prefs.length > 0) {
-      await base44.entities.UserSchoolPreference.update(prefs[0].id, {
-        active_school_id: schoolId,
-        updated_at: new Date().toISOString()
-      });
-    } else {
-      await base44.entities.UserSchoolPreference.create({
-        user_email: user.email,
-        active_school_id: schoolId,
-        updated_at: new Date().toISOString()
-      });
-    }
-
-    localStorage.setItem('active_school_id', schoolId);
+    await changeActiveSchool(schoolId);
   };
 
-  // Determine audience
-  const userAudience = isSchoolAdmin ? 'admin' : (canTeach ? 'teacher' : 'student');
+  const userAudience = audience || (isSchoolAdmin ? 'admin' : (canTeach ? 'teacher' : 'student'));
 
   // Build nav from registry
-  const navGroups = getNavGroupsForAudience(userAudience);
+  const navGroups = useMemo(() => getNavGroupsForAudience(userAudience), [userAudience]);
   const coreNav = navGroups.find(g => g.label === 'Core Learning')?.features || [];
   const teachNav = navGroups.find(g => g.label === 'Teaching Tools')?.features || [];
 
@@ -129,26 +87,10 @@ export default function Layout({ children, currentPageName }) {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
-      <style>{`
-        :root {
-          --primary-navy: #0f172a;
-          --primary-gold: #d4af37;
-          --accent-blue: #1e40af;
-        }
-        @import url('https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
-        
-        h1, h2, h3, h4 {
-          font-family: 'Crimson Text', serif;
-        }
-        
-        body {
-          font-family: 'Inter', sans-serif;
-        }
-      `}</style>
+    <div className={tokens.page.outer}>
 
       {/* Header */}
-      <header className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-b border-slate-700 shadow-xl sticky top-0 z-50">
+      <header className="sticky top-0 z-50 border-b border-border bg-background/70 backdrop-blur">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
@@ -157,8 +99,8 @@ export default function Layout({ children, currentPageName }) {
                 <BookOpen className="w-6 h-6 text-slate-900" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-white">Breslov Academy</h1>
-                <p className="text-xs text-amber-400">Torah of Rebbe Nachman</p>
+                <h1 className="text-xl font-bold text-foreground">Breslov Academy</h1>
+                <p className="text-xs text-amber-500/90 dark:text-amber-400">Torah of Rebbe Nachman</p>
               </div>
             </Link>
 
@@ -171,11 +113,10 @@ export default function Layout({ children, currentPageName }) {
                   <Link
                     key={item.name}
                     to={createPageUrl(item.path)}
-                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all ${
-                      isActive
-                        ? 'bg-amber-500 text-slate-900 shadow-lg'
-                        : 'text-slate-300 hover:text-white hover:bg-slate-700'
-                    }`}
+                    className={cx(
+                      tokens.glass.navItem,
+                      isActive ? tokens.glass.navItemActive : 'text-muted-foreground hover:text-foreground'
+                    )}
                   >
                     <Icon className="w-4 h-4" />
                     <span className="font-medium text-sm">{item.name}</span>
@@ -186,7 +127,7 @@ export default function Layout({ children, currentPageName }) {
               {/* Labs Dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="text-slate-300 hover:text-white hover:bg-slate-700">
+                  <Button variant="ghost" className={cx(tokens.glass.navItem, 'text-muted-foreground hover:text-foreground')}>
                     <Beaker className="w-4 h-4 mr-2" />
                     Labs
                     <ChevronDown className="w-3 h-3 ml-1" />
@@ -208,11 +149,12 @@ export default function Layout({ children, currentPageName }) {
               {/* Vault Link */}
               <Link
                 to={createPageUrl('Vault')}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all ${
+                className={cx(
+                  tokens.glass.navItem,
                   currentPageName === 'Vault'
-                    ? 'bg-amber-500 text-slate-900 shadow-lg'
-                    : 'text-slate-300 hover:text-white hover:bg-slate-700'
-                }`}
+                    ? tokens.glass.navItemActive
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
               >
                 <Archive className="w-4 h-4" />
                 <span className="font-medium text-sm">Vault</span>
@@ -236,7 +178,7 @@ export default function Layout({ children, currentPageName }) {
                   <ThemeToggle userEmail={user.email} />
                   <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="text-slate-300">
+                            <Button variant="ghost" className={cx(tokens.glass.navItem, 'text-muted-foreground hover:text-foreground')}>
                               <User className="w-4 h-4 mr-2" />
                               {user.full_name}
                               <ChevronDown className="w-3 h-3 ml-1" />
@@ -274,18 +216,21 @@ export default function Layout({ children, currentPageName }) {
             </div>
 
             {/* Mobile menu button */}
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden text-slate-300 hover:text-white"
-            >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
+            <div className="md:hidden">
+              <IconButton
+                label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+                variant="ghost"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              >
+                {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              </IconButton>
+            </div>
           </div>
         </div>
 
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
-          <div className="md:hidden bg-slate-800 border-t border-slate-700">
+          <div className="md:hidden border-t border-border bg-background/70 backdrop-blur">
             <div className="px-4 py-4 space-y-2">
               {coreNavigation.map((item) => {
                 const Icon = item.icon;
@@ -295,11 +240,11 @@ export default function Layout({ children, currentPageName }) {
                     key={item.name}
                     to={createPageUrl(item.path)}
                     onClick={() => setMobileMenuOpen(false)}
-                    className={`flex items-center space-x-3 px-4 py-3 rounded-lg ${
-                      isActive
-                        ? 'bg-amber-500 text-slate-900'
-                        : 'text-slate-300 hover:bg-slate-700'
-                    }`}
+                    className={cx(
+                      tokens.glass.navItem,
+                      'justify-start px-4 py-3',
+                      isActive ? tokens.glass.navItemActive : 'text-muted-foreground hover:text-foreground'
+                    )}
                   >
                     <Icon className="w-5 h-5" />
                     <span className="font-medium">{item.name}</span>
@@ -309,14 +254,14 @@ export default function Layout({ children, currentPageName }) {
 
               {/* Labs Section */}
               <div className="pt-2 pb-1 px-4">
-                <p className="text-xs text-slate-500 font-semibold">LABS</p>
+                <p className="text-xs text-muted-foreground font-semibold">LABS</p>
               </div>
               {labsFeatures.map((feature) => (
                 <Link
                   key={feature.name}
                   to={createPageUrl(feature.path)}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-700"
+                  className={cx(tokens.glass.navItem, 'justify-start px-4 py-3 text-muted-foreground hover:text-foreground')}
                 >
                   <Beaker className="w-5 h-5" />
                   <span className="font-medium">{feature.name}</span>
@@ -328,7 +273,7 @@ export default function Layout({ children, currentPageName }) {
                 <Link
                   to={createPageUrl('Teach')}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-700"
+                  className={cx(tokens.glass.navItem, 'justify-start px-4 py-3 text-muted-foreground hover:text-foreground')}
                 >
                   <BookMarked className="w-5 h-5" />
                   <span className="font-medium">Teach</span>
@@ -337,7 +282,7 @@ export default function Layout({ children, currentPageName }) {
               <Link
                 to={createPageUrl('Integrations')}
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-700"
+                className={cx(tokens.glass.navItem, 'justify-start px-4 py-3 text-muted-foreground hover:text-foreground')}
               >
                 <Plug className="w-5 h-5" />
                 <span className="font-medium">Integrations</span>
@@ -345,7 +290,7 @@ export default function Layout({ children, currentPageName }) {
               <Link
                 to={createPageUrl('Portfolio')}
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-700"
+                className={cx(tokens.glass.navItem, 'justify-start px-4 py-3 text-muted-foreground hover:text-foreground')}
               >
                 <User className="w-5 h-5" />
                 <span className="font-medium">Profile</span>
@@ -354,7 +299,7 @@ export default function Layout({ children, currentPageName }) {
               {user && (
                 <button
                   onClick={() => base44.auth.logout()}
-                  className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-700"
+                  className={cx(tokens.glass.navItem, 'w-full justify-start px-4 py-3 text-muted-foreground hover:text-foreground')}
                 >
                   <LogOut className="w-5 h-5" />
                   <span className="font-medium">Sign Out</span>

@@ -1,97 +1,150 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { FEATURES } from '../config/features';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Command, Zap } from 'lucide-react';
+import { FEATURES } from '@/components/config/features';
+import { useSession } from '@/components/hooks/useSession';
+import {
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandSeparator,
+} from '@/components/ui/command';
+import { Search, Vault, Settings, Home, Building2 } from 'lucide-react';
 
-export default function CommandPalette({ audience = 'student' }) {
-  const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState('');
+/**
+ * v8.6 CommandPalette
+ * - Registry-driven
+ * - Keyboard-first (Cmd/Ctrl+K)
+ * - Accessible labels
+ */
+export default function CommandPalette() {
   const navigate = useNavigate();
+  const { audience, activeSchool } = useSession();
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
 
   useEffect(() => {
     const down = (e) => {
-      if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
+      if ((e.key === 'k' || e.key === 'K') && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
-        setOpen((open) => !open);
+        setOpen((o) => !o);
       }
     };
-
-    document.addEventListener('keydown', down);
-    return () => document.removeEventListener('keydown', down);
+    window.addEventListener('keydown', down);
+    return () => window.removeEventListener('keydown', down);
   }, []);
 
-  const allFeatures = Object.values(FEATURES).filter(f => 
-    f.audiences.includes(audience) || f.audiences.includes('public')
-  );
+  const normalizedAudience = (audience || 'student').toLowerCase();
 
-  const filteredFeatures = allFeatures.filter(f =>
-    f.label.toLowerCase().includes(search.toLowerCase()) ||
-    f.area.toLowerCase().includes(search.toLowerCase())
-  );
+  const features = useMemo(() => {
+    const all = Object.values(FEATURES);
+    // Keep Vault visible to everyone; hide vaultOnly items from non-admins
+    const filtered = all.filter((f) => {
+      if (!f) return false;
+      if (f.key === 'Vault') return true;
+      if (f.vaultOnly && normalizedAudience !== 'admin') return false;
+      if (!Array.isArray(f.audiences) || f.audiences.length === 0) return true;
+      return f.audiences.includes(normalizedAudience) || f.audiences.includes('all');
+    });
+    filtered.sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+    return filtered;
+  }, [normalizedAudience]);
 
-  const handleSelect = (feature) => {
-    navigate(feature.route || createPageUrl(feature.key));
+  const quickActions = useMemo(() => {
+    const actions = [
+      {
+        key: 'go:home',
+        label: 'Go to Dashboard',
+        icon: Home,
+        onSelect: () => navigate(createPageUrl('Dashboard')),
+      },
+      {
+        key: 'go:vault',
+        label: 'Open Vault (all features)',
+        icon: Vault,
+        onSelect: () => navigate(createPageUrl('Vault')),
+      },
+    ];
+    if (activeSchool?.slug) {
+      actions.push({
+        key: 'go:storefront',
+        label: `Open Storefront (${activeSchool.slug})`,
+        icon: Building2,
+        onSelect: () => navigate(`/s/${activeSchool.slug}`),
+      });
+    }
+    if (normalizedAudience === 'admin') {
+      actions.push({
+        key: 'go:schooladmin',
+        label: 'School Admin',
+        icon: Settings,
+        onSelect: () => navigate(createPageUrl('SchoolAdmin')),
+      });
+    }
+    return actions;
+  }, [navigate, normalizedAudience, activeSchool?.slug]);
+
+  const onSelect = (fn) => {
     setOpen(false);
-    setSearch('');
+    setQuery('');
+    fn();
   };
 
   return (
     <>
+      {/* Hidden but accessible trigger for screen readers */}
       <button
+        type="button"
+        aria-label="Open command palette"
+        className="sr-only"
         onClick={() => setOpen(true)}
-        className="hidden md:flex items-center text-sm text-slate-400 hover:text-slate-600 px-3 py-1.5 border border-slate-300 rounded-md"
-      >
-        <Command className="w-3 h-3 mr-2" />
-        <span>Search...</span>
-        <kbd className="ml-auto text-xs bg-slate-100 px-1.5 py-0.5 rounded">⌘K</kbd>
-      </button>
+      />
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Command Palette</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search features..."
-              autoFocus
-            />
-            
-            <div className="max-h-96 overflow-y-auto space-y-1">
-              {filteredFeatures.map((feature) => (
-                <button
+      <CommandDialog open={open} onOpenChange={setOpen} aria-label="Command palette">
+        <CommandInput
+          value={query}
+          onValueChange={setQuery}
+          placeholder="Search pages, tools, and actions…"
+          aria-label="Search"
+        />
+        <CommandList>
+          <CommandEmpty>No results found.</CommandEmpty>
+
+          <CommandGroup heading="Quick actions">
+            {quickActions.map((a) => {
+              const Icon = a.icon || Search;
+              return (
+                <CommandItem key={a.key} value={a.label} onSelect={() => onSelect(a.onSelect)}>
+                  <Icon className="mr-2 h-4 w-4" />
+                  <span>{a.label}</span>
+                </CommandItem>
+              );
+            })}
+          </CommandGroup>
+
+          <CommandSeparator />
+
+          <CommandGroup heading="Navigation">
+            {features.map((feature) => {
+              const value = `${feature.label} ${feature.area} ${feature.route}`;
+              return (
+                <CommandItem
                   key={feature.key}
-                  onClick={() => handleSelect(feature)}
-                  className="w-full text-left p-3 hover:bg-slate-50 rounded-lg flex items-center justify-between group"
+                  value={value}
+                  onSelect={() => onSelect(() => navigate(feature.route))}
                 >
-                  <div className="flex-1">
-                    <div className="font-medium">{feature.label}</div>
-                    <div className="flex items-center space-x-2 mt-1">
-                      <Badge variant="outline" className="text-xs">{feature.area}</Badge>
-                      {feature.vaultOnly && (
-                        <Badge variant="secondary" className="text-xs">Vault</Badge>
-                      )}
-                    </div>
-                  </div>
-                  {feature.icon && (
-                    <Zap className="w-4 h-4 text-slate-400 opacity-0 group-hover:opacity-100" />
-                  )}
-                </button>
-              ))}
-              
-              {filteredFeatures.length === 0 && (
-                <p className="text-center text-slate-500 py-8">No features found</p>
-              )}
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+                  <Search className="mr-2 h-4 w-4" />
+                  <span>{feature.label}</span>
+                  <span className="ml-auto text-xs text-muted-foreground">{feature.area}</span>
+                </CommandItem>
+              );
+            })}
+          </CommandGroup>
+        </CommandList>
+      </CommandDialog>
     </>
   );
 }

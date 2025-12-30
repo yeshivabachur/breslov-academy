@@ -1,3 +1,5 @@
+import React from 'react';
+
 import Achievements from './pages/Achievements';
 import AdaptiveLearning from './pages/AdaptiveLearning';
 import AdminHardening from './pages/AdminHardening';
@@ -14,13 +16,11 @@ import CourseDetail from './pages/CourseDetail';
 import CourseSales from './pages/CourseSales';
 import Courses from './pages/Courses';
 import Dashboard from './pages/Dashboard';
-import Downloads from './pages/Downloads';
 import Events from './pages/Events';
 import Feed from './pages/Feed';
 import Forums from './pages/Forums';
 import HabitTracker from './pages/HabitTracker';
 import Integrations from './pages/Integrations';
-import Integrity from './pages/Integrity';
 import LanguageLearning from './pages/LanguageLearning';
 import Languages from './pages/Languages';
 import Leaderboard from './pages/Leaderboard';
@@ -45,10 +45,8 @@ import SchoolCheckout from './pages/SchoolCheckout';
 import SchoolCourses from './pages/SchoolCourses';
 import SchoolJoin from './pages/SchoolJoin';
 import SchoolLanding from './pages/SchoolLanding';
-import SchoolMonetization from './pages/SchoolMonetization';
 import SchoolNew from './pages/SchoolNew';
 import SchoolPricing from './pages/SchoolPricing';
-import SchoolSearch from './pages/SchoolSearch';
 import SchoolSelect from './pages/SchoolSelect';
 import SchoolThankYou from './pages/SchoolThankYou';
 import Skills from './pages/Skills';
@@ -64,15 +62,21 @@ import TeachCourse from './pages/TeachCourse';
 import TeachCourseNew from './pages/TeachCourseNew';
 import TeachLesson from './pages/TeachLesson';
 import Tournaments from './pages/Tournaments';
-import Vault from './pages/Vault';
 import oauth2callback from './pages/oauth2callback';
-import Account from './pages/Account';
-import NetworkAdmin from './pages/NetworkAdmin';
 import CertificateVerify from './pages/CertificateVerify';
 import SchoolStaff from './pages/SchoolStaff';
 import InviteAccept from './pages/InviteAccept';
 import AuditLogViewer from './pages/AuditLogViewer';
 import __Layout from './Layout.jsx';
+
+// Lazy-loaded heavy routes (v8.6 perf)
+const Downloads = React.lazy(() => import('./pages/Downloads'));
+const Integrity = React.lazy(() => import('./pages/Integrity'));
+const SchoolMonetization = React.lazy(() => import('./pages/SchoolMonetization'));
+const SchoolSearch = React.lazy(() => import('./pages/SchoolSearch'));
+const Vault = React.lazy(() => import('./pages/Vault'));
+const Account = React.lazy(() => import('./pages/Account'));
+const NetworkAdmin = React.lazy(() => import('./pages/NetworkAdmin'));
 
 
 export const PAGES = {

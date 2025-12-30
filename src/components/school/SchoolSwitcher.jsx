@@ -23,16 +23,27 @@ export default function SchoolSwitcher({ activeSchool, memberships, onSchoolChan
 
   const loadSchools = async () => {
     if (!memberships || memberships.length === 0) return;
-    
-    const schoolIds = memberships.map(m => m.school_id);
-    const allSchools = await base44.entities.School.list();
-    const userSchools = allSchools.filter(s => schoolIds.includes(s.id));
-    setSchools(userSchools);
+
+    // IMPORTANT: Avoid listing all schools (multi-tenant + performance).
+    // Instead, fetch only the schools the current user is a member of.
+    const schoolIds = Array.from(new Set(memberships.map(m => m.school_id).filter(Boolean)));
+    try {
+      const fetched = await Promise.all(
+        schoolIds.map(async (id) => {
+          const rows = await base44.entities.School.filter({ id });
+          return rows?.[0] || null;
+        })
+      );
+      setSchools(fetched.filter(Boolean));
+    } catch (err) {
+      console.error('Failed to load schools', err);
+      setSchools([]);
+    }
   };
 
   const handleSchoolSwitch = async (schoolId) => {
     await onSchoolChange(schoolId);
-    window.location.reload(); // Refresh to apply new school context
+    // No full reload: session/provider updates should re-render with new school context.
   };
 
   if (!activeSchool) {
@@ -42,7 +53,7 @@ export default function SchoolSwitcher({ activeSchool, memberships, onSchoolChan
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="text-slate-300 hover:text-white hover:bg-slate-700 max-w-xs">
+        <Button variant="ghost" className="max-w-xs">
           <Building2 className="w-4 h-4 mr-2" />
           <span className="truncate">{activeSchool.name}</span>
           <ChevronDown className="w-3 h-3 ml-2" />

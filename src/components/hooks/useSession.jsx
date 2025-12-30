@@ -30,17 +30,33 @@ export const SessionProvider = ({ children }) => {
       });
       setMemberships(userMemberships);
 
-      // Load active school
-      const storedSchoolId = localStorage.getItem('active_school_id');
-      if (storedSchoolId) {
-        await loadActiveSchool(storedSchoolId, userMemberships);
-        
+      // Load active school (localStorage -> persisted preference -> first membership)
+      let preferredSchoolId = localStorage.getItem('active_school_id');
+      if (!preferredSchoolId) {
+        try {
+          const prefs = await base44.entities.UserSchoolPreference.filter({
+            user_email: currentUser.email,
+          });
+          if (prefs?.[0]?.active_school_id) {
+            preferredSchoolId = prefs[0].active_school_id;
+          }
+        } catch (e) {
+          // optional entity in some workspaces
+        }
+      }
+      if (!preferredSchoolId && userMemberships.length > 0) {
+        preferredSchoolId = userMemberships[0].school_id;
+      }
+      if (preferredSchoolId) {
+        localStorage.setItem('active_school_id', preferredSchoolId);
+        await loadActiveSchool(preferredSchoolId, userMemberships);
+
         // Reconcile subscriptions (best effort, background)
         try {
           const { reconcileSubscriptions } = await import('../subscriptions/subscriptionEngine');
           reconcileSubscriptions({
-            school_id: storedSchoolId,
-            user_email: currentUser.email
+            school_id: preferredSchoolId,
+            user_email: currentUser.email,
           });
         } catch (e) {
           console.warn('Subscription reconciliation failed:', e);
@@ -49,6 +65,11 @@ export const SessionProvider = ({ children }) => {
     } catch (error) {
       console.error('Session load error:', error);
       setUser(null);
+      setMemberships([]);
+      setActiveSchool(null);
+      setActiveSchoolId(null);
+      setRole(null);
+      setAudience('student');
     } finally {
       setIsLoading(false);
     }
@@ -96,7 +117,7 @@ export const SessionProvider = ({ children }) => {
       console.error('Update preference error:', error);
     }
     
-    window.location.reload();
+    // Avoid full reload; react-query + scoped keys already include school_id.
   };
 
   const value = {

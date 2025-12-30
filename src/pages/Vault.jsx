@@ -1,130 +1,261 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { FEATURES, FEATURE_AREAS } from '@/components/config/features';
+import { useSession } from '@/components/hooks/useSession';
+
+import PageShell from '@/components/ui/PageShell';
+import GlassCard from '@/components/ui/GlassCard';
+import SectionHeader from '@/components/ui/SectionHeader';
+import EmptyState from '@/components/ui/EmptyState';
+import StatusBadge from '@/components/ui/StatusBadge';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Archive, Search } from 'lucide-react';
-import { FEATURES, FEATURE_AREAS, getFeaturesByArea } from '../components/config/features';
+import { Button } from '@/components/ui/button';
 
+import { Archive, ArrowUpRight, Filter, Search } from 'lucide-react';
+
+/**
+ * Vault (All Features)
+ * Non-negotiable: ALL pages/features remain discoverable, even if main nav is streamlined.
+ * Source of truth: components/config/features.jsx
+ */
 export default function Vault() {
-  const [searchQuery, setSearchQuery] = useState('');
+  const { audience, user, activeSchool } = useSession();
+  const isAdmin = (audience || '').toLowerCase() === 'admin';
+  const currentAudience = useMemo(() => {
+    if (isAdmin) return 'admin';
+    if (!user) return 'public';
+    return (audience || 'student').toLowerCase();
+  }, [audience, isAdmin, user]);
+  const [q, setQ] = useState('');
+  const [area, setArea] = useState('all');
+  const [showHidden, setShowHidden] = useState(true);
+  const [showVaultOnly, setShowVaultOnly] = useState(true);
 
-  const allFeatures = Object.values(FEATURES);
-  const filteredFeatures = allFeatures.filter(f => 
-    f.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    f.area.toLowerCase().includes(searchQuery.toLowerCase())
+  const areas = useMemo(() => {
+    const base = Object.keys(FEATURE_AREAS || {});
+    return ['all', ...base];
+  }, []);
+
+  const allFeatures = useMemo(() => {
+    const list = Object.values(FEATURES || {}).filter(Boolean);
+    // Stable sort: area then order then label
+    return list.sort((a, b) => {
+      const ao = (a.order ?? 999) - (b.order ?? 999);
+      if (a.area !== b.area) return String(a.area).localeCompare(String(b.area));
+      if (ao !== 0) return ao;
+      return String(a.label).localeCompare(String(b.label));
+    });
+  }, []);
+
+  const filtered = useMemo(() => {
+    const needle = q.trim().toLowerCase();
+    return allFeatures.filter((f) => {
+      if (!f) return false;
+      if (!showHidden && f.hidden) return false;
+      if (!showVaultOnly && f.vaultOnly) return false;
+      if (area !== 'all' && f.area !== area) return false;
+      if (!needle) return true;
+      const hay = `${f.label} ${f.key} ${f.area} ${Array.isArray(f.audiences) ? f.audiences.join(' ') : ''}`.toLowerCase();
+      return hay.includes(needle);
+    });
+  }, [allFeatures, q, area, showHidden, showVaultOnly]);
+
+  const grouped = useMemo(() => {
+    const map = new Map();
+    filtered.forEach((f) => {
+      const k = f.area || 'other';
+      if (!map.has(k)) map.set(k, []);
+      map.get(k).push(f);
+    });
+    return Array.from(map.entries()).sort((a, b) => String(a[0]).localeCompare(String(b[0])));
+  }, [filtered]);
+
+  const actions = (
+    <>
+      <Link to={createPageUrl('Integrity')}>
+        <Button variant="outline">Integrity</Button>
+      </Link>
+      <Link to={createPageUrl('Dashboard')}>
+        <Button>Back to Dashboard</Button>
+      </Link>
+    </>
   );
 
-  const areas = FEATURE_AREAS;
-
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center mb-4">
-          <Archive className="w-8 h-8 text-amber-600 mr-3" />
-          <h1 className="text-3xl font-bold">Vault</h1>
-        </div>
-        <p className="text-slate-600 mb-6">
-          Complete directory of all platform features. Nothing is ever removed - everything is preserved here.
-        </p>
+    <PageShell
+      title="Vault"
+      subtitle="Every feature and page in the platform, organized and searchable. Nothing gets deleted; everything stays discoverable."
+      actions={actions}
+    >
+      <GlassCard className="p-4 sm:p-6">
+        <SectionHeader
+          title="Find anything"
+          description="Search by name, area, or audience. Use filters to narrow results."
+          right={
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                variant={showHidden ? 'default' : 'outline'}
+                onClick={() => setShowHidden((v) => !v)}
+              >
+                <Filter className="mr-2 h-4 w-4" />
+                {showHidden ? 'Showing hidden' : 'Hidden off'}
+              </Button>
+              <Button
+                variant={showVaultOnly ? 'default' : 'outline'}
+                onClick={() => setShowVaultOnly((v) => !v)}
+              >
+                <Archive className="mr-2 h-4 w-4" />
+                {showVaultOnly ? 'Including Vault-only' : 'Vault-only off'}
+              </Button>
+            </div>
+          }
+        />
 
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
-          <Input
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search features..."
-            className="pl-10"
+        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="sm:col-span-2">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Search features… (e.g. Lesson Viewer, Monetization, Staff)"
+                className="pl-9"
+                aria-label="Search features"
+              />
+            </div>
+          </div>
+          <div>
+            <select
+              value={area}
+              onChange={(e) => setArea(e.target.value)}
+              className="h-10 w-full rounded-md border border-border bg-background/60 px-3 text-sm"
+              aria-label="Filter by area"
+            >
+              {areas.map((a) => (
+                <option key={a} value={a}>
+                  {a === 'all' ? 'All areas' : a}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-wrap gap-2 text-xs text-muted-foreground">
+          <span>
+            Results: <span className="text-foreground font-medium">{filtered.length}</span>
+          </span>
+          {activeSchool?.name && (
+            <span>
+              • Active school: <span className="text-foreground font-medium">{activeSchool.name}</span>
+            </span>
+          )}
+          <span>
+            • Audience: <span className="text-foreground font-medium">{(audience || (user ? 'student' : 'public')).toLowerCase()}</span>
+          </span>
+        </div>
+      </GlassCard>
+
+      {filtered.length === 0 ? (
+        <div className="mt-6">
+          <EmptyState
+            icon={Archive}
+            title="No features match your search"
+            description="Try a different query, clear filters, or toggle hidden/Vault-only items."
+            action={
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setQ('');
+                  setArea('all');
+                  setShowHidden(true);
+                  setShowVaultOnly(true);
+                }}
+              >
+                Reset filters
+              </Button>
+            }
           />
         </div>
-      </div>
+      ) : (
+        <div className="mt-6 space-y-6">
+          {grouped.map(([groupKey, feats]) => (
+            <GlassCard key={groupKey} className="p-4 sm:p-6" hover>
+              <SectionHeader
+                title={groupKey}
+                description={`${feats.length} feature${feats.length === 1 ? '' : 's'}`}
+              />
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-blue-600">{allFeatures.length}</div>
-            <div className="text-sm text-slate-600">Total Features</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-green-600">{getFeaturesByArea('core').length}</div>
-            <div className="text-sm text-slate-600">Core</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-purple-600">{getFeaturesByArea('admin').length}</div>
-            <div className="text-sm text-slate-600">Admin</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-amber-600">{getFeaturesByArea('marketing').length}</div>
-            <div className="text-sm text-slate-600">Marketing</div>
-          </CardContent>
-        </Card>
-      </div>
+              <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {feats.map((f) => {
+                  const aud = Array.isArray(f.audiences) ? f.audiences : [];
+                  const audienceOk = (() => {
+                    if (isAdmin) return true;
+                    if (!aud.length) return true;
+                    if (currentAudience === 'teacher') return aud.includes('teacher') || aud.includes('student') || aud.includes('public');
+                    if (currentAudience === 'student') return aud.includes('student') || aud.includes('public');
+                    if (currentAudience === 'public') return aud.includes('public');
+                    return false;
+                  })();
 
-      {/* Features by Area */}
-      {Object.entries(areas).map(([areaKey, areaInfo]) => {
-        const areaFeatures = filteredFeatures.filter(f => f.area === areaKey);
-        if (areaFeatures.length === 0) return null;
+                  const isLocked = Boolean(f.vaultOnly && !isAdmin);
+                  const canOpen = audienceOk && !isLocked;
+                  const restrictedReason = isLocked
+                    ? 'Requires admin'
+                    : audienceOk
+                      ? 'Restricted'
+                      : `Requires ${aud.join(' / ')}`;
 
-        return (
-          <Card key={areaKey} className="mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Badge className={areaInfo.color}>{areaInfo.label}</Badge>
-                <span className="ml-2 text-sm text-slate-500">({areaFeatures.length})</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {areaFeatures.map((feature) => {
-                  // Use feature.route if it's already a path, otherwise createPageUrl
-                  const href = feature.route && feature.route.startsWith('/') 
-                    ? feature.route 
-                    : createPageUrl(feature.key);
-                  
+                  // Prefer canonical dynamic route (registry uses lowercase routes),
+                  // but keep PascalCase fallback for deep-link compatibility.
+                  const href = f.route || createPageUrl(f.key);
+
                   return (
-                  <Link 
-                    key={feature.key} 
-                    to={href}
-                    className="p-3 border rounded-lg hover:bg-slate-50 hover:border-slate-300 transition-all group"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium group-hover:text-blue-600 transition-colors">{feature.label}</span>
-                      <div className="flex items-center space-x-1">
-                        {feature.hidden && (
-                          <Badge variant="outline" className="text-xs">Hidden</Badge>
-                        )}
-                        {feature.vaultOnly && (
-                          <Badge variant="secondary" className="text-xs">Vault</Badge>
-                        )}
+                    <GlassCard
+                      key={`${f.key}-${f.route}`}
+                      className="p-4"
+                      hover
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <div className="truncate font-semibold">{f.label}</div>
+                            {f.hidden && <StatusBadge status="warning">Hidden</StatusBadge>}
+                            {f.vaultOnly && <StatusBadge status={isAdmin ? 'ok' : 'warning'}>Vault-only</StatusBadge>}
+                          </div>
+                          <div className="mt-1 text-xs text-muted-foreground truncate">
+                            Key: {f.key} • Route: {href}
+                          </div>
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {(Array.isArray(f.audiences) ? f.audiences : []).slice(0, 6).map((a) => (
+                              <StatusBadge key={`${f.key}-${a}`} status="active">
+                                {a}
+                              </StatusBadge>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          <Button asChild size="sm" disabled={!canOpen}>
+                            <Link to={href}>
+                              Open
+                              <ArrowUpRight className="ml-2 h-4 w-4" />
+                            </Link>
+                          </Button>
+                          {!canOpen && (
+                            <div className="text-[11px] text-muted-foreground text-right">
+                              {restrictedReason}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                    <div className="text-xs text-slate-500 mt-1">
-                      {feature.audiences.join(', ')}
-                    </div>
-                  </Link>
+                    </GlassCard>
                   );
                 })}
               </div>
-            </CardContent>
-          </Card>
-        );
-      })}
-
-      {filteredFeatures.length === 0 && (
-        <div className="text-center py-12 text-slate-500">
-          No features found matching "{searchQuery}"
+            </GlassCard>
+          ))}
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }
