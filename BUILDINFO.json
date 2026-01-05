@@ -1,7 +1,22 @@
 {
-  "version": "v9.0-stable",
-  "created_at": "2026-01-01T00:50:23Z",
-  "source_zip": "breslov-academy-main00_v89.zip",
-  "python": "3.11.2",
-  "git_commit": null
+  "version": "9.1.2",
+  "milestone": "v9.1 portalization",
+  "checkpoint": "checkpoint4",
+  "created_at": "2026-01-01T15:57:05.471111Z",
+  "source": {
+    "baseline": "origin/main @ 7a179a6 (user-provided)",
+    "working_branch": "feat/v9.1-portalization"
+  },
+  "notes": [
+    "Public marketing routes expanded per IA spec (how-it-works, faq, privacy, terms).",
+    "Dedicated login routes (/login/student, /login/teacher).",
+    "App portal supports post-login role hint via ?loginRole=teacher|student.",
+    "SEO/public prerender snapshots generated at build-time from src/portals/public/publicContent.json.",
+    "Added react-helmet-async for public portal meta tags; HelmetProvider wrapped in src/main.jsx.",
+    "Added vite-plugin-sitemap to generate sitemap.xml and robots.txt at build.",
+    "Made public prerender generation idempotent with marker blocks in index.html.",
+    "Added app onboarding gateway: /app index redirects users with 0 memberships to /app/onboarding and users with multiple memberships (no explicit selection) to /app/SchoolSelect.",
+    "useSession now exposes activeSchoolSource + needsSchoolSelection.",
+    "Public prerender snapshot now auto-hides when JS runs to avoid duplicate rendering for users; remains visible for no-JS crawlers."
+  ]
 }

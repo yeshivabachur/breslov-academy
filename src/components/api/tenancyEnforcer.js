@@ -204,6 +204,69 @@ function makeGuardedCreate(entityName, raw, ctx) {
   };
 }
 
+
+
+function makeGuardedUpdate(entityName, raw, ctx) {
+  return async (id, payload = {}) => {
+    const activeSchoolId = ctx.getActiveSchoolId?.();
+    const userEmail = ctx.getUserEmail?.();
+    const isGlobalAdminEmail = ctx.isGlobalAdmin?.(userEmail);
+
+    const scoped = requiresSchoolScope(entityName);
+    if (!scoped) return raw.update(id, payload);
+
+    if (!activeSchoolId && !isGlobalAdminEmail) {
+      recordTenancyWarning(entityName, 'update', { id, payload, reason: 'missing_active_school' });
+      throw new Error(`TenancyEnforcer: cannot update ${entityName} without an active school`);
+    }
+
+    // Disallow moving records between schools for non-global-admins.
+    if (!isGlobalAdminEmail && Object.prototype.hasOwnProperty.call(payload || {}, 'school_id')) {
+      if (payload.school_id !== activeSchoolId) {
+        recordTenancyWarning(entityName, 'update', { id, payload, reason: 'cross_school_school_id_change' });
+        throw new Error(`TenancyEnforcer: cannot change school scope for ${entityName}`);
+      }
+    }
+
+    const checkSchoolId = (payload && payload.school_id) ? payload.school_id : activeSchoolId;
+
+    if (checkSchoolId && raw?.filter) {
+      const found = await raw.filter({ id, school_id: checkSchoolId });
+      if (!found || found.length === 0) {
+        recordTenancyWarning(entityName, 'update', { id, payload, reason: 'record_not_in_active_school' });
+        throw new Error(`TenancyEnforcer: ${entityName} ${id} not found in active school`);
+      }
+    }
+
+    return raw.update(id, payload);
+  };
+}
+
+function makeGuardedDelete(entityName, raw, ctx) {
+  return async (id) => {
+    const activeSchoolId = ctx.getActiveSchoolId?.();
+    const userEmail = ctx.getUserEmail?.();
+    const isGlobalAdminEmail = ctx.isGlobalAdmin?.(userEmail);
+
+    const scoped = requiresSchoolScope(entityName);
+    if (!scoped) return raw.delete(id);
+
+    if (!activeSchoolId && !isGlobalAdminEmail) {
+      recordTenancyWarning(entityName, 'delete', { id, reason: 'missing_active_school' });
+      throw new Error(`TenancyEnforcer: cannot delete ${entityName} without an active school`);
+    }
+
+    if (activeSchoolId && raw?.filter) {
+      const found = await raw.filter({ id, school_id: activeSchoolId });
+      if (!found || found.length === 0) {
+        recordTenancyWarning(entityName, 'delete', { id, reason: 'record_not_in_active_school' });
+        throw new Error(`TenancyEnforcer: ${entityName} ${id} not found in active school`);
+      }
+    }
+
+    return raw.delete(id);
+  };
+}
 function attachGlobalEscapeHatches(entityName, entity, raw, ctx) {
   // Global admin-only explicit escape hatches for cross-school queries.
   if (!requiresSchoolScope(entityName)) return;
@@ -277,6 +340,8 @@ export function installTenancyEnforcer(base44, ctx) {
     // list() wrapper depends on filter() to translate list -> scoped filter.
     if (raw?.list && raw?.filter) entity.list = makeGuardedList(base44, entityName, raw, ctx);
     if (raw?.create) entity.create = makeGuardedCreate(entityName, raw, ctx);
+    if (raw?.update) entity.update = makeGuardedUpdate(entityName, raw, ctx);
+    if (raw?.delete) entity.delete = makeGuardedDelete(entityName, raw, ctx);
 
     attachGlobalEscapeHatches(entityName, entity, raw, ctx);
   }

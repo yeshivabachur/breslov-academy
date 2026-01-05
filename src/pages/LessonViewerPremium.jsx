@@ -14,6 +14,7 @@ import BookmarkPanel from '../components/learning/BookmarkPanel';
 import TranscriptPanel from '../components/learning/TranscriptPanel';
 import NotesPanel from '../components/learning/NotesPanel';
 import AiTutorPanel from '../components/ai/AiTutorPanel';
+import { shouldFetchMaterials } from '@/components/materials/materialsEngine';
 import { useLessonAccess } from '../components/hooks/useLessonAccess';
 import ProtectedContent from '../components/protection/ProtectedContent';
 import AccessGate from '../components/security/AccessGate';
@@ -62,6 +63,14 @@ export default function LessonViewerPremium() {
     user,
     lesson?.school_id
   );
+
+  const canFetchMaterials = shouldFetchMaterials(access.accessLevel);
+  const rawContent = lesson?.content || '';
+  const contentToShow = (access.accessLevel === 'FULL')
+    ? rawContent
+    : (access.accessLevel === 'PREVIEW')
+      ? (rawContent.slice(0, access.maxPreviewChars || 1500) + (rawContent.length > (access.maxPreviewChars || 1500) ? '…' : ''))
+      : '';
 
   const { data: course } = useQuery({
     queryKey: ['course', lesson?.course_id],
@@ -135,12 +144,14 @@ export default function LessonViewerPremium() {
       </div>
 
       {/* Premium Video Player */}
-      {(lesson.video_url || lesson.audio_url) && (
+      {canFetchMaterials && (lesson.video_url || lesson.audio_url) && (
         <div ref={videoPlayerRef}>
           <PremiumVideoPlayer
             lesson={lesson}
             progress={progress}
             user={user}
+            accessLevel={access.accessLevel}
+            maxPreviewSeconds={access.maxPreviewSeconds}
             onProgressUpdate={() => queryClient.invalidateQueries(['progress'])}
           />
         </div>
@@ -172,7 +183,7 @@ export default function LessonViewerPremium() {
                   </CardHeader>
                   <CardContent>
                     <ReactMarkdown className="prose prose-slate max-w-none prose-headings:font-serif">
-                      {contentToShow || 'No content available'}
+                      {canFetchMaterials ? (contentToShow || 'No content available') : 'This lesson is locked. Purchase or enroll to access the content.'}
                     </ReactMarkdown>
                     {access.accessLevel === 'PREVIEW' && (
                       <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg text-center">
@@ -190,7 +201,7 @@ export default function LessonViewerPremium() {
             </TabsContent>
 
             <TabsContent value="transcript">
-              <TranscriptPanel lesson={lesson} />
+              <TranscriptPanel lesson={lesson} accessLevel={access.accessLevel} maxPreviewChars={access.maxPreviewChars} />
             </TabsContent>
           </Tabs>
         </div>
@@ -201,7 +212,7 @@ export default function LessonViewerPremium() {
             contextType="LESSON"
             contextId={lesson.id}
             contextTitle={lesson.title}
-            contextContent={lesson.content}
+            contextContent={canFetchMaterials ? contentToShow : ''}
             user={user}
             schoolId={lesson.school_id}
           />

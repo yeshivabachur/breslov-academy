@@ -7,11 +7,14 @@ import { Badge } from '@/components/ui/badge';
 import { Play, Pause, Volume2, VolumeX, SkipForward, SkipBack, Bookmark as BookmarkIcon, Settings } from 'lucide-react';
 import { toast } from 'sonner';
 
-export default function PremiumVideoPlayer({ lesson, progress, user, onProgressUpdate }) {
+export default function PremiumVideoPlayer({ lesson, progress, user, accessLevel = 'FULL', maxPreviewSeconds = 90, onProgressUpdate }) {
   const videoRef = useRef(null);
   const [playing, setPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const effectiveDuration = (accessLevel === 'PREVIEW' && maxPreviewSeconds)
+    ? Math.min(duration || 0, maxPreviewSeconds)
+    : (duration || 0);
   const [volume, setVolume] = useState(1);
   const [muted, setMuted] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
@@ -29,9 +32,22 @@ export default function PremiumVideoPlayer({ lesson, progress, user, onProgressU
     if (!video) return;
 
     const handleTimeUpdate = () => {
+      // Preview enforcement: do not allow playback past maxPreviewSeconds
+      if (accessLevel === 'PREVIEW' && maxPreviewSeconds && video.currentTime >= maxPreviewSeconds) {
+        video.currentTime = maxPreviewSeconds;
+        setCurrentTime(maxPreviewSeconds);
+        if (!video.paused) video.pause();
+        setPlaying(false);
+        if (!previewEnded) {
+          setPreviewEnded(true);
+          toast.info('Preview ended. Enroll to continue.');
+        }
+        return;
+      }
+
       setCurrentTime(video.currentTime);
-      
-      // Auto-save progress every 5 seconds
+
+      // Auto-save progress every 5 seconds (clamped in preview)
       if (Math.floor(video.currentTime) % 5 === 0) {
         saveProgress(video.currentTime);
       }
@@ -51,11 +67,16 @@ export default function PremiumVideoPlayer({ lesson, progress, user, onProgressU
   }, []);
 
   const saveProgress = async (position) => {
-    const percentage = duration > 0 ? (position / duration) * 100 : 0;
-    
+    const clampedPosition = (accessLevel === 'PREVIEW' && maxPreviewSeconds)
+      ? Math.min(position, maxPreviewSeconds)
+      : position;
+
+    const denom = effectiveDuration > 0 ? effectiveDuration : (duration > 0 ? duration : 0);
+    const percentage = denom > 0 ? (clampedPosition / denom) * 100 : 0;
+
     if (progress) {
       await base44.entities.UserProgress.update(progress.id, {
-        last_position_seconds: Math.floor(position),
+        last_position_seconds: Math.floor(clampedPosition),
         progress_percentage: Math.floor(percentage),
         last_played_at: new Date().toISOString(),
         completed: percentage >= 90
@@ -66,14 +87,14 @@ export default function PremiumVideoPlayer({ lesson, progress, user, onProgressU
         user_email: user.email,
         lesson_id: lesson.id,
         course_id: lesson.course_id,
-        last_position_seconds: Math.floor(position),
+        last_position_seconds: Math.floor(clampedPosition),
         progress_percentage: Math.floor(percentage),
         last_played_at: new Date().toISOString(),
         completed: percentage >= 90
       });
     }
-    
-    if (onProgressUpdate) onProgressUpdate();
+
+    onProgressUpdate?.();
   };
 
   const togglePlay = () => {
@@ -88,9 +109,13 @@ export default function PremiumVideoPlayer({ lesson, progress, user, onProgressU
   };
 
   const skip = (seconds) => {
-    if (videoRef.current) {
-      videoRef.current.currentTime += seconds;
-    }
+    const video = videoRef.current;
+    if (!video) return;
+    const target = video.currentTime + seconds;
+    const clamped = (accessLevel === 'PREVIEW' && maxPreviewSeconds)
+      ? Math.max(0, Math.min(target, maxPreviewSeconds))
+      : Math.max(0, Math.min(target, duration || 0));
+    video.currentTime = clamped;
   };
 
   const toggleMute = () => {
@@ -109,11 +134,13 @@ export default function PremiumVideoPlayer({ lesson, progress, user, onProgressU
   };
 
   const handleSeek = (value) => {
+    const video = videoRef.current;
+    if (!video) return;
     const newTime = value[0];
-    setCurrentTime(newTime);
-    if (videoRef.current) {
-      videoRef.current.currentTime = newTime;
-    }
+    const max = (accessLevel === 'PREVIEW' && maxPreviewSeconds) ? maxPreviewSeconds : (duration || 0);
+    const clamped = Math.max(0, Math.min(newTime, max));
+    setCurrentTime(clamped);
+    video.currentTime = clamped;
   };
 
   const changeSpeed = (rate) => {
@@ -148,14 +175,14 @@ export default function PremiumVideoPlayer({ lesson, progress, user, onProgressU
         <div className="mb-4">
           <Slider
             value={[currentTime]}
-            max={duration}
+            max={effectiveDuration}
             step={1}
             onValueChange={handleSeek}
             className="cursor-pointer"
           />
           <div className="flex justify-between text-xs text-white mt-1">
             <span>{formatTime(currentTime)}</span>
-            <span>{formatTime(duration)}</span>
+            <span>{formatTime(effectiveDuration)}</span>
           </div>
         </div>
 

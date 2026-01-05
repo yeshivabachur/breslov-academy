@@ -14,4 +14,4 @@ Date: 2026-01-01
 ## Next
 - Refactor remaining legacy `access_tier` checks to use entitlement-based access (backwards compatible).
 - Add healthcheck scripts + CI.
-- Release automation (PowerShell): generate stable ZIP + checksums + GitHub branch update.
+- Release automation (PowerShell): generate stable ZIP + checksums + GitLab branch update.

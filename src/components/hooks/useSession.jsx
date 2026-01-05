@@ -10,6 +10,7 @@ export const SessionProvider = ({ children }) => {
   const [memberships, setMemberships] = useState([]);
   const [activeSchool, setActiveSchool] = useState(null);
   const [activeSchoolId, setActiveSchoolId] = useState(null);
+  const [activeSchoolSource, setActiveSchoolSource] = useState(null); // localStorage | preference | firstMembership | manual
   const [role, setRole] = useState(null);
   const [audience, setAudience] = useState('student');
   const [isLoading, setIsLoading] = useState(true);
@@ -32,6 +33,7 @@ export const SessionProvider = ({ children }) => {
 
       // Load active school (localStorage -> persisted preference -> first membership)
       let preferredSchoolId = localStorage.getItem('active_school_id');
+      let preferredSource = preferredSchoolId ? 'localStorage' : null;
       if (!preferredSchoolId) {
         try {
           const prefs = await base44.entities.UserSchoolPreference.filter({
@@ -68,6 +70,7 @@ export const SessionProvider = ({ children }) => {
       setMemberships([]);
       setActiveSchool(null);
       setActiveSchoolId(null);
+      setActiveSchoolSource(null);
       setRole(null);
       setAudience('student');
     } finally {
@@ -96,6 +99,7 @@ export const SessionProvider = ({ children }) => {
 
   const changeActiveSchool = async (schoolId) => {
     localStorage.setItem('active_school_id', schoolId);
+    setActiveSchoolSource('manual');
     await loadActiveSchool(schoolId);
     
     // Update preference
@@ -125,6 +129,8 @@ export const SessionProvider = ({ children }) => {
     memberships,
     activeSchool,
     activeSchoolId,
+    activeSchoolSource,
+    needsSchoolSelection: memberships.length > 1 && activeSchoolSource === 'firstMembership',
     role,
     audience,
     isLoading,

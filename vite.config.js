@@ -1,6 +1,7 @@
 import base44 from "@base44/vite-plugin"
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
+import sitemap from 'vite-plugin-sitemap'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
@@ -25,5 +26,9 @@ export default defineConfig({
       visualEditAgent: true
     }),
     react(),
+    sitemap({
+      hostname: process.env.VITE_PUBLIC_BASE_URL || process.env.PUBLIC_SITE_URL || 'https://example.com',
+      robots: [{ userAgent: '*', allow: '/' }]
+    }),
   ]
 });

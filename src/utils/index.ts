@@ -10,11 +10,82 @@
  */
 import { FEATURES } from '@/components/config/features';
 
+// v9.1 "portalization" (public site + app portal) support.
+// - Public marketing routes live at /, /pricing, /about, ...
+// - Authenticated application lives under /app/*
+// - Storefront stays public under /s/:schoolSlug/*
+// We preserve all legacy deep links by keeping route aliases in the router.
+const APP_PORTAL_PREFIX = '/app';
+const PORTAL_PREFIXES = ['/student', '/teacher', '/admin', '/superadmin', '/app'];
+
+function getCurrentPortalPrefix() {
+  try {
+    if (typeof window !== 'undefined') {
+      const path = (window.location?.pathname || '').toLowerCase();
+      const fromPath = PORTAL_PREFIXES.find((p) => path === p || path.startsWith(p + '/'));
+      if (fromPath) return fromPath;
+      const stored = localStorage.getItem('ba_portal_prefix');
+      if (stored && String(stored).startsWith('/')) return String(stored);
+    }
+  } catch {
+    // ignore
+  }
+  return APP_PORTAL_PREFIX;
+}
+
+const PUBLIC_ROUTES = new Set<string>([
+  '/',
+  '/about',
+  '/how-it-works',
+  '/pricing',
+  '/faq',
+  '/contact',
+  '/privacy',
+  '/terms',
+  '/login',
+  '/login/student',
+  '/login/teacher',
+  '/blog',
+]);
+
+function isStorefrontRoute(path: string) {
+  return path.startsWith('/s/');
+}
+
+function isPublicRoute(path: string) {
+  if (PUBLIC_ROUTES.has(path)) return true;
+  // Treat /blog/* as public
+  if (path.startsWith('/blog/')) return true;
+  // Treat /legal/* and /login/* as public
+  if (path.startsWith('/legal/')) return true;
+  if (path.startsWith('/login/')) return true;
+  return false;
+}
+
+function withAppPortalPrefix(path: string) {
+  if (!path.startsWith('/')) return path;
+
+  const portalPrefix = getCurrentPortalPrefix();
+
+  // Already portalized
+  if (path.startsWith(portalPrefix + '/')) return path;
+  if (path === portalPrefix) return path;
+
+  // Never portalize public/storefront routes
+  if (isStorefrontRoute(path) || isPublicRoute(path)) return path;
+
+  // Special case: legacy root becomes portal root
+  if (path === '/') return portalPrefix;
+
+  return `${portalPrefix}${path}`;
+}
+
 export function createPageUrl(pageName: string, params: Record<string, any> = {}) {
     if (!pageName) return '/';
     // If caller passes a path already, respect it.
     if (pageName.startsWith('/')) {
-        return appendQuery(pageName, params);
+        // Apply portalization only to app-internal routes.
+        return appendQuery(withAppPortalPrefix(pageName), params);
     }
 
     // Try registry-based canonical routing first.
@@ -27,7 +98,7 @@ export function createPageUrl(pageName: string, params: Record<string, any> = {}
             return k === wanted || label === wanted;
         });
         if (match?.route) {
-            return appendQuery(String(match.route), params);
+            return appendQuery(withAppPortalPrefix(String(match.route)), params);
         }
     } catch {
         // ignore – fallback below
@@ -35,7 +106,7 @@ export function createPageUrl(pageName: string, params: Record<string, any> = {}
 
     // Fallback: legacy /PageName convention
     const legacy = '/' + pageName.replace(/ /g, '-');
-    return appendQuery(legacy, params);
+    return appendQuery(withAppPortalPrefix(legacy), params);
 }
 
 function appendQuery(path: string, params: Record<string, any>) {
