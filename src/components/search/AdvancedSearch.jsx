@@ -13,12 +13,21 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 
+const LANGUAGES = [
+  { code: 'en', label: 'English' },
+  { code: 'he', label: 'Hebrew' },
+  { code: 'es', label: 'Spanish' },
+  { code: 'fr', label: 'French' },
+  { code: 'ru', label: 'Russian' }
+];
+
 export default function AdvancedSearch({ courses, onFilter }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [selectedLevels, setSelectedLevels] = useState([]);
   const [selectedTiers, setSelectedTiers] = useState([]);
   const [selectedInstructors, setSelectedInstructors] = useState([]);
+  const [selectedLanguages, setSelectedLanguages] = useState([]);
 
   const categories = [...new Set(courses.map(c => c.category))];
   const levels = ['beginner', 'intermediate', 'advanced'];
@@ -27,7 +36,7 @@ export default function AdvancedSearch({ courses, onFilter }) {
 
   useEffect(() => {
     applyFilters();
-  }, [searchQuery, selectedCategories, selectedLevels, selectedTiers, selectedInstructors]);
+  }, [searchQuery, selectedCategories, selectedLevels, selectedTiers, selectedInstructors, selectedLanguages]);
 
   const applyFilters = () => {
     let filtered = courses;
@@ -59,6 +68,11 @@ export default function AdvancedSearch({ courses, onFilter }) {
     // Instructors
     if (selectedInstructors.length > 0) {
       filtered = filtered.filter(c => selectedInstructors.includes(c.instructor));
+    }
+
+    // Languages
+    if (selectedLanguages.length > 0) {
+      filtered = filtered.filter(c => selectedLanguages.includes(c.language || 'en'));
     }
 
     onFilter(filtered);
@@ -96,19 +110,29 @@ export default function AdvancedSearch({ courses, onFilter }) {
     );
   };
 
+  const toggleLanguage = (langCode) => {
+    setSelectedLanguages(prev => 
+      prev.includes(langCode)
+        ? prev.filter(l => l !== langCode)
+        : [...prev, langCode]
+    );
+  };
+
   const clearAllFilters = () => {
     setSearchQuery('');
     setSelectedCategories([]);
     setSelectedLevels([]);
     setSelectedTiers([]);
     setSelectedInstructors([]);
+    setSelectedLanguages([]);
   };
 
   const activeFiltersCount = 
     selectedCategories.length + 
     selectedLevels.length + 
     selectedTiers.length + 
-    selectedInstructors.length;
+    selectedInstructors.length +
+    selectedLanguages.length;
 
   return (
     <div className="space-y-4">
@@ -143,7 +167,7 @@ export default function AdvancedSearch({ courses, onFilter }) {
               )}
             </Button>
           </SheetTrigger>
-          <SheetContent className="overflow-y-auto">
+          <SheetContent className="overflow-y-auto w-[400px]">
             <SheetHeader>
               <SheetTitle className="flex items-center justify-between">
                 <span>Filters</span>
@@ -161,6 +185,25 @@ export default function AdvancedSearch({ courses, onFilter }) {
             </SheetHeader>
 
             <div className="space-y-6 mt-6">
+              {/* Languages */}
+              <div>
+                <h3 className="font-semibold mb-3">Language</h3>
+                <div className="space-y-2">
+                  {LANGUAGES.map(lang => (
+                    <div key={lang.code} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`lang-${lang.code}`}
+                        checked={selectedLanguages.includes(lang.code)}
+                        onCheckedChange={() => toggleLanguage(lang.code)}
+                      />
+                      <Label htmlFor={`lang-${lang.code}`} className="cursor-pointer">
+                        {lang.label}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               {/* Categories */}
               <div>
                 <h3 className="font-semibold mb-3">Categories</h3>
@@ -244,6 +287,14 @@ export default function AdvancedSearch({ courses, onFilter }) {
       {/* Active Filters Display */}
       {activeFiltersCount > 0 && (
         <div className="flex flex-wrap gap-2">
+          {selectedLanguages.map(langCode => (
+            <Badge key={langCode} variant="secondary" className="flex items-center space-x-1">
+              <span>{LANGUAGES.find(l => l.code === langCode)?.label}</span>
+              <button onClick={() => toggleLanguage(langCode)}>
+                <X className="w-3 h-3" />
+              </button>
+            </Badge>
+          ))}
           {selectedCategories.map(cat => (
             <Badge key={cat} variant="secondary" className="flex items-center space-x-1">
               <span>{cat.replace(/_/g, ' ')}</span>

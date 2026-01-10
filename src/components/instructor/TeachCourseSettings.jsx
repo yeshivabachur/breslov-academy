@@ -8,6 +8,14 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 
+const LANGUAGES = [
+  { code: 'en', label: 'English' },
+  { code: 'he', label: 'Hebrew' },
+  { code: 'es', label: 'Spanish' },
+  { code: 'fr', label: 'French' },
+  { code: 'ru', label: 'Russian' }
+];
+
 export default function TeachCourseSettings({ course }) {
   const queryClient = useQueryClient();
 
@@ -26,6 +34,7 @@ export default function TeachCourseSettings({ course }) {
     updateCourseMutation.mutate({
       status: formData.get('status'),
       visibility: formData.get('visibility'),
+      language: formData.get('language'),
       drip_enabled: formData.get('drip_enabled') === 'on'
     });
   };
@@ -37,6 +46,25 @@ export default function TeachCourseSettings({ course }) {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-2">
+            <Label>Course Language</Label>
+            <Select name="language" defaultValue={course.language || 'en'}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {LANGUAGES.map((lang) => (
+                  <SelectItem key={lang.code} value={lang.code}>
+                    {lang.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              This helps students filter courses by language.
+            </p>
+          </div>
+
           <div className="space-y-2">
             <Label>Course Status</Label>
             <Select name="status" defaultValue={course.status || 'draft'}>
