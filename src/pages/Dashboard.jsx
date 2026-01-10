@@ -7,21 +7,18 @@ import { BookOpen, CheckCircle, Clock, Crown, ArrowRight, Star } from 'lucide-re
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
+import { tokens, cx } from '@/components/theme/tokens';
 import StatCard from '@/components/dashboard/StatCard';
 import CourseCard from '@/components/courses/CourseCard';
 import CourseRecommendations from '@/components/ai/CourseRecommendations';
 import AnnouncementsPanel from '@/components/announcements/AnnouncementsPanel';
+import { DashboardSkeleton } from '@/components/ui/SkeletonLoaders';
 
 export default function Dashboard() {
   const { user, activeSchoolId, isLoading } = useSession();
   const [userTier, setUserTier] = useState('free');
-useEffect(() => {
-    if (!isLoading && !user) {
-      try { base44.auth.redirectToLogin(); } catch {}
-    }
-  }, [isLoading, user]);
 
-const { data: subscription } = useQuery({
+  const { data: subscription, isLoading: subLoading } = useQuery({
     queryKey: ['subscription', user?.email],
     queryFn: async () => {
       if (!user?.email) return null;
@@ -31,7 +28,7 @@ const { data: subscription } = useQuery({
     enabled: !!user?.email
   });
 
-  const { data: courses = [] } = useQuery({
+  const { data: courses = [], isLoading: coursesLoading } = useQuery({
     queryKey: ['courses', activeSchoolId],
     queryFn: async () => {
       if (!activeSchoolId) return [];
@@ -64,35 +61,47 @@ const { data: subscription } = useQuery({
   });
 
   useEffect(() => {
+    if (!isLoading && !user) {
+      try { base44.auth.redirectToLogin(); } catch {}
+    }
+  }, [isLoading, user]);
+
+  useEffect(() => {
     if (subscription?.tier) {
       setUserTier(subscription.tier);
     }
   }, [subscription]);
 
+  // Check for loading states AFTER all hooks
+  if (isLoading || subLoading || coursesLoading) {
+    return <DashboardSkeleton />;
+  }
+
   const completedLessons = progress?.courseProgress?.filter(p => p.completed).length || 0;
   const inProgressCourses = [...new Set(progress?.courseProgress?.filter(p => !p.completed).map(p => p.course_id) || [])].length;
 
   const tierBenefits = {
-    free: { name: 'Free', color: 'text-slate-600', icon: Star },
-    premium: { name: 'Premium', color: 'text-blue-600', icon: Crown },
-    elite: { name: 'Elite', color: 'text-amber-600', icon: Crown }
+    free: { name: 'Free', color: 'text-slate-600 dark:text-slate-400', icon: Star },
+    premium: { name: 'Premium', color: 'text-blue-600 dark:text-blue-400', icon: Crown },
+    elite: { name: 'Elite', color: 'text-amber-600 dark:text-amber-400', icon: Crown }
   };
 
   const currentTier = tierBenefits[userTier];
 
   return (
-    <div className="space-y-8">
+    <div className={tokens.layout.sectionGap}>
       {/* Welcome Section */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-8 shadow-2xl">
-        <div className="flex flex-col md:flex-row items-center justify-between">
-          <div className="text-white mb-6 md:mb-0">
-            <h1 className="text-4xl font-bold mb-2">
+      <div className={cx(tokens.glass.card, "p-8 md:p-12 overflow-hidden")}>
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-50" />
+        <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="text-center md:text-left">
+            <h1 className={tokens.text.h1}>
               Shalom, {user?.full_name || 'Student'}
             </h1>
-            <p className="text-slate-300 text-lg">
-              Continue your journey through the teachings of Rebbe Nachman
+            <p className={cx(tokens.text.lead, "mt-2 max-w-2xl")}>
+              Continue your journey through the teachings of Rebbe Nachman.
             </p>
-            <div className="flex items-center space-x-2 mt-4">
+            <div className="flex items-center justify-center md:justify-start space-x-2 mt-4">
               {React.createElement(currentTier.icon, { className: `w-5 h-5 ${currentTier.color}` })}
               <span className={`font-semibold ${currentTier.color}`}>
                 {currentTier.name} Member
@@ -101,7 +110,7 @@ const { data: subscription } = useQuery({
           </div>
           {userTier === 'free' && (
             <Link to={createPageUrl('Subscription')}>
-              <Button className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold px-8 py-6 text-lg shadow-xl">
+              <Button size="lg" className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all">
                 <Crown className="w-5 h-5 mr-2" />
                 Upgrade to Premium
               </Button>
@@ -111,33 +120,38 @@ const { data: subscription } = useQuery({
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className={cx("grid grid-cols-1 md:grid-cols-3", tokens.layout.gridGap)}>
         <StatCard
           icon={BookOpen}
           label="Courses Available"
           value={courses.length}
-          color="from-blue-500 to-blue-600"
+          color="text-blue-600 dark:text-blue-400"
+          bg="bg-blue-100 dark:bg-blue-900/20"
         />
         <StatCard
           icon={CheckCircle}
           label="Lessons Completed"
           value={completedLessons}
-          color="from-green-500 to-green-600"
+          color="text-green-600 dark:text-green-400"
+          bg="bg-green-100 dark:bg-green-900/20"
         />
         <StatCard
           icon={Clock}
           label="In Progress"
           value={inProgressCourses}
-          color="from-amber-500 to-amber-600"
+          color="text-amber-600 dark:text-amber-400"
+          bg="bg-amber-100 dark:bg-amber-900/20"
         />
       </div>
 
       {/* Featured Quote */}
-      <div className="bg-gradient-to-r from-amber-50 to-blue-50 rounded-xl p-8 border-l-4 border-amber-500">
-        <p className="text-slate-700 text-xl italic font-serif mb-3">
+      <div className={cx(tokens.glass.card, "p-8 border-l-4 border-l-amber-500")}>
+        <blockquote className="text-xl md:text-2xl font-serif italic text-foreground/80 mb-4 text-center md:text-left">
           "The essence of Torah study is to turn the intellect toward Hashem and to come closer to Him through the wisdom of Torah."
-        </p>
-        <p className="text-slate-600 font-semibold">— Likutey Moharan I:25</p>
+        </blockquote>
+        <cite className="block text-sm font-semibold text-muted-foreground text-center md:text-left">
+          — Likutey Moharan I:25
+        </cite>
       </div>
 
       {/* Announcements */}
@@ -153,26 +167,26 @@ const { data: subscription } = useQuery({
       {/* Featured Courses */}
       <div>
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-3xl font-bold text-slate-900">Featured Courses</h2>
+          <h2 className={tokens.text.h2}>Featured Courses</h2>
           <Link to={createPageUrl('Courses')}>
-            <Button variant="outline" className="group">
-              View All Courses
+            <Button variant="ghost" className="group text-muted-foreground hover:text-foreground">
+              View All
               <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
             </Button>
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className={cx("grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3", tokens.layout.gridGap)}>
           {courses.slice(0, 3).map((course) => (
             <CourseCard key={course.id} course={course} userTier={userTier} />
           ))}
         </div>
 
         {courses.length === 0 && (
-          <div className="text-center py-12 bg-white rounded-xl border-2 border-dashed border-slate-300">
-            <BookOpen className="w-16 h-16 text-slate-400 mx-auto mb-4" />
-            <p className="text-slate-600 text-lg">No courses available yet</p>
-            <p className="text-slate-500 text-sm mt-2">Check back soon for new Torah content</p>
+          <div className="text-center py-16 bg-muted/30 rounded-2xl border-2 border-dashed border-border">
+            <BookOpen className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+            <p className="text-lg font-medium text-foreground">No courses available yet</p>
+            <p className="text-muted-foreground mt-2">Check back soon for new Torah content</p>
           </div>
         )}
       </div>

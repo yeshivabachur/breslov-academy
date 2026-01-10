@@ -1,5 +1,4 @@
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Clock, Crown, Sparkles, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -29,10 +28,10 @@ export default function CourseCard({ course, userTier = 'free' }) {
 
   return (
     <Link to={createPageUrl(`CourseDetail?id=${course.id}`)} className="block h-full group">
-      <Card className={cx(
+      <div className={cx(
         tokens.glass.card, 
         tokens.glass.cardHover,
-        "h-full overflow-hidden border-none shadow-sm flex flex-col"
+        "h-full overflow-hidden flex flex-col"
       )}>
         <div className="relative aspect-video overflow-hidden bg-muted">
           {course.thumbnail_url ? (
@@ -59,32 +58,32 @@ export default function CourseCard({ course, userTier = 'free' }) {
           )}
 
           <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
-            <Badge variant="secondary" className={cx("border-none font-medium", levelColors[course.level])}>
+            <Badge variant="secondary" className={cx("border-none font-medium backdrop-blur-sm", levelColors[course.level])}>
               {course.level}
             </Badge>
           </div>
         </div>
 
-        <CardContent className="p-6 flex-1 flex flex-col">
+        <div className="p-6 flex-1 flex flex-col">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-3">
               <TierIcon className={cx("w-3.5 h-3.5", tierColor)} />
-              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              <span className={tokens.text.meta}>
                 {course.category || 'General'}
               </span>
             </div>
 
-            <h3 className="font-bold text-xl leading-tight mb-2 group-hover:text-primary transition-colors line-clamp-2">
+            <h3 className={cx(tokens.text.h3, "mb-2 group-hover:text-primary transition-colors line-clamp-2")}>
               {course.title}
             </h3>
             
             {course.title_hebrew && (
-              <p className="text-primary font-medium mb-3 text-lg leading-relaxed" dir="rtl">
+              <p className="text-primary/90 font-medium mb-3 text-lg leading-relaxed font-serif" dir="rtl">
                 {course.title_hebrew}
               </p>
             )}
             
-            <p className="text-muted-foreground text-sm line-clamp-2 leading-relaxed mb-4">
+            <p className={cx(tokens.text.body, "text-sm line-clamp-2 mb-4 text-muted-foreground")}>
               {course.description}
             </p>
           </div>
@@ -102,8 +101,8 @@ export default function CourseCard({ course, userTier = 'free' }) {
               </div>
             )}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </Link>
   );
 }
