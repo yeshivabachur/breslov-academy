@@ -124,6 +124,7 @@ export const FEATURES = {
   
   // v8.5 additions
   schoolStaff: { key: 'SchoolStaff', label: 'Staff Management', route: '/schoolstaff', area: 'admin', audiences: ['admin'], icon: 'Users', vaultOnly: true },
+  schoolFeatures: { key: 'SchoolFeatures', label: 'Feature Manager', route: '/schoolfeatures', area: 'admin', audiences: ['admin'], icon: 'ToggleRight', vaultOnly: true },
   auditLogViewer: { key: 'AuditLogViewer', label: 'Audit Log', route: '/auditlogviewer', area: 'admin', audiences: ['admin'], icon: 'Shield', vaultOnly: true },
   inviteAccept: { key: 'InviteAccept', label: 'Accept Invite', route: '/inviteaccept', area: 'system', audiences: ['public'], hidden: true }
 };

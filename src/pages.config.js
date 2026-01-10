@@ -30,6 +30,7 @@ const TeachGrading = React.lazy(() => import('./pages/TeachGrading'));
 const SchoolAdmin = React.lazy(() => import('./pages/SchoolAdmin'));
 const SchoolAnalytics = React.lazy(() => import('./pages/SchoolAnalytics'));
 const SchoolMonetization = React.lazy(() => import('./pages/SchoolMonetization'));
+const SchoolFeatures = React.lazy(() => import('./pages/SchoolFeatures'));
 const SchoolStaff = React.lazy(() => import('./pages/SchoolStaff'));
 const AuditLogViewer = React.lazy(() => import('./pages/AuditLogViewer'));
 const AdminHardening = React.lazy(() => import('./pages/AdminHardening'));
@@ -140,6 +141,7 @@ export const PAGES = {
     "SchoolJoin": SchoolJoin,
     "SchoolLanding": SchoolLanding,
     "SchoolMonetization": SchoolMonetization,
+    "SchoolFeatures": SchoolFeatures,
     "SchoolNew": SchoolNew,
     "SchoolPricing": SchoolPricing,
     "SchoolSearch": SchoolSearch,

@@ -1,9 +1,9 @@
 # Roadmap Status
 
-**Current Version:** v9.4 (Integrity & Performance)
+**Current Version:** v9.5 (Storefront & Trust)
 **Last Updated:** 2026-01-11
 
-## v9.x Milestones
+## v9.x Milestones (ALL COMPLETE)
 
 - [x] **v9.1 Stable Foundation**
     - [x] Portalization (Student/Teacher/Admin split)
@@ -26,6 +26,11 @@
     - [x] Integrity Dashboard (/integrity)
     - [x] Lazy Loading Optimization
     - [x] Bundle Size Reduction
+
+- [x] **v9.5 Storefront & Trust**
+    - [x] School Landing Page Redesign
+    - [x] Pricing Page (Bundles/Add-ons)
+    - [x] Trust Signals & FAQ
 
 ## Future Horizons (v10.0+)
 - **Mobile Native:** Capacitor/React Native wrapper.

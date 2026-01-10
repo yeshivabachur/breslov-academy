@@ -1,6 +1,6 @@
 # Breslov Academy LMS
 
-**Version:** 9.4 Integrity & Performance
+**Version:** 9.5 Storefront & Trust
 **Architecture:** Multi-Tenant, Portalized, Registry-Driven, Lazy-Loaded
 **Status:** Production Ready (2026-01-11)
 
@@ -10,7 +10,7 @@
 - **[Architecture Map](./docs/REALITY_MAP.md):** Current codebase structure.
 - **[Audit Report](./docs/AUDIT_REPORT_V9_1.md):** Zero-Trust security audit results.
 
-## Key Features (v9.4)
+## Key Features (v9.5 Complete)
 
 ### 🎨 University-Grade Design System
 - **Calm UI:** "Calm" gradients, glassmorphism cards (`GlassCard`), and serif typography for a premium academic feel.
@@ -21,6 +21,11 @@
 - **Leaderboards:** Global and time-based rankings with "Top Scholar" highlighting.
 - **Achievements:** Visual badge collection grid with progress tracking.
 - **Study Buddies:** Peer matching system with "Match Score" and accountability tools.
+
+### 🛍️ Storefront & Trust
+- **Landing Pages:** High-conversion school landing pages with testimonials, instructor bios, and FAQs.
+- **Smart Pricing:** Clear tiered pricing displays for Subscriptions, Bundles, and Add-ons.
+- **Trust Signals:** Secure checkout badges and satisfaction guarantees.
 
 ### 🛡️ System Integrity
 - **Diagnostics:** Real-time `/integrity` dashboard for admins to detect registry drift and tenancy leaks.

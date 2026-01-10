@@ -2,6 +2,12 @@
 
 All notable changes to the Breslov Academy LMS project.
 
+## [v9.5] - 2026-01-11
+### Storefront & Trust
+- **School Landing:** Redesigned public landing pages with modern Hero, Benefits, Testimonials, and FAQ sections.
+- **Pricing Page:** Upgraded pricing display to support tiered Subscriptions, Bundles, and Add-ons with "Best Value" indicators.
+- **Trust Signals:** Added secure checkout badges and satisfaction guarantee visual elements.
+
 ## [v9.4] - 2026-01-11
 ### Integrity & Performance
 - **Integrity Dashboard:** Revamped `/integrity` with real-time tenancy warning streams and source code scans.
