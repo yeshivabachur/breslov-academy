@@ -7,6 +7,8 @@ import { scopedFilter } from '@/components/api/scoped';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ArrowLeft, Settings as SettingsIcon, Users, DollarSign, BookOpen, Eye } from 'lucide-react';
+import { tokens, cx } from '@/components/theme/tokens';
+import { DashboardSkeleton } from '@/components/ui/SkeletonLoaders';
 import TeachCourseCurriculum from '@/components/instructor/TeachCourseCurriculum';
 import TeachCoursePricing from '@/components/instructor/TeachCoursePricing';
 import TeachCourseStudents from '@/components/instructor/TeachCourseStudents';
@@ -34,80 +36,81 @@ export default function TeachCourse() {
   });
 
   if (isLoading || !course) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-          <p className="text-slate-600">Loading course...</p>
-        </div>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   return (
-    <div className="space-y-6">
+    <div className={tokens.layout.sectionGap}>
       {/* Header */}
-      <div className="bg-gradient-to-r from-indigo-900 to-purple-900 rounded-xl p-8 shadow-xl text-white">
-        <Button 
-          variant="ghost" 
-          onClick={() => navigate(createPageUrl('Teach'))}
-          className="text-white hover:bg-white/10 mb-4"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Dashboard
-        </Button>
-        
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">{course.title}</h1>
-            <p className="text-indigo-200">{course.subtitle || 'Course Builder'}</p>
+      <div className={cx(tokens.glass.card, "p-8 md:p-12 overflow-hidden bg-gradient-to-r from-indigo-900 to-purple-900 border-none")}>
+        <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex-1">
+            <Button 
+              variant="ghost" 
+              onClick={() => navigate(createPageUrl('Teach'))}
+              className="text-white/80 hover:text-white hover:bg-white/10 mb-4 pl-0 -ml-2 transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Dashboard
+            </Button>
+            
+            <h1 className={cx(tokens.text.h1, "text-white mb-2")}>{course.title}</h1>
+            <p className="text-indigo-100/80 text-lg font-medium">{course.subtitle || 'Course Builder'}</p>
           </div>
+          
           <Button 
-            variant="secondary"
+            className="bg-white/10 text-white hover:bg-white/20 border border-white/20 backdrop-blur-sm"
             onClick={() => window.open(createPageUrl(`CourseDetail?id=${course.id}`), '_blank')}
           >
             <Eye className="w-4 h-4 mr-2" />
-            Preview
+            Preview Course
           </Button>
         </div>
+        
+        {/* Background Pattern */}
+        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 pointer-events-none" />
       </div>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="curriculum">
-            <BookOpen className="w-4 h-4 mr-2" />
-            Curriculum
-          </TabsTrigger>
-          <TabsTrigger value="pricing">
-            <DollarSign className="w-4 h-4 mr-2" />
-            Pricing & Access
-          </TabsTrigger>
-          <TabsTrigger value="students">
-            <Users className="w-4 h-4 mr-2" />
-            Students
-          </TabsTrigger>
-          <TabsTrigger value="settings">
-            <SettingsIcon className="w-4 h-4 mr-2" />
-            Settings
-          </TabsTrigger>
-        </TabsList>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
+        <div className={tokens.glass.card}>
+          <TabsList className="grid w-full grid-cols-4 p-1 bg-muted/50 rounded-xl">
+            <TabsTrigger value="curriculum" className="data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg transition-all">
+              <BookOpen className="w-4 h-4 mr-2" />
+              Curriculum
+            </TabsTrigger>
+            <TabsTrigger value="pricing" className="data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg transition-all">
+              <DollarSign className="w-4 h-4 mr-2" />
+              Pricing
+            </TabsTrigger>
+            <TabsTrigger value="students" className="data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg transition-all">
+              <Users className="w-4 h-4 mr-2" />
+              Students
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg transition-all">
+              <SettingsIcon className="w-4 h-4 mr-2" />
+              Settings
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
-        <TabsContent value="curriculum">
-          <TeachCourseCurriculum course={course} user={user} />
-        </TabsContent>
+        <div className="min-h-[500px]">
+          <TabsContent value="curriculum" className="mt-0 focus-visible:outline-none">
+            <TeachCourseCurriculum course={course} user={user} />
+          </TabsContent>
 
-        <TabsContent value="pricing">
-          <TeachCoursePricing course={course} schoolId={activeSchoolId} />
-        </TabsContent>
+          <TabsContent value="pricing" className="mt-0 focus-visible:outline-none">
+            <TeachCoursePricing course={course} schoolId={activeSchoolId} />
+          </TabsContent>
 
-        <TabsContent value="students">
-          <TeachCourseStudents course={course} schoolId={activeSchoolId} />
-        </TabsContent>
+          <TabsContent value="students" className="mt-0 focus-visible:outline-none">
+            <TeachCourseStudents course={course} schoolId={activeSchoolId} />
+          </TabsContent>
 
-        <TabsContent value="settings">
-          <TeachCourseSettings course={course} />
-        </TabsContent>
+          <TabsContent value="settings" className="mt-0 focus-visible:outline-none">
+            <TeachCourseSettings course={course} />
+          </TabsContent>
+        </div>
       </Tabs>
     </div>
   );
