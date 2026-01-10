@@ -41,6 +41,7 @@ const Integrity = React.lazy(() => import('./pages/Integrity'));
 // Lazy-Loaded: Labs & Experimental (Non-critical)
 const Achievements = React.lazy(() => import('./pages/Achievements'));
 const AITutorPage = React.lazy(() => import('./pages/AITutorPage'));
+const VirtualBeitMidrashPage = React.lazy(() => import('./pages/VirtualBeitMidrashPage'));
 const Leaderboard = React.lazy(() => import('./pages/Leaderboard'));
 const StudyBuddies = React.lazy(() => import('./pages/StudyBuddies'));
 const Tournaments = React.lazy(() => import('./pages/Tournaments'));
@@ -170,6 +171,7 @@ export const PAGES = {
     "MyQuizzes": MyQuizzes,
     "Tournaments": Tournaments,
     "Vault": Vault,
+    "VirtualBeitMidrash": VirtualBeitMidrashPage,
     "oauth2callback": oauth2callback,
     "Account": Account,
     "NetworkAdmin": NetworkAdmin,

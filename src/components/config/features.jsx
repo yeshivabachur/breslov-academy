@@ -107,6 +107,7 @@ export const FEATURES = {
   leaderboard: { key: 'Leaderboard', label: 'Leaderboard', route: '/leaderboard', area: 'labs', audiences: ['student', 'teacher', 'admin'], icon: 'Trophy', vaultOnly: true },
   learningPaths: { key: 'LearningPaths', label: 'Learning Paths', route: '/learningpaths', area: 'core', audiences: ['student', 'teacher', 'admin'], icon: 'Map', vaultOnly: true },
   liveStreams: { key: 'LiveStreams', label: 'Live Streams', route: '/livestreams', area: 'labs', audiences: ['student', 'teacher', 'admin'], icon: 'Video', vaultOnly: true },
+  virtualBeitMidrash: { key: 'VirtualBeitMidrash', label: 'Virtual Beit Midrash', route: '/virtual-beit-midrash', area: 'labs', audiences: ['student', 'teacher', 'admin'], icon: 'Box', order: 5 },
   marketplace: { key: 'Marketplace', label: 'Marketplace', route: '/marketplace', area: 'labs', audiences: ['student', 'teacher', 'admin'], icon: 'Store', vaultOnly: true },
   mentorship: { key: 'Mentorship', label: 'Mentorship', route: '/mentorship', area: 'labs', audiences: ['student', 'teacher', 'admin'], icon: 'Users', vaultOnly: true },
   messages: { key: 'Messages', label: 'Messages', route: '/messages', area: 'core', audiences: ['student', 'teacher', 'admin'], icon: 'Mail', vaultOnly: true },
