@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Search } from 'lucide-react';
+import { scopedFilter } from '@/components/api/scoped';
 import CourseCard from '@/components/courses/CourseCard';
 import AdvancedSearch from '@/components/search/AdvancedSearch';
 

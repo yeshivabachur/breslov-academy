@@ -6,7 +6,7 @@ import { ArrowLeft, Clock, Crown, Play, Lock, CheckCircle, BookOpen, ClipboardCh
 import { base44 } from '@/api/base44Client';
 import { createPageUrl } from '@/utils';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { scopedFilter } from '@/components/api/scoped';

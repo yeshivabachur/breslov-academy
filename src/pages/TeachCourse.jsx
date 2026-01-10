@@ -1,18 +1,28 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
+import { useSession } from '@/components/hooks/useSession';
+import { scopedFilter } from '@/components/api/scoped';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ArrowLeft, Settings as SettingsIcon, Users, DollarSign, BookOpen, Eye } from 'lucide-react';
 import TeachCourseCurriculum from '@/components/instructor/TeachCourseCurriculum';
 import TeachCoursePricing from '@/components/instructor/TeachCoursePricing';
 import TeachCourseStudents from '@/components/instructor/TeachCourseStudents';
-import { scopedFilter } from '@/components/api/scoped';
-
-// ...
+import TeachCourseSettings from '@/components/instructor/TeachCourseSettings';
 
 export default function TeachCourse() {
-  // ... (state setup)
+  const { user, activeSchoolId } = useSession();
+  const [courseId, setCourseId] = useState(null);
+  const [activeTab, setActiveTab] = useState('curriculum');
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('id');
+    setCourseId(id);
+  }, []);
 
   const { data: course, isLoading } = useQuery({
     queryKey: ['course', courseId, activeSchoolId],
@@ -37,7 +47,7 @@ export default function TeachCourse() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-indigo-900 to-purple-900 rounded-xl p-8 shadow-xl">
+      <div className="bg-gradient-to-r from-indigo-900 to-purple-900 rounded-xl p-8 shadow-xl text-white">
         <Button 
           variant="ghost" 
           onClick={() => navigate(createPageUrl('Teach'))}
@@ -48,7 +58,7 @@ export default function TeachCourse() {
         </Button>
         
         <div className="flex items-start justify-between">
-          <div className="text-white">
+          <div>
             <h1 className="text-3xl font-bold mb-2">{course.title}</h1>
             <p className="text-indigo-200">{course.subtitle || 'Course Builder'}</p>
           </div>

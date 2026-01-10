@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { 
@@ -18,7 +19,8 @@ import {
   FileText, 
   User, 
   Award,
-  AlertCircle
+  AlertCircle,
+  BookOpen
 } from 'lucide-react';
 import { toast } from 'sonner';
 

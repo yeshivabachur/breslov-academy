@@ -7,23 +7,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MapPin, Clock, Crown, BookOpen, ArrowRight } from 'lucide-react';
-import { scopedFilter } from '@/components/api/scoped';
+import { useSession } from '@/components/hooks/useSession';
 
 export default function LearningPaths() {
   const { user, activeSchoolId } = useSession();
   const [userTier, setUserTier] = useState('free');
-
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-      } catch (error) {
-        base44.auth.redirectToLogin();
-      }
-    };
-    loadUser();
-  }, []);
 
   const { data: subscription } = useQuery({
     queryKey: ['subscription', user?.email],
