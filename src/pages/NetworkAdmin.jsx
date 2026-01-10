@@ -61,6 +61,59 @@ export default function NetworkAdmin() {
     enabled: isGlobalAdmin
   });
 
+  // Pending Applications
+  const { data: pendingApps = [] } = useQuery({
+    queryKey: ['pending-apps'],
+    queryFn: () => base44.entities.TenantApplication.list('-created_date', 100),
+    enabled: isGlobalAdmin
+  });
+
+  const approveAppMutation = useMutation({
+    mutationFn: async (app) => {
+      // 1. Create School
+      const school = await base44.entities.School.create({
+        name: app.name,
+        slug: app.slug,
+        description: app.description,
+        created_by_user: user.email
+      });
+
+      // 2. Create Owner Membership
+      await base44.entities.SchoolMembership.create({
+        school_id: school.id,
+        user_email: app.admin_email,
+        role: 'OWNER'
+      });
+
+      // 3. Create Policy
+      await base44.entities.ContentProtectionPolicy.create({
+        school_id: school.id,
+        protect_content: true,
+        allow_previews: true,
+        max_preview_seconds: 90,
+        max_preview_chars: 1500,
+        copy_mode: 'ADDON',
+        download_mode: 'ADDON'
+      });
+
+      // 4. Update Application Status
+      await base44.entities.TenantApplication.update(app.id, {
+        status: 'approved',
+        school_id: school.id
+      });
+
+      return school;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['all-schools']);
+      queryClient.invalidateQueries(['pending-apps']);
+      toast.success('Application approved & school created');
+    },
+    onError: (err) => {
+      toast.error('Failed to approve application: ' + err.message);
+    }
+  });
+
   const createSchoolMutation = useMutation({
     mutationFn: async (data) => {
       const school = await base44.entities.School.create(data);
@@ -229,6 +282,41 @@ export default function NetworkAdmin() {
                 </Button>
               </div>
             </form>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Pending Applications */}
+      {pendingApps.filter(a => a.status === 'pending').length > 0 && (
+        <Card className="border-amber-200 bg-amber-50/30">
+          <CardHeader>
+            <CardTitle className="text-amber-800 flex items-center">
+              <Users className="w-5 h-5 mr-2" />
+              Pending School Applications
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {pendingApps.filter(a => a.status === 'pending').map(app => (
+                <div key={app.id} className="flex items-center justify-between p-4 bg-white rounded-lg border shadow-sm">
+                  <div>
+                    <h4 className="font-bold text-lg">{app.name}</h4>
+                    <div className="flex items-center gap-3 text-sm text-slate-600">
+                      <Badge variant="outline">/s/{app.slug}</Badge>
+                      <span>{app.admin_email}</span>
+                    </div>
+                    <p className="text-sm mt-2 text-slate-700">{app.description}</p>
+                  </div>
+                  <Button 
+                    onClick={() => approveAppMutation.mutate(app)}
+                    disabled={approveAppMutation.isPending}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    Approve & Create
+                  </Button>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
       )}

@@ -89,6 +89,16 @@ function injectSchoolId({ entityName, filters, activeSchoolId, userEmail, isGlob
     return { ...cloned, school_id: activeSchoolId };
   }
 
+  // Public invite acceptance exception:
+  // Allow token-based lookup for invite entities when no school_id/activeSchoolId is available.
+  // Safety: require a minimally long token to reduce guessability.
+  if ((entityName === 'StaffInvite' || entityName === 'SchoolInvite') && typeof cloned.token === 'string') {
+    const token = String(cloned.token).trim();
+    if (token.length >= 16) {
+      return cloned;
+    }
+  }
+
   // No activeSchoolId and no explicit school_id => unsafe.
   return null;
 }

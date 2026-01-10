@@ -7,15 +7,30 @@ export default function LoginStudent() {
 
   useEffect(() => {
     try {
+      // Canonical intent keys (v9.1+)
       localStorage.setItem('ba_intended_audience', 'student');
       localStorage.setItem('ba_portal_prefix', '/student');
+
+      // Legacy compatibility keys (kept indefinitely)
+      localStorage.setItem('portal_intent', 'student');
+      localStorage.setItem('portal_prefix', '/student');
       localStorage.setItem('breslov.login.intent', 'student');
     } catch {}
   }, []);
 
   const handle = () => {
     const origin = window.location.origin;
-    navigateToLogin(`${origin}/student?loginRole=student`);
+    const params = new URLSearchParams(window.location.search);
+    const returnTo = params.get('returnTo');
+    const safeReturnTo = (() => {
+      if (!returnTo) return null;
+      const p = String(returnTo);
+      if (p.includes('://')) return null;
+      if (!(p.startsWith('/student'))) return null;
+      return p;
+    })();
+
+    navigateToLogin(safeReturnTo ? `${origin}${safeReturnTo}` : `${origin}/student?loginRole=student`);
   };
 
   return (

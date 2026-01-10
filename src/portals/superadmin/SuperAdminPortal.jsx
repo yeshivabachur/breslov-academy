@@ -7,7 +7,7 @@ export default function SuperAdminPortal() {
     <PortalGate
       portalPrefix="/superadmin"
       intendedAudience="admin"
-      allowedAudiences=['admin']
+      allowedAudiences={['admin']}
     >
       <AppPortal />
     </PortalGate>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { scopedCreate } from '@/components/api/scoped';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -87,14 +88,29 @@ export default function SchoolProtectionSettings({ schoolId }) {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
+      let policyId;
       if (policyRecord) {
         await base44.entities.ContentProtectionPolicy.update(policyRecord.id, policy);
+        policyId = policyRecord.id;
       } else {
-        await base44.entities.ContentProtectionPolicy.create({
+        const newPolicy = await base44.entities.ContentProtectionPolicy.create({
           school_id: schoolId,
           ...policy
         });
+        policyId = newPolicy.id;
       }
+
+      // Log the change (Phase 6 Requirement)
+      await scopedCreate('AuditLog', schoolId, {
+        school_id: schoolId,
+        action: 'CONTENT_PROTECTION_UPDATE',
+        entity_type: 'ContentProtectionPolicy',
+        entity_id: policyId,
+        metadata: { 
+          updated_fields: Object.keys(policy),
+          timestamp: new Date().toISOString()
+        }
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['protection-policy']);

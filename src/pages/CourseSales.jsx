@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
+import { scopedFilter } from '@/components/api/scoped';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import useStorefrontContext from '../components/hooks/useStorefrontContext';
+import useStorefrontContext from '@/components/hooks/useStorefrontContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -52,24 +53,24 @@ export default function CourseSales() {
   });
 
   const { data: course } = useQuery({
-    queryKey: ['course', courseId],
+    queryKey: ['course', school?.id, courseId],
     queryFn: async () => {
-      const courses = await base44.entities.Course.filter({ id: courseId });
+      const courses = await scopedFilter('Course', school.id, { id: courseId });
       return courses[0];
     },
-    enabled: !!courseId
+    enabled: !!school?.id && !!courseId
   });
 
   const { data: lessons = [] } = useQuery({
-    queryKey: ['course-lessons', courseId],
-    queryFn: () => base44.entities.Lesson.filter({ course_id: courseId }, 'order'),
-    enabled: !!courseId
+    queryKey: ['course-lessons', school?.id, courseId],
+    queryFn: () => scopedFilter('Lesson', school.id, { course_id: courseId }, 'order'),
+    enabled: !!school?.id && !!courseId
   });
 
   const { data: reviews = [] } = useQuery({
-    queryKey: ['course-reviews', courseId],
-    queryFn: () => base44.entities.CourseReview.filter({ course_id: courseId }, '-created_date', 10),
-    enabled: !!courseId
+    queryKey: ['course-reviews', school?.id, courseId],
+    queryFn: () => scopedFilter('CourseReview', school.id, { course_id: courseId }, '-created_date', 10),
+    enabled: !!school?.id && !!courseId
   });
 
   const { data: offers = [] } = useQuery({

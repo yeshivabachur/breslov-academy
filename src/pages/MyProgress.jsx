@@ -1,42 +1,42 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
+import { scopedFilter, scopedList } from '@/components/api/scoped';
+import { useSession } from '@/components/hooks/useSession';
 import { useQuery } from '@tanstack/react-query';
 import { Trophy, BookOpen, Clock, TrendingUp, CheckCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { Badge } from '@/components/ui/badge';
-import StatCard from '../components/dashboard/StatCard';
+import StatCard from '@/components/dashboard/StatCard';
 
 export default function MyProgress() {
-  const [user, setUser] = useState(null);
+  const { user, activeSchoolId, isLoading } = useSession();
 
   useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-      } catch (error) {
-        base44.auth.redirectToLogin();
-      }
-    };
-    loadUser();
-  }, []);
+    if (!isLoading && !user) {
+      try { base44.auth.redirectToLogin(); } catch {}
+    }
+  }, [isLoading, user]);
 
-  const { data: progress = [] } = useQuery({
-    queryKey: ['progress', user?.email],
-    queryFn: () => base44.entities.UserProgress.filter({ user_email: user.email }),
-    enabled: !!user?.email
+const { data: progress = [] } = useQuery({
+    queryKey: ['progress', activeSchoolId, user?.email],
+    queryFn: () => scopedFilter('UserProgress', activeSchoolId, { user_email: user.email }),
+    enabled: !!activeSchoolId && !!user?.email
   });
 
   const { data: courses = [] } = useQuery({
-    queryKey: ['courses'],
-    queryFn: () => base44.entities.Course.filter({ is_published: true })
+    queryKey: ['courses', activeSchoolId],
+    queryFn: () => scopedFilter('Course', activeSchoolId, { is_published: true })
+    ,
+    enabled: !!activeSchoolId
   });
 
   const { data: lessons = [] } = useQuery({
-    queryKey: ['lessons'],
-    queryFn: () => base44.entities.Lesson.list()
+    queryKey: ['lessons', activeSchoolId],
+    queryFn: () => scopedList('Lesson', activeSchoolId, 'order', 500)
+    ,
+    enabled: !!activeSchoolId
   });
 
   const completedLessons = progress.filter(p => p.completed).length;

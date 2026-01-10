@@ -2,6 +2,7 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { appParams } from '@/lib/app-params';
 import { createAxiosClient } from '@base44/sdk/dist/utils/axios-client';
+import { checkRateLimit } from '@/components/security/rateLimiter';
 
 const AuthContext = createContext();
 
@@ -123,7 +124,13 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const navigateToLogin = (nextUrl = window.location.href) => {
+  const navigateToLogin = async (nextUrl = window.location.href) => {
+    // Rate limit the redirect attempt (client-side defense)
+    const { allowed } = await checkRateLimit('login', 'guest'); 
+    if (!allowed) {
+      console.warn('Login redirect rate limited');
+      return;
+    }
     // Uses Base44 SDK redirectToLogin(nextUrl)
     base44.auth.redirectToLogin(nextUrl);
   };

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import PageShell from '@/components/ui/PageShell';
 import { Card, CardContent } from '@/components/ui/card';
@@ -11,8 +11,10 @@ import { getQuizMeta, loadQuizForAccess } from '@/components/academic/quizEngine
 import QuizCard from '@/components/learning/QuizCard';
 
 export default function QuizTake() {
-  const { quizId = '' } = useParams();
-  const { user, activeSchoolId, memberships, changeActiveSchool, isTeacher, isLoading } = useSession();
+  const params = useParams();
+  const [searchParams] = useSearchParams();
+  const quizId = (params.quizId || searchParams.get('quizId') || searchParams.get('id') || '').trim();
+const { user, activeSchoolId, memberships, changeActiveSchool, isTeacher, isLoading } = useSession();
 
   const membershipSchoolIds = useMemo(() => {
     const ids = new Set();

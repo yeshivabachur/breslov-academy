@@ -1,27 +1,29 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
+import { scopedFilter } from '@/components/api/scoped';
+import { useSession } from '@/components/hooks/useSession';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, ChevronLeft, ChevronRight, CheckCircle, BookOpen } from 'lucide-react';
-import { toast } from 'sonner';
 import ReactMarkdown from 'react-markdown';
-import PremiumVideoPlayer from '../components/learning/PremiumVideoPlayer';
-import BookmarkPanel from '../components/learning/BookmarkPanel';
-import TranscriptPanel from '../components/learning/TranscriptPanel';
-import NotesPanel from '../components/learning/NotesPanel';
-import AiTutorPanel from '../components/ai/AiTutorPanel';
+import PremiumVideoPlayer from '@/components/learning/PremiumVideoPlayer';
+import BookmarkPanel from '@/components/learning/BookmarkPanel';
+import TranscriptPanel from '@/components/learning/TranscriptPanel';
+import NotesPanel from '@/components/learning/NotesPanel';
+import AiTutorPanel from '@/components/ai/AiTutorPanel';
+import { useLessonAccess } from '@/components/hooks/useLessonAccess';
 import { shouldFetchMaterials } from '@/components/materials/materialsEngine';
-import { useLessonAccess } from '../components/hooks/useLessonAccess';
-import ProtectedContent from '../components/protection/ProtectedContent';
-import AccessGate from '../components/security/AccessGate';
+import ProtectedContent from '@/components/protection/ProtectedContent';
+import AccessGate from '@/components/security/AccessGate';
+import { tokens, cx } from '@/components/theme/tokens';
 
 export default function LessonViewerPremium() {
-  const [activeSchool, setActiveSchool] = useState(null);
-  const [user, setUser] = useState(null);
+  const { user, activeSchool, activeSchoolId, isLoading } = useSession();
   const [currentTime, setCurrentTime] = useState(0);
   const queryClient = useQueryClient();
   const videoPlayerRef = useRef(null);
@@ -30,74 +32,104 @@ export default function LessonViewerPremium() {
   const lessonId = urlParams.get('id');
 
   useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-        
-        const schoolId = localStorage.getItem('active_school_id');
-        if (schoolId) {
-          const schools = await base44.entities.School.filter({ id: schoolId });
-          if (schools[0]) setActiveSchool(schools[0]);
-        }
-      } catch (error) {
-        base44.auth.redirectToLogin();
-      }
-    };
-    loadUser();
-  }, []);
+    if (!isLoading && !user) {
+      try { base44.auth.redirectToLogin(); } catch {}
+    }
+  }, [isLoading, user]);
 
-  const { data: lesson } = useQuery({
-    queryKey: ['lesson', lessonId],
+  // Lesson metadata (safe fields only)
+  const { data: lessonMeta } = useQuery({
+    queryKey: ['lesson-meta', activeSchoolId, lessonId],
     queryFn: async () => {
-      const lessons = await base44.entities.Lesson.filter({ id: lessonId });
-      return lessons[0];
+      if (!activeSchoolId || !lessonId) return null;
+      const lessons = await scopedFilter('Lesson', activeSchoolId, { id: lessonId });
+      const l = lessons?.[0] || null;
+      if (!l) return null;
+      return {
+        id: l.id,
+        school_id: l.school_id,
+        course_id: l.course_id,
+        title: l.title,
+        is_preview: l.is_preview,
+        drip_publish_at: l.drip_publish_at,
+        drip_days_after_enroll: l.drip_days_after_enroll,
+      };
     },
-    enabled: !!lessonId
+    enabled: !!activeSchoolId && !!lessonId,
+    staleTime: 30_000,
   });
 
-  // Access control
+  // Access control (membership-first)
   const access = useLessonAccess(
-    lesson?.course_id,
+    lessonMeta?.course_id,
     lessonId,
     user,
-    lesson?.school_id
+    activeSchoolId,
+    { lessonMeta }
   );
 
-  const canFetchMaterials = shouldFetchMaterials(access.accessLevel);
-  const rawContent = lesson?.content || '';
-  const contentToShow = (access.accessLevel === 'FULL')
-    ? rawContent
-    : (access.accessLevel === 'PREVIEW')
-      ? (rawContent.slice(0, access.maxPreviewChars || 1500) + (rawContent.length > (access.maxPreviewChars || 1500) ? '…' : ''))
-      : '';
+  const shouldLoadLesson = access.accessLevel === 'FULL' || access.accessLevel === 'PREVIEW';
+
+  // Full lesson payload (only when FULL or PREVIEW)
+  const { data: lesson } = useQuery({
+    queryKey: ['lesson-full', activeSchoolId, lessonId],
+    queryFn: async () => {
+      const lessons = await scopedFilter('Lesson', activeSchoolId, { id: lessonId });
+      return lessons?.[0] || null;
+    },
+    enabled: !!activeSchoolId && !!lessonId && shouldLoadLesson,
+    staleTime: 15_000,
+  });
+
+  const effectiveCourseId = lessonMeta?.course_id || lesson?.course_id;
+  const allowCourseData = access.accessLevel === 'FULL' || access.accessLevel === 'PREVIEW';
 
   const { data: course } = useQuery({
-    queryKey: ['course', lesson?.course_id],
+    queryKey: ['course', activeSchoolId, effectiveCourseId],
     queryFn: async () => {
-      const courses = await base44.entities.Course.filter({ id: lesson.course_id });
+      const courses = await scopedFilter('Course', activeSchoolId, { id: effectiveCourseId });
       return courses[0];
     },
-    enabled: !!lesson?.course_id
+    enabled: !!activeSchoolId && !!effectiveCourseId && allowCourseData
   });
 
   const { data: allLessons = [] } = useQuery({
-    queryKey: ['lessons', lesson?.course_id],
-    queryFn: () => base44.entities.Lesson.filter({ course_id: lesson.course_id }, 'order'),
-    enabled: !!lesson?.course_id
+    queryKey: ['lessons', activeSchoolId, effectiveCourseId],
+    queryFn: () => scopedFilter('Lesson', activeSchoolId, { course_id: effectiveCourseId }, 'order'),
+    enabled: !!activeSchoolId && !!effectiveCourseId && allowCourseData
   });
 
   const { data: progress } = useQuery({
-    queryKey: ['progress', user?.email, lessonId],
+    queryKey: ['progress', activeSchoolId, user?.email, lessonId],
     queryFn: async () => {
-      const progs = await base44.entities.UserProgress.filter({
+      const progs = await scopedFilter('UserProgress', activeSchoolId, {
         user_email: user.email,
-        lesson_id: lessonId
+        lesson_id: lessonId,
       });
       return progs[0] || null;
     },
-    enabled: !!user?.email && !!lessonId
+    enabled: !!activeSchoolId && !!user?.email && !!lessonId && access.accessLevel === 'FULL'
   });
+
+  const canFetchMaterials = shouldFetchMaterials(access.accessLevel);
+  const rawContent = lesson?.content || lesson?.content_json || '';
+  const maxChars = access.maxPreviewChars || 1500;
+  const contentToShow = (access.accessLevel === 'FULL')
+    ? rawContent
+    : (access.accessLevel === 'PREVIEW')
+      ? (rawContent.slice(0, maxChars) + (rawContent.length > maxChars ? '…' : ''))
+      : '';
+
+  if (access.accessLevel === 'LOCKED' || access.accessLevel === 'DRIP_LOCKED') {
+    return (
+      <AccessGate
+        mode={access.accessLevel}
+        courseId={effectiveCourseId}
+        schoolSlug={activeSchool?.slug}
+        message={access.accessLevel === 'DRIP_LOCKED' ? (access.dripInfo?.countdownLabel || 'This lesson will unlock soon.') : undefined}
+      />
+    );
+  }
 
   if (!lesson || !course) {
     return (
@@ -113,39 +145,42 @@ export default function LessonViewerPremium() {
   const nextLesson = currentIndex < allLessons.length - 1 ? allLessons[currentIndex + 1] : null;
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
+    <div className={tokens.layout.sectionGap}>
       {/* Header */}
       <div>
         <Link to={createPageUrl(`CourseDetail?id=${course.id}`)}>
-          <Button variant="ghost" className="group mb-4">
-            <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
+          <Button variant="ghost" className="group mb-4 pl-0 hover:pl-2 transition-all">
+            <ArrowLeft className="w-4 h-4 mr-2" />
             Back to {course.title}
           </Button>
         </Link>
 
-        <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 rounded-xl p-8 shadow-2xl">
-          <p className="text-amber-400 text-sm mb-2 font-medium">{course.title}</p>
-          <h1 className="text-4xl font-bold text-white mb-2">{lesson.title}</h1>
-          {lesson.title_hebrew && (
-            <h2 className="text-2xl text-amber-300 font-serif" dir="rtl">{lesson.title_hebrew}</h2>
-          )}
-          <div className="flex items-center space-x-2 mt-4">
-            {progress?.completed && (
-              <div className="inline-flex items-center px-3 py-1 rounded-full bg-green-500/20 text-green-400 border border-green-500/30">
-                <CheckCircle className="w-4 h-4 mr-2" />
-                <span className="text-sm font-medium">Completed</span>
-              </div>
+        <div className="relative overflow-hidden rounded-2xl bg-slate-900 p-8 shadow-xl">
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900" />
+          <div className="relative z-10">
+            <p className="text-primary/80 text-sm mb-2 font-medium tracking-wide uppercase">{course.title}</p>
+            <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">{lesson.title}</h1>
+            {lesson.title_hebrew && (
+              <h2 className="text-2xl text-amber-400/90 font-serif" dir="rtl">{lesson.title_hebrew}</h2>
             )}
-            {access.accessLevel === 'PREVIEW' && (
-              <Badge className="bg-amber-500">Preview Mode</Badge>
-            )}
+            <div className="flex items-center space-x-2 mt-4">
+              {progress?.completed && (
+                <Badge variant="outline" className="border-green-500/30 text-green-400 bg-green-500/10">
+                  <CheckCircle className="w-3.5 h-3.5 mr-1" />
+                  Completed
+                </Badge>
+              )}
+              {access.accessLevel === 'PREVIEW' && (
+                <Badge className="bg-amber-500 text-black border-none">Preview Mode</Badge>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
       {/* Premium Video Player */}
       {canFetchMaterials && (lesson.video_url || lesson.audio_url) && (
-        <div ref={videoPlayerRef}>
+        <div ref={videoPlayerRef} className="rounded-2xl overflow-hidden shadow-lg border border-border/50">
           <PremiumVideoPlayer
             lesson={lesson}
             progress={progress}
@@ -158,15 +193,15 @@ export default function LessonViewerPremium() {
       )}
 
       {/* Lesson Content & Tools */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
           <Tabs defaultValue="content" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="content">Content</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsTrigger value="content">Lesson Content</TabsTrigger>
               <TabsTrigger value="transcript">Transcript</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="content">
+            <TabsContent value="content" className="mt-0">
               <ProtectedContent
                 policy={access.policy}
                 userEmail={user?.email}
@@ -174,23 +209,18 @@ export default function LessonViewerPremium() {
                 canCopy={access.canCopy}
                 canDownload={access.canDownload}
               >
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <BookOpen className="w-5 h-5 mr-2" />
-                      Lesson Content
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ReactMarkdown className="prose prose-slate max-w-none prose-headings:font-serif">
-                      {canFetchMaterials ? (contentToShow || 'No content available') : 'This lesson is locked. Purchase or enroll to access the content.'}
+                <Card className="border-none shadow-sm">
+                  <CardContent className="p-6 md:p-8">
+                    <ReactMarkdown className="prose prose-slate dark:prose-invert max-w-none prose-headings:font-semibold prose-a:text-primary hover:prose-a:underline">
+                      {canFetchMaterials ? (contentToShow || 'No content available.') : 'This lesson is locked.'}
                     </ReactMarkdown>
+                    
                     {access.accessLevel === 'PREVIEW' && (
-                      <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg text-center">
-                        <p className="text-amber-800 mb-3">Preview limit reached</p>
+                      <div className="mt-8 p-6 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded-xl text-center">
+                        <p className="text-amber-800 dark:text-amber-300 mb-4 font-medium">You've reached the end of the preview.</p>
                         <Link to={createPageUrl(`CourseSales?slug=${activeSchool?.slug}&courseId=${course.id}`)}>
-                          <Button className="bg-amber-500 hover:bg-amber-600">
-                            Purchase Full Access
+                          <Button className="bg-primary hover:bg-primary/90 shadow-md">
+                            Unlock Full Course
                           </Button>
                         </Link>
                       </div>
@@ -200,7 +230,7 @@ export default function LessonViewerPremium() {
               </ProtectedContent>
             </TabsContent>
 
-            <TabsContent value="transcript">
+            <TabsContent value="transcript" className="mt-0">
               <TranscriptPanel lesson={lesson} accessLevel={access.accessLevel} maxPreviewChars={access.maxPreviewChars} />
             </TabsContent>
           </Tabs>
@@ -233,12 +263,15 @@ export default function LessonViewerPremium() {
       </div>
 
       {/* Navigation */}
-      <div className="flex justify-between items-center pt-6 border-t border-slate-200">
+      <div className="flex justify-between items-center pt-8 border-t border-border">
         {previousLesson ? (
           <Link to={createPageUrl(`LessonViewerPremium?id=${previousLesson.id}`)}>
-            <Button variant="outline" className="group">
+            <Button variant="outline" className="group h-12 px-6">
               <ChevronLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
-              Previous Lesson
+              <div>
+                <span className="block text-xs text-muted-foreground text-left">Previous</span>
+                <span className="block font-semibold">{previousLesson.title}</span>
+              </div>
             </Button>
           </Link>
         ) : (
@@ -247,16 +280,19 @@ export default function LessonViewerPremium() {
 
         {nextLesson ? (
           <Link to={createPageUrl(`LessonViewerPremium?id=${nextLesson.id}`)}>
-            <Button className="bg-indigo-600 hover:bg-indigo-700 group">
-              Next Lesson
+            <Button className="group h-12 px-6 shadow-md bg-primary hover:bg-primary/90 text-primary-foreground">
+              <div className="text-right">
+                <span className="block text-xs opacity-80">Next Lesson</span>
+                <span className="block font-semibold">{nextLesson.title}</span>
+              </div>
               <ChevronRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
             </Button>
           </Link>
         ) : (
           <Link to={createPageUrl(`CourseDetail?id=${course.id}`)}>
-            <Button className="bg-green-600 hover:bg-green-700">
+            <Button className="bg-green-600 hover:bg-green-700 h-12 px-6">
               <CheckCircle className="w-4 h-4 mr-2" />
-              Back to Course
+              Complete Course
             </Button>
           </Link>
         )}

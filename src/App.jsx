@@ -20,6 +20,10 @@ import PublicFAQ from '@/portals/public/pages/PublicFAQ';
 import LoginChooser from '@/portals/public/pages/LoginChooser';
 import LoginStudent from '@/portals/public/pages/LoginStudent';
 import LoginTeacher from '@/portals/public/pages/LoginTeacher';
+import SignupChooser from '@/portals/public/pages/SignupChooser';
+import SignupStudent from '@/portals/public/pages/SignupStudent';
+import SignupTeacher from '@/portals/public/pages/SignupTeacher';
+import SignupSchool from '@/portals/public/pages/SignupSchool';
 import LegalPrivacy from '@/portals/public/pages/LegalPrivacy';
 import LegalTerms from '@/portals/public/pages/LegalTerms';
 
@@ -54,6 +58,12 @@ function App() {
                 <Route path="login" element={<LoginChooser />} />
                 <Route path="login/student" element={<LoginStudent />} />
                 <Route path="login/teacher" element={<LoginTeacher />} />
+
+                {/* Dedicated signups (v9.1 spec) */}
+                <Route path="signup" element={<SignupChooser />} />
+                <Route path="signup/student" element={<SignupStudent />} />
+                <Route path="signup/teacher" element={<SignupTeacher />} />
+                <Route path="signup/school" element={<SignupSchool />} />
 
                 {/* Legal pages (must be public for OAuth branding) */}
                 <Route path="privacy" element={<LegalPrivacy />} />

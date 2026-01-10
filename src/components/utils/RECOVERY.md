@@ -128,7 +128,30 @@ Defense-in-depth safety net that auto-injects `school_id` into school-scoped ent
 
 ---
 
-Last Updated: 2025-12-30
+Last Updated: 2026-01-10
+
+---
+
+## v9.1 Recovery Additions (Stable Release)
+
+### Portal Architecture
+
+- **Resolver:** `src/portals/shared/PortalPageResolver.jsx` maps URL slugs to components using the Registry (`portalPages.js`).
+- **Layouts:** `StudentLayout`, `TeacherLayout`, `AdminLayout` wrap `PortalLayout` and force `audienceOverride` to ensure correct sidebar context.
+- **Smart Session:** `useSession.jsx` respects `ba_intended_audience` to allow role-based context switching (e.g. Admin viewing Student Portal).
+
+### Critical Fixes
+
+- **Tenancy:** `TeachCourse.jsx` and `TeachLesson.jsx` now use `scopedFilter` to prevent IDOR.
+- **Audit:** `PayoutBatchManager.jsx` and `SchoolProtectionSettings.jsx` now log critical actions to `AuditLog`.
+- **Search:** `SchoolSearch.jsx` enforces metadata-only search for Lessons/Texts.
+
+### If Nav Breaks
+
+1. Check `src/components/config/features.jsx` (Registry).
+2. Verify `portalPages.js` exports the component.
+3. Check `PortalGate.jsx` allowed audiences.
+4. Clear localStorage `ba_intended_audience`.
 
 ---
 
@@ -150,3 +173,33 @@ Last Updated: 2025-12-30
 ### Query contracts
 
 - `src/components/api/contracts.js` and `normalizeLimit()` ensure reads remain bounded.
+
+---
+
+## v10.0 Architecture (Portals + Onboarding)
+
+### Portal Layouts
+
+- **Global Shell:** `src/portals/shared/PortalLayout.jsx` (replaces legacy `Layout.jsx`)
+- **Portal Entry Points:** `/student/*`, `/teacher/*`, `/admin/*`
+- **Routing:** `src/portals/app/AppPortal.jsx` handles internal routing
+- **Gating:** `src/components/routing/PortalGate.jsx` enforces auth + audience
+
+### Onboarding Flow
+
+- **Signup Chooser:** `/signup`
+- **Student/Teacher:** `/signup/student`, `/signup/teacher`
+- **School Creation:** `/signup/school` (creates pending TenantApplication)
+
+### Import Standard
+
+- **Alias:** Always use `@/` for `src/` imports.
+- **Forbidden:** Relative `../` imports crossing module boundaries.
+
+### Critical Files (v10 Additions)
+
+- src/portals/shared/PortalLayout.jsx
+- src/portals/shared/PortalSidebar.jsx
+- src/components/routing/PortalGate.jsx
+- src/components/theme/ThemeToggle.jsx
+- src/components/storefront/SchoolHero.jsx

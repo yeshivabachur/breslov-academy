@@ -25,12 +25,16 @@ export const FEATURES = {
   downloads: { key: 'Downloads', label: 'Downloads', route: '/downloads', area: 'core', audiences: ['student', 'teacher', 'admin'], icon: 'Download', vaultOnly: true },
   myQuizzes: { key: 'MyQuizzes', label: 'My Quizzes', route: '/my-quizzes', area: 'core', audiences: ['student', 'teacher', 'admin'], icon: 'ClipboardCheck', order: 6 },
   
+  quizTake: { key: 'QuizTake', label: 'Take Quiz', route: '/quiz/:quizId', area: 'core', audiences: ['student', 'teacher', 'admin'], hidden: true },
+  
   // TEACHING
   teach: { key: 'Teach', label: 'Teach', route: '/teach', area: 'teach', audiences: ['teacher', 'admin'], icon: 'GraduationCap', order: 1 },
   teachCourse: { key: 'TeachCourse', label: 'Course Builder', route: '/teachcourse', area: 'teach', audiences: ['teacher', 'admin'], icon: 'Edit', hidden: true },
   teachCourseNew: { key: 'TeachCourseNew', label: 'New Course', route: '/teachcoursenew', area: 'teach', audiences: ['teacher', 'admin'], icon: 'Plus', hidden: true },
   teachLesson: { key: 'TeachLesson', label: 'Lesson Editor', route: '/teachlesson', area: 'teach', audiences: ['teacher', 'admin'], icon: 'FileEdit', hidden: true },
   teachQuizzes: { key: 'TeachQuizzes', label: 'Quizzes', route: '/teach/quizzes', area: 'teach', audiences: ['teacher', 'admin'], icon: 'ClipboardList', order: 3 },
+  teachQuizEditor: { key: 'TeachQuizEditor', label: 'Quiz Editor', route: '/teach/quizzes/:quizId', area: 'teach', audiences: ['teacher', 'admin'], hidden: true },
+  teachGrading: { key: 'TeachGrading', label: 'Grading', route: '/teach/grading', area: 'teach', audiences: ['teacher', 'admin'], icon: 'CheckSquare', order: 4 },
   teachAnalytics: { key: 'TeachAnalytics', label: 'Teaching Analytics', route: '/teachanalytics', area: 'teach', audiences: ['teacher', 'admin'], icon: 'BarChart', order: 2 },
   
   // ADMIN
@@ -43,6 +47,22 @@ export const FEATURES = {
   legacyMigration: { key: 'LegacyMigration', label: 'Legacy Migration', route: '/legacymigration', area: 'admin', audiences: ['admin'], icon: 'Database', vaultOnly: true },
   
   // MARKETING & STOREFRONT
+  // PUBLIC MARKETING (guest routes)
+  publicHome: { key: 'PublicHome', label: 'Home', route: '/', area: 'marketing', audiences: ['public'], hidden: true },
+  publicAbout: { key: 'PublicAbout', label: 'About', route: '/about', area: 'marketing', audiences: ['public'], hidden: true },
+  publicHowItWorks: { key: 'PublicHowItWorks', label: 'How It Works', route: '/how-it-works', area: 'marketing', audiences: ['public'], hidden: true },
+  publicPricing: { key: 'PublicPricing', label: 'Pricing', route: '/pricing', area: 'marketing', audiences: ['public'], hidden: true },
+  publicFAQ: { key: 'PublicFAQ', label: 'FAQ', route: '/faq', area: 'marketing', audiences: ['public'], hidden: true },
+  publicContact: { key: 'PublicContact', label: 'Contact', route: '/contact', area: 'marketing', audiences: ['public'], hidden: true },
+
+  loginChooserPublic: { key: 'LoginChooserPublic', label: 'Login', route: '/login', area: 'marketing', audiences: ['public'], hidden: true },
+  loginStudentPublic: { key: 'LoginStudentPublic', label: 'Student Login', route: '/login/student', area: 'marketing', audiences: ['public'], hidden: true },
+  loginTeacherPublic: { key: 'LoginTeacherPublic', label: 'Teacher Login', route: '/login/teacher', area: 'marketing', audiences: ['public'], hidden: true },
+
+  legalPrivacy: { key: 'LegalPrivacy', label: 'Privacy Policy', route: '/privacy', aliases: ['/legal/privacy'], area: 'marketing', audiences: ['public'], hidden: true },
+  legalTerms: { key: 'LegalTerms', label: 'Terms of Service', route: '/terms', aliases: ['/legal/terms'], area: 'marketing', audiences: ['public'], hidden: true },
+
+
   schoolLanding: { key: 'SchoolLanding', label: 'Landing Page', route: '/schoollanding', area: 'marketing', audiences: ['public', 'student', 'teacher', 'admin'], icon: 'Globe' },
   schoolCourses: { key: 'SchoolCourses', label: 'Course Catalog', route: '/schoolcourses', area: 'marketing', audiences: ['public', 'student', 'teacher', 'admin'], icon: 'Library' },
   courseSales: { key: 'CourseSales', label: 'Sales Page', route: '/coursesales', area: 'marketing', audiences: ['public', 'student', 'teacher', 'admin'], icon: 'ShoppingBag', hidden: true },
@@ -128,13 +148,22 @@ export const getFeaturesByArea = (area) => {
 };
 
 export const getAllRoutes = () => {
-  return Object.values(FEATURES).map(f => f.route);
+  const routes = [];
+  Object.values(FEATURES).forEach((f) => {
+    if (f?.route) routes.push(f.route);
+    if (Array.isArray(f?.aliases)) {
+      f.aliases.forEach((a) => {
+        if (a) routes.push(a);
+      });
+    }
+  });
+  return Array.from(new Set(routes));
 };
 
 export const getNavGroupsForAudience = (audience) => {
   const groups = {};
   Object.values(FEATURES)
-    .filter(f => !f.hidden && !f.vaultOnly && f.audiences.includes(audience))
+    .filter(f => !f.hidden && !f.vaultOnly && (f.showInMainNav !== false) && f.audiences.includes(audience))
     .forEach(feature => {
       if (!groups[feature.area]) {
         groups[feature.area] = {

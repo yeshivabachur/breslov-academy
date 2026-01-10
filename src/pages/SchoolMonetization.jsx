@@ -7,10 +7,10 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { DollarSign, Tag, ShoppingCart, TrendingUp } from 'lucide-react';
 import { toast } from 'sonner';
-import { createEntitlementsForPurchase, processReferral, recordCouponRedemption } from '../components/utils/entitlements';
-import ConversionFunnel from '../components/analytics/ConversionFunnel';
-import RevenueChart from '../components/analytics/RevenueChart';
-import PayoutBatchManager from '../components/payouts/PayoutBatchManager';
+import { createEntitlementsForPurchase, processReferral, recordCouponRedemption } from '@/components/utils/entitlements';
+import ConversionFunnel from '@/components/analytics/ConversionFunnel';
+import RevenueChart from '@/components/analytics/RevenueChart';
+import PayoutBatchManager from '@/components/payouts/PayoutBatchManager';
 import { createPageUrl } from '@/utils';
 import VirtualizedList from '@/components/system/VirtualizedList';
 

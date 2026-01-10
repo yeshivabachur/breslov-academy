@@ -7,15 +7,30 @@ export default function LoginTeacher() {
 
   useEffect(() => {
     try {
+      // Canonical intent keys (v9.1+)
       localStorage.setItem('ba_intended_audience', 'teacher');
       localStorage.setItem('ba_portal_prefix', '/teacher');
+
+      // Legacy compatibility keys (kept indefinitely)
+      localStorage.setItem('portal_intent', 'teacher');
+      localStorage.setItem('portal_prefix', '/teacher');
       localStorage.setItem('breslov.login.intent', 'teacher');
     } catch {}
   }, []);
 
   const handle = () => {
     const origin = window.location.origin;
-    navigateToLogin(`${origin}/teacher?loginRole=teacher`);
+    const params = new URLSearchParams(window.location.search);
+    const returnTo = params.get('returnTo');
+    const safeReturnTo = (() => {
+      if (!returnTo) return null;
+      const p = String(returnTo);
+      if (p.includes('://')) return null;
+      if (!(p.startsWith('/teacher') || p.startsWith('/admin'))) return null;
+      return p;
+    })();
+
+    navigateToLogin(safeReturnTo ? `${origin}${safeReturnTo}` : `${origin}/teacher?loginRole=teacher`);
   };
 
   return (

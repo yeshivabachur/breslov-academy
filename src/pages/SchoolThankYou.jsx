@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
+import { scopedFilter } from '@/components/api/scoped';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import useStorefrontContext from '../components/hooks/useStorefrontContext';
+import useStorefrontContext from '@/components/hooks/useStorefrontContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, Mail, Plus } from 'lucide-react';
-import { hasCopyLicense, hasDownloadLicense } from '../components/utils/entitlements';
+import { hasCopyLicense, hasDownloadLicense } from '@/components/utils/entitlements';
 import confetti from 'canvas-confetti';
 
 export default function SchoolThankYou() {
@@ -69,21 +70,21 @@ export default function SchoolThankYou() {
   });
 
   const { data: transaction } = useQuery({
-    queryKey: ['transaction', transactionId],
+    queryKey: ['transaction', school?.id, transactionId],
     queryFn: async () => {
-      const transactions = await base44.entities.Transaction.filter({ id: transactionId });
+      const transactions = await scopedFilter('Transaction', school.id, { id: transactionId });
       return transactions[0];
     },
-    enabled: !!transactionId
+    enabled: !!school?.id && !!transactionId
   });
 
   const { data: offer } = useQuery({
-    queryKey: ['offer', transaction?.offer_id],
+    queryKey: ['offer', school?.id, transaction?.offer_id],
     queryFn: async () => {
-      const offers = await base44.entities.Offer.filter({ id: transaction.offer_id });
+      const offers = await scopedFilter('Offer', school.id, { id: transaction.offer_id });
       return offers[0];
     },
-    enabled: !!transaction?.offer_id
+    enabled: !!school?.id && !!transaction?.offer_id
   });
 
   const { data: entitlements = [] } = useQuery({

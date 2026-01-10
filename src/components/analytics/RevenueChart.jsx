@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { scopedFilter } from '../api/scoped';
+import { scopedFilter } from '@/components/api/scoped';
 
 export default function RevenueChart({ schoolId }) {
   const { data: transactions = [] } = useQuery({

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
+import { scopedCreate } from '@/components/api/scoped';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -74,10 +75,10 @@ export default function TeachCourseNew() {
         is_published: false
       };
 
-      const course = await base44.entities.Course.create(courseData);
+      const course = await scopedCreate('Course', activeSchoolId, courseData);
 
       // Create CourseStaff record
-      await base44.entities.CourseStaff.create({
+      await scopedCreate('CourseStaff', activeSchoolId, {
         school_id: activeSchoolId,
         course_id: course.id,
         user_email: user.email,

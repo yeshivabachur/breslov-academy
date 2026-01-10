@@ -60,7 +60,7 @@ export const RECOVERY = `
 
 **Access:**
 \`\`\`javascript
-import { FEATURES, FEATURE_AREAS } from '../components/config/features';
+import { FEATURES, FEATURE_AREAS } from '@/components/config/features';
 \`\`\`
 
 ## Vault Access

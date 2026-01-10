@@ -5,8 +5,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Download, FileText, BookOpen, Headphones, Lock } from 'lucide-react';
-import { scopedFilter } from '../components/api/scoped';
+import { scopedFilter } from '@/components/api/scoped';
 import { isEntitlementActive } from '@/components/utils/entitlements';
+import { checkRateLimit } from '@/components/security/rateLimiter';
 import { toast } from 'sonner';
 
 export default function Downloads() {
@@ -121,8 +122,15 @@ export default function Downloads() {
                   {finalCanDownload ? (
                     <Button
                       onClick={async () => {
+                        // Rate limit check
+                        const { allowed } = await checkRateLimit('download', user.email, activeSchoolId);
+                        if (!allowed) {
+                          toast.error('Download rate limit exceeded. Please wait.');
+                          return;
+                        }
+
                         // Secure retrieval
-                        const { getSecureDownloadUrl } = await import('../components/materials/materialsEngine');
+                        const { getSecureDownloadUrl } = await import('@/components/materials/materialsEngine');
                         const result = await getSecureDownloadUrl({
                           school_id: activeSchoolId,
                           download_id: download.id,

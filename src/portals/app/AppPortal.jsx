@@ -63,6 +63,15 @@ const AppIndexRedirect = () => {
   const isTeacher = a === 'teacher' || a === 'admin' || r === 'TEACHER' || r === 'ADMIN' || r === 'OWNER';
   const isTeacherHint = intended === 'teacher' || intended === 'admin';
 
+  // Portal-specific landings (portalization)
+  const p = String(loc.pathname || '').toLowerCase();
+  if (p.startsWith('/superadmin')) {
+    return <Navigate to="NetworkAdmin" replace />;
+  }
+  if (p.startsWith('/admin')) {
+    return <Navigate to="SchoolAdmin" replace />;
+  }
+
   return <Navigate to={(isTeacher || isTeacherHint) ? "teach" : "dashboard"} replace />;
 };
 
@@ -81,6 +90,15 @@ const DynamicPageRoute = ({ fallbackLabel = 'Loading page…' }) => {
     </LayoutWrapper>
   );
 };
+
+// Helper to wrap explicit routes in the layout
+const WrappedRoute = ({ component: Component, pageName }) => (
+  <LayoutWrapper currentPageName={pageName}>
+    <Suspense fallback={<RouteFallback />}>
+      <Component />
+    </Suspense>
+  </LayoutWrapper>
+);
 
 /**
  * Authenticated application portal.
@@ -108,11 +126,11 @@ export default function AppPortal() {
       <Route path="onboarding" element={<OnboardingHub />} />
 
       {/* Canonical quiz routes (v9.0/v9.1) */}
-      <Route path="my-quizzes" element={<Pages.MyQuizzes />} />
-      <Route path="quiz/:quizId" element={<Pages.QuizTake />} />
-      <Route path="teach/quizzes" element={<Pages.TeachQuizzes />} />
-      <Route path="teach/quizzes/new" element={<Pages.TeachQuizEditor />} />
-      <Route path="teach/quizzes/:quizId" element={<Pages.TeachQuizEditor />} />
+      <Route path="my-quizzes" element={<WrappedRoute component={Pages.MyQuizzes} pageName="MyQuizzes" />} />
+      <Route path="quiz/:quizId" element={<WrappedRoute component={Pages.QuizTake} pageName="QuizTake" />} />
+      <Route path="teach/quizzes" element={<WrappedRoute component={Pages.TeachQuizzes} pageName="TeachQuizzes" />} />
+      <Route path="teach/quizzes/new" element={<WrappedRoute component={Pages.TeachQuizEditor} pageName="TeachQuizEditor" />} />
+      <Route path="teach/quizzes/:quizId" element={<WrappedRoute component={Pages.TeachQuizEditor} pageName="TeachQuizEditor" />} />
 
       {/* Registry + legacy single-segment routes */}
       <Route path=":pageName" element={<DynamicPageRoute />} />

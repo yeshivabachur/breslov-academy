@@ -5,8 +5,8 @@ import { Search, Filter } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import CourseCard from '../components/courses/CourseCard';
-import AdvancedSearch from '../components/search/AdvancedSearch';
+import CourseCard from '@/components/courses/CourseCard';
+import AdvancedSearch from '@/components/search/AdvancedSearch';
 
 export default function Courses() {
   const [user, setUser] = useState(null);
@@ -34,7 +34,7 @@ export default function Courses() {
     queryKey: ['subscription', user?.email],
     queryFn: async () => {
       if (!user?.email) return null;
-      const subs = await base44.entities.Subscription.filter({ user_email: user.email });
+      const subs = await scopedFilter('Subscription', activeSchoolId, { user_email: user.email });
       return subs[0] || null;
     },
     enabled: !!user?.email

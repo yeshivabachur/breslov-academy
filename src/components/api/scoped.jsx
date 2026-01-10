@@ -28,11 +28,20 @@ export const scopedFilter = async (entityName, schoolId, additionalFilters = {},
   }
 
   const filters = requiresSchoolScope(entityName)
-    ? { school_id: schoolId, ...additionalFilters }
+    ? { ...additionalFilters, school_id: schoolId }
     : additionalFilters;
 
   return base44.entities[entityName].filter(filters, sort, normalizeLimit(limit));
 };
+
+/**
+ * Scoped get - fetch single record by id within school
+ */
+export const scopedGet = async (entityName, schoolId, id) => {
+  const rows = await scopedFilter(entityName, schoolId, { id });
+  return rows?.[0] || null;
+};
+
 
 /**
  * Scoped create - ensure school_id is included
@@ -43,7 +52,7 @@ export const scopedCreate = async (entityName, schoolId, payload) => {
   }
 
   const data = requiresSchoolScope(entityName)
-    ? { school_id: schoolId, ...payload }
+    ? { ...payload, school_id: schoolId }
     : payload;
 
   return base44.entities[entityName].create(data);

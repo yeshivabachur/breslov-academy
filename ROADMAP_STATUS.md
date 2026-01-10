@@ -1,17 +1,19 @@
 # Roadmap Status
 
-Date: 2026-01-01
+Date: 2026-01-09
 
 ## Done
-- v7 foundation: Protected content system (copy/print/download blocking, watermarking, preview limits, license add-ons).
-- Tenancy scaffolding: `TenancyBridge`, `tenancyEnforcer`, `scoped*` helpers.
-- Feature registry: Vault discoverability for all pages.
+- v7 foundation: Protected content system.
+- v9.0: Quizzes, access hardening, public site, portalization.
+- v9.1: Onboarding & Tenant Excellence (Signups, Invites, Approvals, Audit Logs).
+- v9.2: Student Learning WOW (Dashboard, Course Detail, Lesson Viewer).
+- v9.3: Teacher Power Tools (Course builder, Quiz bank, Grading dashboard).
+- v9.4: Storefront Conversion & Trust (FAQ, Idempotency, Attribution).
+- v9.5: Observability & QA (CI/CD, Integrity Scanner).
 
-## In progress (v9.0)
-- Quizzes: canonical routes + teacher editor + student take flow + attempt recording.
-- Access hardening: fix `useLessonAccess` hook to be hook-rule compliant and expiry/drip aware.
+## In progress (v10.0+)
+- Major Upgrades: Feature flags framework, multi-language support.
 
 ## Next
-- Refactor remaining legacy `access_tier` checks to use entitlement-based access (backwards compatible).
-- Add healthcheck scripts + CI.
-- Release automation (PowerShell): generate stable ZIP + checksums + GitLab branch update.
+- Integrations Marketplace
+- Content Protection Materials Engine v2

@@ -8,10 +8,10 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { BookMarked, Search, Highlighter, FileText, Lock } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
-import ProtectedContent from '../components/protection/ProtectedContent';
-import AccessGate from '../components/security/AccessGate';
-import AiTutorPanel from '../components/ai/AiTutorPanel';
-import { scopedFilter } from '../components/api/scoped';
+import ProtectedContent from '@/components/protection/ProtectedContent';
+import AccessGate from '@/components/security/AccessGate';
+import AiTutorPanel from '@/components/ai/AiTutorPanel';
+import { scopedFilter } from '@/components/api/scoped';
 
 export default function Reader() {
   const [user, setUser] = useState(null);

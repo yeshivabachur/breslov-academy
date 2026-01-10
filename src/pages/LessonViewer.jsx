@@ -1,64 +1,87 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
+import { useSession } from '@/components/hooks/useSession';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, CheckCircle, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react';
-import DiscussionThread from '../components/learning/DiscussionThread';
-import AITutor from '../components/ai/AITutor';
-import TranscriptViewer from '../components/video/TranscriptViewer';
-import Whiteboard from '../components/collaboration/Whiteboard';
-import OfflineMode from '../components/mobile/OfflineMode';
-import AdvancedVideoPlayer from '../components/video/AdvancedVideoPlayer';
+import DiscussionThread from '@/components/learning/DiscussionThread';
+import AITutor from '@/components/ai/AITutor';
+import TranscriptViewer from '@/components/video/TranscriptViewer';
+import Whiteboard from '@/components/collaboration/Whiteboard';
+import OfflineMode from '@/components/mobile/OfflineMode';
+import AdvancedVideoPlayer from '@/components/video/AdvancedVideoPlayer';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import ReactMarkdown from 'react-markdown';
+import { shouldFetchMaterials } from '@/components/materials/materialsEngine';
 import { toast } from 'sonner';
-import { useLessonAccess } from '../components/hooks/useLessonAccess';
-import ProtectedContent from '../components/protection/ProtectedContent';
-import AccessGate from '../components/security/AccessGate';
-import { scopedFilter } from '../components/api/scoped';
-
+import { useLessonAccess } from '@/components/hooks/useLessonAccess';
+import { scopedFilter, scopedCreate, scopedUpdate } from '@/components/api/scoped';
+import ProtectedContent from '@/components/protection/ProtectedContent';
+import AccessGate from '@/components/security/AccessGate';
 export default function LessonViewer() {
-  const [user, setUser] = useState(null);
-  const [activeSchoolId, setActiveSchoolId] = useState(null);
-  const [activeSchool, setActiveSchool] = useState(null);
+  const { user, activeSchool, activeSchoolId, isLoading } = useSession();
   const [notes, setNotes] = useState('');
   const queryClient = useQueryClient();
   const urlParams = new URLSearchParams(window.location.search);
   const lessonId = urlParams.get('id');
 
   useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-        
-        const schoolId = localStorage.getItem('active_school_id');
-        setActiveSchoolId(schoolId);
-        
-        if (schoolId) {
-          const schools = await base44.entities.School.filter({ id: schoolId });
-          if (schools[0]) setActiveSchool(schools[0]);
-        }
-      } catch (error) {
-        base44.auth.redirectToLogin();
-      }
-    };
-    loadUser();
-  }, []);
+    if (!isLoading && !user) {
+      try { base44.auth.redirectToLogin(); } catch {}
+    }
+  }, [isLoading, user]);
 
-  const { data: lesson } = useQuery({
-    queryKey: ['lesson', lessonId, activeSchoolId],
+  // Lesson metadata (safe fields only)
+  const { data: lessonMeta } = useQuery({
+    queryKey: ['lesson-meta', lessonId, activeSchoolId],
     queryFn: async () => {
+      if (!lessonId || !activeSchoolId) return null;
       const lessons = await scopedFilter('Lesson', activeSchoolId, { id: lessonId });
-      return lessons[0];
+      const l = lessons?.[0] || null;
+      if (!l) return null;
+      return {
+        id: l.id,
+        school_id: l.school_id,
+        course_id: l.course_id,
+        title: l.title,
+        is_preview: l.is_preview,
+        drip_publish_at: l.drip_publish_at,
+        drip_days_after_enroll: l.drip_days_after_enroll,
+        order: l.order,
+      };
     },
-    enabled: !!lessonId && !!activeSchoolId
+    enabled: !!lessonId && !!activeSchoolId,
+    staleTime: 30_000,
   });
 
-  const { data: course } = useQuery({
+  // Access control (membership-first)
+  const access = useLessonAccess(
+    lessonMeta?.course_id,
+    lessonId,
+    user,
+    activeSchoolId,
+    { lessonMeta }
+  );
+
+  const shouldLoadLesson = access.accessLevel === 'FULL' || access.accessLevel === 'PREVIEW';
+
+  // Full lesson payload (only when FULL or PREVIEW)
+  const { data: lesson } = useQuery({
+    queryKey: ['lesson-full', lessonId, activeSchoolId],
+    queryFn: async () => {
+      const lessons = await scopedFilter('Lesson', activeSchoolId, { id: lessonId });
+      return lessons?.[0] || null;
+    },
+    enabled: !!lessonId && !!activeSchoolId && shouldLoadLesson,
+    staleTime: 15_000,
+  });
+
+  const effectiveCourseId = lessonMeta?.course_id || lesson?.course_id;
+
+const { data: course } = useQuery({
     queryKey: ['course', lesson?.course_id, activeSchoolId],
     queryFn: async () => {
       const courses = await scopedFilter('Course', activeSchoolId, { id: lesson.course_id });
@@ -94,10 +117,28 @@ export default function LessonViewer() {
     enabled: !!lesson?.course_id && !!activeSchoolId
   });
 
-  // Access control
-  const access = useLessonAccess(lesson?.course_id, lessonId, user, activeSchoolId);
+  // Access control (computed above)
+const canFetchMaterials = shouldFetchMaterials(access.accessLevel);
+const rawContent = String(lesson?.content || lesson?.content_json || lesson?.text || '');
+const maxChars = access.maxPreviewChars || 1500;
+const contentToShow = (access.accessLevel === 'FULL')
+  ? rawContent
+  : (access.accessLevel === 'PREVIEW')
+    ? (rawContent.slice(0, maxChars) + (rawContent.length > maxChars ? '…' : ''))
+    : '';
 
-  useEffect(() => {
+if (access.accessLevel === 'LOCKED' || access.accessLevel === 'DRIP_LOCKED') {
+  return (
+    <AccessGate
+      mode={access.accessLevel}
+      courseId={effectiveCourseId}
+      schoolSlug={activeSchool?.slug}
+      message={access.accessLevel === 'DRIP_LOCKED' ? (access.dripInfo?.countdownLabel || 'This lesson will unlock soon.') : undefined}
+    />
+  );
+}
+
+useEffect(() => {
     if (progress?.notes) {
       setNotes(progress.notes);
     }
@@ -106,12 +147,12 @@ export default function LessonViewer() {
   const markCompleteMutation = useMutation({
     mutationFn: async () => {
       if (progress) {
-        return await base44.entities.UserProgress.update(progress.id, {
+        return await scopedUpdate('UserProgress', progress.id, {
           completed: true,
           progress_percentage: 100
-        });
+        }, activeSchoolId, true);
       } else {
-        return await base44.entities.UserProgress.create({
+        return await scopedCreate('UserProgress', activeSchoolId, {
           user_email: user.email,
           lesson_id: lessonId,
           course_id: lesson.course_id,
@@ -129,16 +170,16 @@ export default function LessonViewer() {
   const saveNotesMutation = useMutation({
     mutationFn: async (noteContent) => {
       if (progress) {
-        return await base44.entities.UserProgress.update(progress.id, { notes: noteContent });
+        return await scopedUpdate('UserProgress', progress.id, { notes: noteContent }, activeSchoolId, true);
       } else {
-        return await base44.entities.UserProgress.create({
+        return await scopedCreate('UserProgress', activeSchoolId, {
           user_email: user.email,
           lesson_id: lessonId,
           course_id: lesson.course_id,
           notes: noteContent,
           completed: false,
           progress_percentage: 0
-        });
+        }, activeSchoolId, true);
       }
     },
     onSuccess: () => {
@@ -190,9 +231,9 @@ export default function LessonViewer() {
           onTimeUpdate={(time) => {
             // Auto-save progress
             if (progress) {
-              base44.entities.UserProgress.update(progress.id, {
+              scopedUpdate('UserProgress', progress.id, {
                 last_position_seconds: Math.floor(time)
-              });
+              }, activeSchoolId, true);
             }
           }}
           onEnded={() => {

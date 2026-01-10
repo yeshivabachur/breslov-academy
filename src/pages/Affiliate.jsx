@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
+import { scopedFilter, scopedCreate } from '@/components/api/scoped';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -8,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { DollarSign, Users, TrendingUp, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import { createPageUrl } from '@/utils';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function Affiliate() {
   const [user, setUser] = useState(null);
@@ -32,8 +34,7 @@ export default function Affiliate() {
   const { data: affiliate } = useQuery({
     queryKey: ['affiliate', user?.email, activeSchoolId],
     queryFn: async () => {
-      const affiliates = await base44.entities.Affiliate.filter({
-        school_id: activeSchoolId,
+      const affiliates = await scopedFilter('Affiliate', activeSchoolId, {
         user_email: user.email
       });
       
@@ -44,8 +45,7 @@ export default function Affiliate() {
       
       // Create affiliate record
       const code = `${user.email.split('@')[0]}-${Math.random().toString(36).substring(7)}`.toUpperCase();
-      const newAffiliate = await base44.entities.Affiliate.create({
-        school_id: activeSchoolId,
+      const newAffiliate = await scopedCreate('Affiliate', activeSchoolId, {
         user_email: user.email,
         code,
         commission_rate: 10
@@ -58,16 +58,26 @@ export default function Affiliate() {
 
   const { data: referrals = [] } = useQuery({
     queryKey: ['referrals', affiliate?.id],
-    queryFn: () => base44.entities.Referral.filter({
-      school_id: activeSchoolId,
+    queryFn: () => scopedFilter('Referral', activeSchoolId, {
       affiliate_id: affiliate.id
     }),
-    enabled: !!affiliate
+    enabled: !!affiliate && !!activeSchoolId
   });
 
   const totalEarnings = referrals
     .filter(r => r.status === 'completed')
     .reduce((sum, r) => sum + (r.commission_cents || 0), 0);
+
+  const chartData = useMemo(() => {
+    const months = {};
+    referrals.forEach(r => {
+      const date = new Date(r.created_date);
+      const key = `${date.getMonth() + 1}/${date.getFullYear()}`;
+      if (!months[key]) months[key] = 0;
+      months[key] += (r.commission_cents || 0) / 100;
+    });
+    return Object.entries(months).map(([name, amount]) => ({ name, amount }));
+  }, [referrals]);
 
   const { data: school } = useQuery({
     queryKey: ['active-school', activeSchoolId],
@@ -123,6 +133,27 @@ export default function Affiliate() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Chart */}
+      {chartData.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Earnings Over Time</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-64 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData}>
+                  <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
+                  <Tooltip />
+                  <Bar dataKey="amount" fill="#10b981" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Affiliate Link */}
       <Card>

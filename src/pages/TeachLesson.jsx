@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { useSession } from '@/components/hooks/useSession';
+import { scopedFilter, scopedUpdate } from '@/components/api/scoped';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
@@ -7,57 +8,46 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Save, Eye, Check } from 'lucide-react';
+import { ArrowLeft, Save, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
 export default function TeachLesson() {
-  const [user, setUser] = useState(null);
+  const { user, activeSchoolId } = useSession();
   const [lessonId, setLessonId] = useState(null);
   const [content, setContent] = useState('');
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-        
-        const params = new URLSearchParams(window.location.search);
-        setLessonId(params.get('id'));
-      } catch (error) {
-        base44.auth.redirectToLogin();
-      }
-    };
-    loadUser();
+    const params = new URLSearchParams(window.location.search);
+    setLessonId(params.get('id'));
   }, []);
 
   const { data: lesson, isLoading } = useQuery({
-    queryKey: ['lesson', lessonId],
+    queryKey: ['lesson', lessonId, activeSchoolId],
     queryFn: async () => {
-      const lessons = await base44.entities.Lesson.filter({ id: lessonId });
+      const lessons = await scopedFilter('Lesson', activeSchoolId, { id: lessonId });
       const l = lessons[0];
       if (l) setContent(l.content || '');
       return l;
     },
-    enabled: !!lessonId
+    enabled: !!lessonId && !!activeSchoolId
   });
 
   const { data: course } = useQuery({
-    queryKey: ['course', lesson?.course_id],
+    queryKey: ['course', lesson?.course_id, activeSchoolId],
     queryFn: async () => {
-      const courses = await base44.entities.Course.filter({ id: lesson.course_id });
+      const courses = await scopedFilter('Course', activeSchoolId, { id: lesson.course_id });
       return courses[0];
     },
-    enabled: !!lesson
+    enabled: !!lesson && !!activeSchoolId
   });
 
   const updateLessonMutation = useMutation({
-    mutationFn: (data) => base44.entities.Lesson.update(lessonId, data),
+    mutationFn: (data) => scopedUpdate('Lesson', lessonId, data, activeSchoolId, true),
     onSuccess: () => {
       queryClient.invalidateQueries(['lesson']);
       toast.success('Lesson saved!');

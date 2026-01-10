@@ -63,6 +63,7 @@ import TeachCourseNew from './pages/TeachCourseNew';
 import TeachLesson from './pages/TeachLesson';
 import TeachQuizzes from './pages/TeachQuizzes';
 import TeachQuizEditor from './pages/TeachQuizEditor';
+import TeachGrading from './pages/TeachGrading';
 import QuizTake from './pages/QuizTake';
 import MyQuizzes from './pages/MyQuizzes';
 import Tournaments from './pages/Tournaments';
@@ -71,7 +72,7 @@ import CertificateVerify from './pages/CertificateVerify';
 import SchoolStaff from './pages/SchoolStaff';
 import InviteAccept from './pages/InviteAccept';
 import AuditLogViewer from './pages/AuditLogViewer';
-import __Layout from './Layout.jsx';
+import PortalLayout from './portals/shared/PortalLayout.jsx';
 
 // Lazy-loaded heavy routes (v8.6 perf)
 const Downloads = React.lazy(() => import('./pages/Downloads'));
@@ -151,6 +152,7 @@ export const PAGES = {
     "TeachLesson": TeachLesson,
     "TeachQuizzes": TeachQuizzes,
     "TeachQuizEditor": TeachQuizEditor,
+    "TeachGrading": TeachGrading,
     "QuizTake": QuizTake,
     "MyQuizzes": MyQuizzes,
     "Tournaments": Tournaments,
@@ -167,5 +169,5 @@ export const PAGES = {
 export const pagesConfig = {
     mainPage: "Dashboard",
     Pages: PAGES,
-    Layout: __Layout,
+    Layout: PortalLayout,
 };

@@ -1,42 +1,32 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
+import { scopedFilter } from '@/components/api/scoped';
+import { useSession } from '@/components/hooks/useSession';
 import { useQuery } from '@tanstack/react-query';
 import { BookOpen, CheckCircle, Clock, Crown, ArrowRight, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import StatCard from '../components/dashboard/StatCard';
-import CourseCard from '../components/courses/CourseCard';
-import CourseRecommendations from '../components/ai/CourseRecommendations';
-import LearningInsights from '../components/insights/LearningInsights';
-import AnnouncementsPanel from '../components/announcements/AnnouncementsPanel';
+import StatCard from '@/components/dashboard/StatCard';
+import CourseCard from '@/components/courses/CourseCard';
+import CourseRecommendations from '@/components/ai/CourseRecommendations';
+import LearningInsights from '@/components/insights/LearningInsights';
+import AnnouncementsPanel from '@/components/announcements/AnnouncementsPanel';
 
 export default function Dashboard() {
-  const [user, setUser] = useState(null);
+  const { user, activeSchoolId, isLoading } = useSession();
   const [userTier, setUserTier] = useState('free');
-  const [activeSchoolId, setActiveSchoolId] = useState(null);
+useEffect(() => {
+    if (!isLoading && !user) {
+      try { base44.auth.redirectToLogin(); } catch {}
+    }
+  }, [isLoading, user]);
 
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-        
-        // Get active school
-        const schoolId = localStorage.getItem('active_school_id');
-        setActiveSchoolId(schoolId);
-      } catch (error) {
-        base44.auth.redirectToLogin();
-      }
-    };
-    loadUser();
-  }, []);
-
-  const { data: subscription } = useQuery({
+const { data: subscription } = useQuery({
     queryKey: ['subscription', user?.email],
     queryFn: async () => {
       if (!user?.email) return null;
-      const subs = await base44.entities.Subscription.filter({ user_email: user.email });
+      const subs = await scopedFilter('Subscription', activeSchoolId, { user_email: user.email });
       return subs[0] || null;
     },
     enabled: !!user?.email
@@ -55,10 +45,7 @@ export default function Dashboard() {
       if (schoolCourses.length === 0) {
         const legacySchools = await base44.entities.School.filter({ slug: 'legacy' });
         if (legacySchools.length > 0) {
-          schoolCourses = await base44.entities.Course.filter({ 
-            is_published: true, 
-            school_id: legacySchools[0].id 
-          }, '-created_date', 6);
+          schoolCourses = await scopedFilter('Course', legacySchools[0].id, { is_published: true }, '-created_date', 6);
         }
       }
       
@@ -70,11 +57,11 @@ export default function Dashboard() {
   const { data: progress = [] } = useQuery({
     queryKey: ['progress', user?.email],
     queryFn: async () => {
-      const courseProgress = await base44.entities.UserProgress.filter({ user_email: user.email });
+      const courseProgress = await scopedFilter('UserProgress', activeSchoolId, { user_email: user.email });
       const insights = await base44.entities.LearningInsight.filter({ user_email: user.email, is_read: false });
       return { courseProgress, insights };
     },
-    enabled: !!user?.email
+    enabled: !!activeSchoolId && !!user?.email
   });
 
   useEffect(() => {

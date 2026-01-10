@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { BarChart3 } from 'lucide-react';
-import StudentDashboard from '../components/analytics/StudentDashboard';
+import StudentDashboard from '@/components/analytics/StudentDashboard';
 
 export default function Analytics() {
   const [user, setUser] = useState(null);

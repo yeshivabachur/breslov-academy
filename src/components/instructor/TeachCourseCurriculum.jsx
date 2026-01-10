@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
@@ -8,18 +8,26 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Edit, Eye, GripVertical, Check, X } from 'lucide-react';
+import { Plus, Edit, Eye, GripVertical, Check, X, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
 export default function TeachCourseCurriculum({ course, user }) {
   const [showDialog, setShowDialog] = useState(false);
+  const [orderedLessons, setOrderedLessons] = useState([]);
   const queryClient = useQueryClient();
 
-  const { data: lessons = [] } = useQuery({
+  const { data: lessons = [], isLoading } = useQuery({
     queryKey: ['course-lessons', course.id],
     queryFn: () => base44.entities.Lesson.filter({ course_id: course.id }, 'order'),
     enabled: !!course
   });
+
+  useEffect(() => {
+    if (lessons.length > 0) {
+      setOrderedLessons(lessons);
+    }
+  }, [lessons]);
 
   const createLessonMutation = useMutation({
     mutationFn: async (title) => {
@@ -46,6 +54,30 @@ export default function TeachCourseCurriculum({ course, user }) {
     onSuccess: () => {
       queryClient.invalidateQueries(['course-lessons']);
       toast.success('Updated!');
+    }
+  });
+
+  const reorderMutation = useMutation({
+    mutationFn: async (newOrder) => {
+      // Optimistic update handled by local state
+      // Persist changes: update 'order' field for each lesson
+      // In a real app, send { ids: [...] } to a batch reorder endpoint.
+      // Here we update them one by one (inefficient but works for small lists)
+      const promises = newOrder.map((lesson, index) => {
+        if (lesson.order !== index + 1) {
+          return base44.entities.Lesson.update(lesson.id, { order: index + 1 });
+        }
+        return Promise.resolve();
+      });
+      await Promise.all(promises);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['course-lessons']);
+      toast.success('Order saved');
+    },
+    onError: () => {
+      toast.error('Failed to save order');
+      queryClient.invalidateQueries(['course-lessons']); // Revert
     }
   });
 
@@ -76,12 +108,58 @@ export default function TeachCourseCurriculum({ course, user }) {
     updateCourseMutation.mutate({ status: 'published', is_published: true });
   };
 
+  const bulkUpdateStatus = useMutation({
+    mutationFn: async (status) => {
+      const promises = orderedLessons.map(l => 
+        base44.entities.Lesson.update(l.id, { status })
+      );
+      await Promise.all(promises);
+    },
+    onSuccess: (_, status) => {
+      queryClient.invalidateQueries(['course-lessons']);
+      toast.success(`All lessons ${status === 'published' ? 'published' : 'moved to draft'}`);
+    }
+  });
+
+  const onDragEnd = (result) => {
+    if (!result.destination) return;
+
+    const items = Array.from(orderedLessons);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+
+    setOrderedLessons(items);
+    reorderMutation.mutate(items);
+  };
+
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Course Curriculum</CardTitle>
-          <div className="flex space-x-2">
+          <div className="flex items-center space-x-2">
+            {lessons.length > 1 && (
+              <div className="flex border rounded-md mr-2">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="rounded-r-none border-r"
+                  onClick={() => bulkUpdateStatus.mutate('published')}
+                  disabled={bulkUpdateStatus.isPending}
+                >
+                  Publish All
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="rounded-l-none"
+                  onClick={() => bulkUpdateStatus.mutate('draft')}
+                  disabled={bulkUpdateStatus.isPending}
+                >
+                  Draft All
+                </Button>
+              </div>
+            )}
             {course.status === 'draft' && lessons.length > 0 && (
               <Button onClick={publishCourse}>
                 <Check className="w-4 h-4 mr-2" />
@@ -108,7 +186,9 @@ export default function TeachCourseCurriculum({ course, user }) {
           </div>
         </CardHeader>
         <CardContent>
-          {lessons.length === 0 ? (
+          {isLoading ? (
+            <div className="text-center py-8">Loading...</div>
+          ) : orderedLessons.length === 0 ? (
             <div className="text-center py-12 border-2 border-dashed rounded-lg">
               <p className="text-slate-600 mb-4">No lessons yet</p>
               <Button onClick={() => setShowDialog(true)}>
@@ -117,52 +197,75 @@ export default function TeachCourseCurriculum({ course, user }) {
               </Button>
             </div>
           ) : (
-            <div className="space-y-2">
-              {lessons.map((lesson, index) => (
-                <div key={lesson.id} className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-slate-50">
-                  <GripVertical className="w-5 h-5 text-slate-400" />
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm text-slate-500">#{index + 1}</span>
-                      <h4 className="font-semibold">{lesson.title}</h4>
-                      <Badge variant={lesson.status === 'published' ? 'default' : 'secondary'}>
-                        {lesson.status}
-                      </Badge>
-                    </div>
+            <DragDropContext onDragEnd={onDragEnd}>
+              <Droppable droppableId="lessons">
+                {(provided) => (
+                  <div
+                    {...provided.droppableProps}
+                    ref={provided.innerRef}
+                    className="space-y-2"
+                  >
+                    {orderedLessons.map((lesson, index) => (
+                      <Draggable key={lesson.id} draggableId={lesson.id} index={index}>
+                        {(provided, snapshot) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            className={`flex items-center space-x-3 p-4 border rounded-lg bg-white ${
+                              snapshot.isDragging ? 'shadow-lg ring-2 ring-primary/20' : 'hover:bg-slate-50'
+                            }`}
+                          >
+                            <div {...provided.dragHandleProps}>
+                              <GripVertical className="w-5 h-5 text-slate-400 cursor-grab active:cursor-grabbing" />
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-2">
+                                <span className="text-sm text-slate-500 w-6">#{index + 1}</span>
+                                <h4 className="font-semibold">{lesson.title}</h4>
+                                <Badge variant={lesson.status === 'published' ? 'default' : 'secondary'}>
+                                  {lesson.status}
+                                </Badge>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => toggleLessonStatus(lesson)}
+                              >
+                                {lesson.status === 'draft' ? (
+                                  <>
+                                    <Check className="w-4 h-4 mr-1" />
+                                    Publish
+                                  </>
+                                ) : (
+                                  <>
+                                    <X className="w-4 h-4 mr-1" />
+                                    Unpublish
+                                  </>
+                                )}
+                              </Button>
+                              <Link to={createPageUrl(`TeachLesson?id=${lesson.id}`)}>
+                                <Button size="sm" variant="outline">
+                                  <Edit className="w-4 h-4 mr-1" />
+                                  Edit
+                                </Button>
+                              </Link>
+                              <Link to={createPageUrl(`LessonViewer?id=${lesson.id}`)} target="_blank">
+                                <Button size="sm" variant="ghost">
+                                  <Eye className="w-4 h-4" />
+                                </Button>
+                              </Link>
+                            </div>
+                          </div>
+                        )}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => toggleLessonStatus(lesson)}
-                    >
-                      {lesson.status === 'draft' ? (
-                        <>
-                          <Check className="w-4 h-4 mr-1" />
-                          Publish
-                        </>
-                      ) : (
-                        <>
-                          <X className="w-4 h-4 mr-1" />
-                          Unpublish
-                        </>
-                      )}
-                    </Button>
-                    <Link to={createPageUrl(`TeachLesson?id=${lesson.id}`)}>
-                      <Button size="sm" variant="outline">
-                        <Edit className="w-4 h-4 mr-1" />
-                        Edit
-                      </Button>
-                    </Link>
-                    <Link to={createPageUrl(`LessonViewer?id=${lesson.id}`)} target="_blank">
-                      <Button size="sm" variant="ghost">
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
-              ))}
-            </div>
+                )}
+              </Droppable>
+            </DragDropContext>
           )}
         </CardContent>
       </Card>

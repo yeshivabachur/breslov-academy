@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Sparkles, TrendingUp, Star } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
-import CourseCard from '../courses/CourseCard';
+import CourseCard from '@/components/courses/CourseCard';
 
 export default function CourseRecommendations({ user, userProgress, courses }) {
   const [recommendations, setRecommendations] = useState([]);

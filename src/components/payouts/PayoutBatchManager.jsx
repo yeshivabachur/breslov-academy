@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { DollarSign, Download, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import { scopedFilter } from '../api/scoped';
+import { scopedFilter, scopedCreate, scopedUpdate } from '@/components/api/scoped';
 
 export default function PayoutBatchManager({ schoolId, user }) {
   const [periodStart, setPeriodStart] = useState('');
@@ -49,8 +49,7 @@ export default function PayoutBatchManager({ schoolId, user }) {
       const totalAmount = eligible.reduce((sum, r) => sum + (r.commission_cents || 0), 0);
       
       // Create batch
-      const batch = await base44.entities.PayoutBatch.create({
-        school_id: schoolId,
+      const batch = await scopedCreate('PayoutBatch', schoolId, {
         batch_name: `${periodStart} to ${periodEnd}`,
         period_start: periodStart,
         period_end: periodEnd,
@@ -61,11 +60,20 @@ export default function PayoutBatchManager({ schoolId, user }) {
       
       // Assign referrals to batch
       for (const ref of eligible) {
-        await base44.entities.Referral.update(ref.id, {
+        await scopedUpdate('Referral', ref.id, {
           payout_batch_id: batch.id,
           status: 'batched'
-        });
+        }, schoolId, true);
       }
+
+      // Log action
+      await scopedCreate('AuditLog', schoolId, {
+        user_email: user.email,
+        action: 'PAYOUT_BATCH_CREATED',
+        entity_type: 'PayoutBatch',
+        entity_id: batch.id,
+        metadata: { totalAmount, count: eligible.length }
+      });
       
       return batch;
     },
@@ -82,12 +90,11 @@ export default function PayoutBatchManager({ schoolId, user }) {
   });
 
   const exportBatch = async (batch) => {
-    const referrals = await base44.entities.Referral.filter({
-      school_id: schoolId,
+    const referrals = await scopedFilter('Referral', schoolId, {
       payout_batch_id: batch.id
     });
     
-    const affiliates = await base44.entities.Affiliate.filter({ school_id: schoolId });
+    const affiliates = await scopedFilter('Affiliate', schoolId, {});
     
     const csv = [
       ['Affiliate Code', 'Email', 'Referrals', 'Commission', 'Status'],
@@ -119,26 +126,44 @@ export default function PayoutBatchManager({ schoolId, user }) {
     a.download = `payout-batch-${batch.batch_name}.csv`;
     a.click();
     toast.success('CSV exported');
+
+    // Log export
+    await scopedCreate('AuditLog', schoolId, {
+      user_email: user.email,
+      action: 'PAYOUT_BATCH_EXPORTED',
+      entity_type: 'PayoutBatch',
+      entity_id: batch.id,
+      metadata: { filename: `payout-batch-${batch.batch_name}.csv` }
+    });
   };
 
   const markPaidMutation = useMutation({
     mutationFn: async (batchId) => {
-      await base44.entities.PayoutBatch.update(batchId, {
+      await scopedUpdate('PayoutBatch', batchId, {
         status: 'COMPLETED',
         processed_by_user: user.email,
         processed_at: new Date().toISOString()
-      });
+      }, schoolId, true);
       
       // Mark referrals as paid
-      const referrals = await base44.entities.Referral.filter({
+      const referrals = await scopedFilter('Referral', schoolId, {
         payout_batch_id: batchId
       });
       
       for (const ref of referrals) {
-        await base44.entities.Referral.update(ref.id, {
+        await scopedUpdate('Referral', ref.id, {
           status: 'paid'
-        });
+        }, schoolId, true);
       }
+
+      // Log action
+      await scopedCreate('AuditLog', schoolId, {
+        user_email: user.email,
+        action: 'PAYOUT_BATCH_PAID',
+        entity_type: 'PayoutBatch',
+        entity_id: batchId,
+        metadata: { processed_at: new Date().toISOString() }
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['payout-batches']);

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Languages as LanguagesIcon } from 'lucide-react';
-import LanguageSelector from '../components/language/LanguageSelector';
+import LanguageSelector from '@/components/language/LanguageSelector';
 
 export default function Languages() {
   const [user, setUser] = useState(null);

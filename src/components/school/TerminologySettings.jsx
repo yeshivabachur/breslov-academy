@@ -32,7 +32,7 @@ const PRESETS = {
   }
 };
 
-export default function TerminologySettings({ school, onSave }) {
+export default function TerminologySettings({ school, user, onSave }) {
   const [preset, setPreset] = useState(school?.terminology_preset || 'breslov');
   const [terms, setTerms] = useState({
     teacher_singular: school?.teacher_singular || 'Rav',
@@ -52,6 +52,21 @@ export default function TerminologySettings({ school, onSave }) {
         terminology_preset: preset,
         ...terms
       });
+
+      // Audit Log
+      try {
+        await base44.entities.AuditLog.create({
+          school_id: school.id,
+          user_email: user?.email,
+          action: 'UPDATE_TERMINOLOGY',
+          entity_type: 'School',
+          entity_id: school.id,
+          metadata: { preset, terms }
+        });
+      } catch (e) {
+        // ignore audit failure
+      }
+
       toast.success('Terminology settings saved');
       if (onSave) onSave();
     } catch (error) {

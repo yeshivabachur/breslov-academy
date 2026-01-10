@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Trophy, Star, Target, Flame } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import AchievementBadge from '../components/gamification/AchievementBadge';
+import AchievementBadge from '@/components/gamification/AchievementBadge';
 
 export default function Achievements() {
   const [user, setUser] = useState(null);

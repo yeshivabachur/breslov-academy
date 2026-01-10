@@ -1,39 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { scopedFilter } from '@/components/api/scoped';
+import { useSession } from '@/components/hooks/useSession';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BookOpen, Users, TrendingUp, DollarSign, AlertCircle } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function TeachAnalytics() {
-  const [user, setUser] = useState(null);
-  const [activeSchoolId, setActiveSchoolId] = useState(null);
-
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-        
-        const schoolId = localStorage.getItem('active_school_id');
-        setActiveSchoolId(schoolId);
-      } catch (error) {
-        base44.auth.redirectToLogin();
-      }
-    };
-    loadUser();
-  }, []);
+  const { user, activeSchoolId } = useSession();
 
   const { data: myCourses = [] } = useQuery({
     queryKey: ['my-courses', user?.email, activeSchoolId],
     queryFn: async () => {
-      const created = await base44.entities.Course.filter({
-        school_id: activeSchoolId,
+      const created = await scopedFilter('Course', activeSchoolId, {
         created_by: user.email
       });
       
-      const staffRecords = await base44.entities.CourseStaff.filter({
-        school_id: activeSchoolId,
+      const staffRecords = await scopedFilter('CourseStaff', activeSchoolId, {
         user_email: user.email
       });
       
@@ -41,7 +24,7 @@ export default function TeachAnalytics() {
       const staffCourses = [];
       
       for (const id of staffCourseIds) {
-        const courses = await base44.entities.Course.filter({ id });
+        const courses = await scopedFilter('Course', activeSchoolId, { id });
         if (courses.length > 0) staffCourses.push(courses[0]);
       }
       
@@ -56,8 +39,7 @@ export default function TeachAnalytics() {
     queryFn: async () => {
       const allEntitlements = [];
       for (const course of myCourses) {
-        const courseEnts = await base44.entities.Entitlement.filter({
-          school_id: activeSchoolId,
+        const courseEnts = await scopedFilter('Entitlement', activeSchoolId, {
           course_id: course.id
         });
         allEntitlements.push(...courseEnts);
@@ -68,39 +50,38 @@ export default function TeachAnalytics() {
   });
 
   const { data: progress = [] } = useQuery({
-    queryKey: ['my-progress', myCourses],
+    queryKey: ['my-progress', activeSchoolId, myCourses],
     queryFn: async () => {
       const allProgress = [];
       for (const course of myCourses) {
-        const courseProgress = await base44.entities.UserProgress.filter({
+        const courseProgress = await scopedFilter('UserProgress', activeSchoolId, {
           course_id: course.id
         });
         allProgress.push(...courseProgress);
       }
       return allProgress;
     },
-    enabled: myCourses.length > 0
+    enabled: !!activeSchoolId && myCourses.length > 0
   });
 
   const { data: posts = [] } = useQuery({
-    queryKey: ['my-posts', myCourses],
+    queryKey: ['my-posts', activeSchoolId, myCourses],
     queryFn: async () => {
       const allPosts = [];
       for (const course of myCourses) {
-        const coursePosts = await base44.entities.Post.filter({
+        const coursePosts = await scopedFilter('Post', activeSchoolId, {
           course_id: course.id
         });
         allPosts.push(...coursePosts);
       }
       return allPosts;
     },
-    enabled: myCourses.length > 0
+    enabled: !!activeSchoolId && myCourses.length > 0
   });
 
   const { data: payouts = [] } = useQuery({
     queryKey: ['my-payouts', user?.email, activeSchoolId],
-    queryFn: () => base44.entities.InstructorPayout.filter({
-      school_id: activeSchoolId,
+    queryFn: () => scopedFilter('InstructorPayout', activeSchoolId, {
       instructor_email: user.email
     }, '-created_date'),
     enabled: !!user && !!activeSchoolId

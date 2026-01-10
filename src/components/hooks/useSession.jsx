@@ -1,7 +1,7 @@
 // Session Management Hook - Single Source of Truth
 import { useState, useEffect, createContext, useContext } from 'react';
 import { base44 } from '@/api/base44Client';
-import { normalizeAudienceFromRole } from '../config/features';
+import { normalizeAudienceFromRole } from '@/components/config/features';
 
 const SessionContext = createContext(null);
 
@@ -88,8 +88,34 @@ export const SessionProvider = ({ children }) => {
         // Determine role and audience
         const membership = userMemberships.find(m => m.school_id === schoolId);
         if (membership) {
-          setRole(membership.role);
-          setAudience(normalizeAudienceFromRole(membership.role));
+          const derivedRole = membership.role;
+          setRole(derivedRole);
+          
+          // Smart Context: Check if user intends to view a specific portal
+          // and has the permissions to do so.
+          const intended = localStorage.getItem('ba_intended_audience');
+          const defaultAudience = normalizeAudienceFromRole(derivedRole);
+          
+          let finalAudience = defaultAudience;
+
+          if (intended) {
+            // Allow downgrading context (e.g. Admin -> Student)
+            // But prevent upgrading (Student -> Admin) without role
+            if (defaultAudience === 'admin') {
+               // Admin can be anything
+               if (['student', 'teacher', 'admin'].includes(intended)) {
+                 finalAudience = intended;
+               }
+            } else if (defaultAudience === 'teacher') {
+               // Teacher can be student or teacher
+               if (['student', 'teacher'].includes(intended)) {
+                 finalAudience = intended;
+               }
+            }
+            // Student stays student
+          }
+          
+          setAudience(finalAudience);
         }
       }
     } catch (error) {

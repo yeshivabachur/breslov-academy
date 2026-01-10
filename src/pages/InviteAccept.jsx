@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
+import { scopedFilter, scopedCreate, scopedUpdate } from '@/components/api/scoped';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
@@ -59,15 +60,13 @@ export default function InviteAccept() {
       if (invite.email !== user.email) throw new Error('Email mismatch');
       
       // Check if membership already exists
-      const existing = await base44.entities.SchoolMembership.filter({
-        school_id: invite.school_id,
+      const existing = await scopedFilter('SchoolMembership', invite.school_id, {
         user_email: user.email
       });
       
       if (existing.length === 0) {
         // Create membership
-        await base44.entities.SchoolMembership.create({
-          school_id: invite.school_id,
+        await scopedCreate('SchoolMembership', invite.school_id, {
           user_email: user.email,
           role: invite.role,
           joined_at: new Date().toISOString()
@@ -75,20 +74,20 @@ export default function InviteAccept() {
       } else {
         // Update role if different
         if (existing[0].role !== invite.role) {
-          await base44.entities.SchoolMembership.update(existing[0].id, {
+          await scopedUpdate('SchoolMembership', existing[0].id, {
             role: invite.role
-          });
+          }, invite.school_id, true);
         }
       }
       
       // Mark invite as accepted
-      await base44.entities.StaffInvite.update(invite.id, {
+      await scopedUpdate('StaffInvite', invite.id, {
         status: 'ACCEPTED',
         accepted_at: new Date().toISOString()
-      });
+      }, invite.school_id, true);
       
       // Log action
-      await base44.entities.AuditLog.create({
+      await scopedCreate('AuditLog', invite.school_id, {
         school_id: invite.school_id,
         user_email: user.email,
         action: 'STAFF_INVITE_ACCEPTED',

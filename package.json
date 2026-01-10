@@ -1,7 +1,7 @@
 {
   "name": "base44-app",
   "private": true,
-  "version": "9.1.2",
+  "version": "10.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",

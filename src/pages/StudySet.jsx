@@ -6,9 +6,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import FlashcardPractice from '../components/language/FlashcardPractice';
-import MatchGame from '../components/study/MatchGame';
-import WriteMode from '../components/study/WriteMode';
+import FlashcardPractice from '@/components/language/FlashcardPractice';
+import MatchGame from '@/components/study/MatchGame';
+import WriteMode from '@/components/study/WriteMode';
 
 export default function StudySet() {
   const [user, setUser] = useState(null);

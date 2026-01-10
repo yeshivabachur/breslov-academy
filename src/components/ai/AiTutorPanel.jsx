@@ -80,6 +80,10 @@ export default function AiTutorPanel({ contextType, contextId, contextTitle, con
   });
 
   const handleQuickAction = (action) => {
+    if (!contextContent) {
+      toast.error('This content is locked. Enroll to unlock AI assistance.');
+      return;
+    }
     const prompts = {
       explain: `Explain the main concepts in "${contextTitle}"`,
       quiz: `Create quiz questions about "${contextTitle}"`,
@@ -88,8 +92,10 @@ export default function AiTutorPanel({ contextType, contextId, contextTitle, con
     askMutation.mutate({ prompt: prompts[action], action });
   };
 
+  const isLocked = !contextContent;
+
   return (
-    <Card>
+    <Card className={isLocked ? 'opacity-70' : ''}>
       <CardHeader>
         <CardTitle className="flex items-center">
           <Sparkles className="w-5 h-5 mr-2 text-purple-600" />
@@ -98,13 +104,20 @@ export default function AiTutorPanel({ contextType, contextId, contextTitle, con
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {isLocked && (
+          <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-lg border border-amber-200 dark:border-amber-800/50 text-center">
+            <p className="text-xs text-amber-800 dark:text-amber-300 font-medium">
+              Enroll in this course to unlock AI learning assistance.
+            </p>
+          </div>
+        )}
         {/* Quick Actions */}
         <div className="flex flex-wrap gap-2">
           <Button 
             size="sm" 
             variant="outline"
             onClick={() => handleQuickAction('explain')}
-            disabled={askMutation.isPending}
+            disabled={askMutation.isPending || isLocked}
           >
             <BookOpen className="w-4 h-4 mr-1" />
             Explain
@@ -113,7 +126,7 @@ export default function AiTutorPanel({ contextType, contextId, contextTitle, con
             size="sm" 
             variant="outline"
             onClick={() => handleQuickAction('quiz')}
-            disabled={askMutation.isPending}
+            disabled={askMutation.isPending || isLocked}
           >
             <HelpCircle className="w-4 h-4 mr-1" />
             Quiz Me
@@ -122,7 +135,7 @@ export default function AiTutorPanel({ contextType, contextId, contextTitle, con
             size="sm" 
             variant="outline"
             onClick={() => handleQuickAction('summarize')}
-            disabled={askMutation.isPending}
+            disabled={askMutation.isPending || isLocked}
           >
             <List className="w-4 h-4 mr-1" />
             Summarize
@@ -133,12 +146,12 @@ export default function AiTutorPanel({ contextType, contextId, contextTitle, con
         <div className="space-y-3 max-h-96 overflow-y-auto">
           {messages.map((msg, i) => (
             <div key={i} className={`p-3 rounded-lg ${
-              msg.role === 'user' ? 'bg-blue-50 ml-8' : 'bg-slate-50 mr-8'
+              msg.role === 'user' ? 'bg-blue-50 dark:bg-blue-900/20 ml-8' : 'bg-slate-50 dark:bg-slate-900/40 mr-8'
             }`}>
-              <p className="text-sm font-medium mb-1">
+              <p className="text-sm font-medium mb-1 text-foreground">
                 {msg.role === 'user' ? 'You' : 'AI Tutor'}
               </p>
-              <p className="text-sm text-slate-700">{msg.content}</p>
+              <p className="text-sm text-muted-foreground">{msg.content}</p>
             </div>
           ))}
           {askMutation.isPending && (
@@ -153,12 +166,13 @@ export default function AiTutorPanel({ contextType, contextId, contextTitle, con
           <Textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask a question..."
+            placeholder={isLocked ? "Enroll to ask questions..." : "Ask a question..."}
             rows={3}
+            disabled={isLocked}
           />
           <Button 
             onClick={() => askMutation.mutate({ prompt: input, action: 'custom' })}
-            disabled={!input.trim() || askMutation.isPending}
+            disabled={!input.trim() || askMutation.isPending || isLocked}
             className="w-full"
           >
             <Send className="w-4 h-4 mr-2" />

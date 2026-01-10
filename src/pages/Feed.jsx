@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
+import { scopedCreate, scopedFilter, scopedUpdate } from '@/components/api/scoped';
+import { useSession } from '@/components/hooks/useSession';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,51 +10,36 @@ import { Heart, MessageCircle, Share2, Send } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Feed() {
-  const [user, setUser] = useState(null);
+  const { user, activeSchoolId, isLoading } = useSession();
   const [newPost, setNewPost] = useState('');
-  const [activeSchoolId, setActiveSchoolId] = useState(null);
   const queryClient = useQueryClient();
+useEffect(() => {
+    if (!isLoading && !user) {
+      try { base44.auth.redirectToLogin(); } catch {}
+    }
+  }, [isLoading, user]);
 
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-        
-        // Get active school
-        const schoolId = localStorage.getItem('active_school_id');
-        setActiveSchoolId(schoolId);
-      } catch (error) {
-        base44.auth.redirectToLogin();
-      }
-    };
-    loadUser();
-  }, []);
-
-  const { data: posts = [] } = useQuery({
+const { data: posts = [] } = useQuery({
     queryKey: ['posts', activeSchoolId],
     queryFn: async () => {
       if (!activeSchoolId) return [];
-      return await base44.entities.Post.filter({ school_id: activeSchoolId }, '-created_date', 50);
+      return await scopedFilter('Post', activeSchoolId, {}, '-created_date', 50);
     },
     enabled: !!activeSchoolId
   });
 
   const createPostMutation = useMutation({
-    mutationFn: (data) => base44.entities.Post.create({
-      ...data,
-      school_id: activeSchoolId
-    }),
+    mutationFn: (data) => scopedCreate('Post', activeSchoolId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['posts']);
+      queryClient.invalidateQueries(['posts', activeSchoolId]);
       setNewPost('');
       toast.success('Posted!');
     }
   });
 
   const likeMutation = useMutation({
-    mutationFn: (post) => base44.entities.Post.update(post.id, { likes: post.likes + 1 }),
-    onSuccess: () => queryClient.invalidateQueries(['posts'])
+    mutationFn: (post) => scopedUpdate('Post', post.id, { likes: (post.likes || 0) + 1 }, activeSchoolId, true),
+    onSuccess: () => queryClient.invalidateQueries(['posts', activeSchoolId])
   });
 
   return (

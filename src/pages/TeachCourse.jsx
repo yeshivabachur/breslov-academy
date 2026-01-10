@@ -11,42 +11,20 @@ import { toast } from 'sonner';
 import TeachCourseCurriculum from '@/components/instructor/TeachCourseCurriculum';
 import TeachCoursePricing from '@/components/instructor/TeachCoursePricing';
 import TeachCourseStudents from '@/components/instructor/TeachCourseStudents';
-import TeachCourseSettings from '@/components/instructor/TeachCourseSettings';
+import { scopedFilter } from '@/components/api/scoped';
+
+// ...
 
 export default function TeachCourse() {
-  const [user, setUser] = useState(null);
-  const [activeSchoolId, setActiveSchoolId] = useState(null);
-  const [courseId, setCourseId] = useState(null);
-  const [activeTab, setActiveTab] = useState('curriculum');
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-        
-        const schoolId = localStorage.getItem('active_school_id');
-        setActiveSchoolId(schoolId);
-
-        const params = new URLSearchParams(window.location.search);
-        const id = params.get('id');
-        setCourseId(id);
-      } catch (error) {
-        base44.auth.redirectToLogin();
-      }
-    };
-    loadUser();
-  }, []);
+  // ... (state setup)
 
   const { data: course, isLoading } = useQuery({
-    queryKey: ['course', courseId],
+    queryKey: ['course', courseId, activeSchoolId],
     queryFn: async () => {
-      const courses = await base44.entities.Course.filter({ id: courseId });
+      const courses = await scopedFilter('Course', activeSchoolId, { id: courseId });
       return courses[0] || null;
     },
-    enabled: !!courseId
+    enabled: !!courseId && !!activeSchoolId
   });
 
   if (isLoading || !course) {

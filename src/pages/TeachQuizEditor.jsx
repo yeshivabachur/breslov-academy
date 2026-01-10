@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { z } from 'zod';
@@ -14,12 +14,13 @@ import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '@/components/hooks/useSession';
 import { scopedFilter } from '@/components/api/scoped';
 import { loadQuizForAccess, saveQuiz } from '@/components/academic/quizEngine';
 import { toast } from 'sonner';
-import { GripVertical, Plus, Save, Trash2 } from 'lucide-react';
+import { GripVertical, Plus, Save, Trash2, Download, Check } from 'lucide-react';
 
 function makeBlankQuestion() {
   return {
@@ -30,6 +31,87 @@ function makeBlankQuestion() {
     explanation: '',
     points: 1,
   };
+}
+
+function ImportQuestionsDialog({ activeSchoolId, onImport }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedQuestions, setSelectedQuestions] = useState(new Set());
+
+  // Fetch all questions from the school (simulating a bank)
+  const { data: allQuestions = [] } = useQuery({
+    queryKey: ['question-bank', activeSchoolId],
+    queryFn: async () => {
+      // Fetch recent questions from other quizzes
+      return await scopedFilter('QuizQuestion', activeSchoolId, {}, '-created_date', 50);
+    },
+    enabled: isOpen && !!activeSchoolId
+  });
+
+  const toggleQuestion = (q) => {
+    const next = new Set(selectedQuestions);
+    if (next.has(q)) {
+      next.delete(q);
+    } else {
+      next.add(q);
+    }
+    setSelectedQuestions(next);
+  };
+
+  const handleImport = () => {
+    onImport(Array.from(selectedQuestions));
+    setIsOpen(false);
+    setSelectedQuestions(new Set());
+    toast.success(`${selectedQuestions.size} questions imported`);
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" type="button">
+          <Download className="w-4 h-4 mr-2" />
+          Import from Bank
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+        <DialogHeader>
+          <DialogTitle>Question Bank</DialogTitle>
+        </DialogHeader>
+        <div className="flex-1 overflow-y-auto min-h-[300px] space-y-2 p-1">
+          {allQuestions.length === 0 ? (
+            <p className="text-center text-slate-500 py-8">No previous questions found.</p>
+          ) : (
+            allQuestions.map(q => (
+              <div 
+                key={q.id} 
+                className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                  selectedQuestions.has(q) ? 'border-primary bg-primary/5' : 'hover:bg-slate-50'
+                }`}
+                onClick={() => toggleQuestion(q)}
+              >
+                <div className="flex items-start gap-3">
+                  <div className={`mt-1 w-4 h-4 rounded-sm border flex items-center justify-center ${
+                    selectedQuestions.has(q) ? 'bg-primary border-primary text-white' : 'border-slate-300'
+                  }`}>
+                    {selectedQuestions.has(q) && <Check className="w-3 h-3" />}
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm line-clamp-2">{q.question}</p>
+                    <p className="text-xs text-slate-500 mt-1">{q.options?.length || 0} options • {q.points} pts</p>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+        <div className="pt-4 border-t flex justify-end gap-2">
+          <Button variant="ghost" onClick={() => setIsOpen(false)}>Cancel</Button>
+          <Button onClick={handleImport} disabled={selectedQuestions.size === 0}>
+            Import {selectedQuestions.size} Questions
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
 }
 
 const questionSchema = z
@@ -120,7 +202,7 @@ export default function TeachQuizEditor() {
   const urlParams = new URLSearchParams(window.location.search);
   const presetCourseId = urlParams.get('courseId') || '';
 
-  const quizId = params.quizId || '';
+  const quizId = (params.quizId || urlParams.get('quizId') || urlParams.get('id') || '').trim();
   const isEditing = !!quizId;
 
   const form = useForm({
@@ -145,6 +227,18 @@ export default function TeachQuizEditor() {
     control: form.control,
     name: 'questions',
   });
+
+  const handleImportQuestions = (imported) => {
+    const newQuestions = imported.map(q => ({
+      prompt: q.question,
+      prompt_hebrew: q.question_hebrew || '',
+      options: q.options || ['', ''],
+      correctIndex: Math.max(0, (q.options || []).indexOf(q.correct_answer)),
+      explanation: q.explanation || '',
+      points: q.points || 1
+    }));
+    appendQuestion(newQuestions);
+  };
 
   const selectedCourseId = form.watch('course_id');
 
@@ -395,7 +489,7 @@ export default function TeachQuizEditor() {
                             <div
                               ref={d.innerRef}
                               {...d.draggableProps}
-                              className="rounded-lg border p-4"
+                              className="rounded-lg border p-4 bg-background"
                             >
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
@@ -464,11 +558,12 @@ export default function TeachQuizEditor() {
               </Droppable>
             </DragDropContext>
 
-            <div className="pt-4">
+            <div className="pt-4 flex gap-3">
               <Button type="button" variant="secondary" onClick={() => appendQuestion(makeBlankQuestion())}>
                 <Plus className="w-4 h-4 mr-2" />
                 Add question
               </Button>
+              <ImportQuestionsDialog activeSchoolId={activeSchoolId} onImport={handleImportQuestions} />
             </div>
           </CardContent>
         </Card>

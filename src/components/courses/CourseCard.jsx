@@ -1,14 +1,15 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Crown, Sparkles } from 'lucide-react';
+import { Clock, Crown, Sparkles, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
+import { tokens, cx } from '@/components/theme/tokens';
 
 export default function CourseCard({ course, userTier = 'free' }) {
   const tierIcons = {
     free: { icon: Sparkles, color: 'text-slate-500' },
-    premium: { icon: Crown, color: 'text-blue-500' },
+    premium: { icon: Crown, color: 'text-primary' },
     elite: { icon: Crown, color: 'text-amber-500' }
   };
 
@@ -21,80 +22,86 @@ export default function CourseCard({ course, userTier = 'free' }) {
     (course.access_tier === 'elite' && userTier === 'elite');
 
   const levelColors = {
-    beginner: 'bg-green-100 text-green-800',
-    intermediate: 'bg-yellow-100 text-yellow-800',
-    advanced: 'bg-red-100 text-red-800'
+    beginner: 'bg-emerald-100/80 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400',
+    intermediate: 'bg-amber-100/80 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
+    advanced: 'bg-rose-100/80 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400'
   };
 
   return (
-    <Link to={createPageUrl(`CourseDetail?id=${course.id}`)}>
-      <Card className="group overflow-hidden hover:shadow-2xl transition-all duration-300 cursor-pointer h-full">
-        <div className="relative h-48 overflow-hidden bg-gradient-to-br from-slate-800 to-slate-900">
+    <Link to={createPageUrl(`CourseDetail?id=${course.id}`)} className="block h-full group">
+      <Card className={cx(
+        tokens.glass.card, 
+        tokens.glass.cardHover,
+        "h-full overflow-hidden border-none shadow-sm flex flex-col"
+      )}>
+        <div className="relative aspect-video overflow-hidden bg-muted">
           {course.thumbnail_url ? (
             <img 
               src={course.thumbnail_url} 
               alt={course.title}
-              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <TierIcon className={`w-16 h-16 ${tierColor} opacity-50`} />
+            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/5 to-primary/10">
+              <TierIcon className={cx("w-12 h-12 opacity-20", tierColor)} />
             </div>
           )}
           
           {!hasAccess && (
-            <div className="absolute inset-0 bg-slate-900/80 flex items-center justify-center">
-              <div className="text-center">
-                <Crown className="w-12 h-12 text-amber-400 mx-auto mb-2" />
-                <p className="text-white font-semibold">
-                  {course.access_tier === 'premium' ? 'Premium' : 'Elite'} Required
+            <div className="absolute inset-0 bg-background/80 backdrop-blur-[2px] flex items-center justify-center">
+              <div className="text-center p-4">
+                <Crown className="w-10 h-10 text-primary mx-auto mb-2 opacity-80" />
+                <p className="text-sm font-bold tracking-tight uppercase">
+                  {course.access_tier} Access
                 </p>
               </div>
             </div>
           )}
 
-          <div className="absolute top-3 left-3 flex gap-2">
-            <Badge className={levelColors[course.level]}>
+          <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
+            <Badge variant="secondary" className={cx("border-none font-medium", levelColors[course.level])}>
               {course.level}
-            </Badge>
-            <Badge className="bg-slate-900/80 text-white border-0">
-              <TierIcon className="w-3 h-3 mr-1" />
-              {course.access_tier}
             </Badge>
           </div>
         </div>
 
-        <CardContent className="p-5">
-          <h3 className="font-bold text-xl text-slate-900 mb-2 group-hover:text-blue-600 transition-colors line-clamp-2">
-            {course.title}
-          </h3>
-          {course.title_hebrew && (
-            <p className="text-amber-700 font-semibold mb-2 text-lg" dir="rtl">
-              {course.title_hebrew}
-            </p>
-          )}
-          <p className="text-slate-600 text-sm mb-4 line-clamp-2">
-            {course.description}
-          </p>
+        <CardContent className="p-6 flex-1 flex flex-col">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-3">
+              <TierIcon className={cx("w-3.5 h-3.5", tierColor)} />
+              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                {course.category || 'General'}
+              </span>
+            </div>
 
-          <div className="flex items-center justify-between text-sm text-slate-500">
-            <span className="font-medium">By {course.instructor}</span>
+            <h3 className="font-bold text-xl leading-tight mb-2 group-hover:text-primary transition-colors line-clamp-2">
+              {course.title}
+            </h3>
+            
+            {course.title_hebrew && (
+              <p className="text-primary font-medium mb-3 text-lg leading-relaxed" dir="rtl">
+                {course.title_hebrew}
+              </p>
+            )}
+            
+            <p className="text-muted-foreground text-sm line-clamp-2 leading-relaxed mb-4">
+              {course.description}
+            </p>
+          </div>
+
+          <div className="pt-4 mt-auto border-t border-border/50 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
+              <User className="w-3.5 h-3.5 opacity-70" />
+              <span>{course.instructor}</span>
+            </div>
+            
             {course.duration_hours && (
-              <div className="flex items-center space-x-1">
-                <Clock className="w-4 h-4" />
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded-md font-medium">
+                <Clock className="w-3 h-3" />
                 <span>{course.duration_hours}h</span>
               </div>
             )}
           </div>
-
-          {course.price && (
-            <div className="mt-4 pt-4 border-t border-slate-200">
-              <div className="flex items-center justify-between">
-                <span className="text-slate-600">One-time purchase</span>
-                <span className="text-2xl font-bold text-slate-900">${course.price}</span>
-              </div>
-            </div>
-          )}
         </CardContent>
       </Card>
     </Link>

@@ -12,13 +12,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Building2, Users, Mail, Settings, Trash2, Copy, DollarSign } from 'lucide-react';
 import { toast } from 'sonner';
-import SchoolAnalytics from '../components/school/SchoolAnalytics';
-import SchoolAnnouncements from '../components/school/SchoolAnnouncements';
-import SchoolModeration from '../components/school/SchoolModeration';
-import SchoolAuditLog from '../components/school/SchoolAuditLog';
-import SchoolPayouts from '../components/school/SchoolPayouts';
-import ContentProtectionSettings from '../components/admin/ContentProtectionSettings';
-import TerminologySettings from '../components/school/TerminologySettings';
+import SchoolAnalytics from '@/components/school/SchoolAnalytics';
+import SchoolAnnouncements from '@/components/school/SchoolAnnouncements';
+import SchoolModeration from '@/components/school/SchoolModeration';
+import SchoolAuditLog from '@/components/school/SchoolAuditLog';
+import SchoolPayouts from '@/components/school/SchoolPayouts';
+import ContentProtectionSettings from '@/components/admin/ContentProtectionSettings';
+import TerminologySettings from '@/components/school/TerminologySettings';
 
 export default function SchoolAdmin() {
   const [user, setUser] = useState(null);
@@ -407,13 +407,13 @@ export default function SchoolAdmin() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ContentProtectionSettings schoolId={school.id} />
+              <ContentProtectionSettings schoolId={school.id} user={user} />
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="terminology">
-          <TerminologySettings school={school} onSave={loadSchoolData} />
+          <TerminologySettings school={school} user={user} onSave={loadSchoolData} />
         </TabsContent>
 
         <TabsContent value="settings">
@@ -436,7 +436,7 @@ export default function SchoolAdmin() {
                 <CardDescription>Configure how your content is protected</CardDescription>
               </CardHeader>
               <CardContent>
-                <ContentProtectionSettings schoolId={school.id} />
+                <ContentProtectionSettings schoolId={school.id} user={user} />
               </CardContent>
             </Card>
           </div>

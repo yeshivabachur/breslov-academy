@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Shield, CheckCircle, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 
-export default function ContentProtectionSettings({ schoolId }) {
+export default function ContentProtectionSettings({ schoolId, user }) {
   const queryClient = useQueryClient();
 
   const { data: policy } = useQuery({
@@ -46,14 +46,31 @@ export default function ContentProtectionSettings({ schoolId }) {
 
   const saveMutation = useMutation({
     mutationFn: async (data) => {
+      let result;
       if (policy) {
-        return await base44.entities.ContentProtectionPolicy.update(policy.id, data);
+        result = await base44.entities.ContentProtectionPolicy.update(policy.id, data);
       } else {
-        return await base44.entities.ContentProtectionPolicy.create({
+        result = await base44.entities.ContentProtectionPolicy.create({
           ...data,
           school_id: schoolId
         });
       }
+
+      // Audit Log
+      try {
+        await base44.entities.AuditLog.create({
+          school_id: schoolId,
+          user_email: user?.email,
+          action: 'UPDATE_PROTECTION_POLICY',
+          entity_type: 'ContentProtectionPolicy',
+          entity_id: result.id,
+          metadata: { changes: Object.keys(data) }
+        });
+      } catch (e) {
+        // ignore audit failure
+      }
+
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['protection-policy']);

@@ -1,6 +1,6 @@
 param(
   [Parameter(Mandatory=$false)]
-  [string]$Version = "v9.0_stable",
+  [string]$Version = "v10.0_stable",
 
   [Parameter(Mandatory=$false)]
   [string]$OutDir = (Join-Path $HOME "Downloads"),
@@ -24,7 +24,7 @@ $Stage = Join-Path ([System.IO.Path]::GetTempPath()) ("breslov_stage_" + [Guid]:
 New-Item -ItemType Directory -Force -Path $Stage | Out-Null
 
 $Exclude = @(
-  "node_modules", ".git", ".next", "dist", "build", "coverage", ".turbo", ".cache", ".DS_Store"
+  "node_modules", ".git", ".next", "build", "coverage", ".turbo", ".cache", ".DS_Store"
 )
 
 Write-Host "Staging repo from $RepoRoot to $Stage"

@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Crown, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import PricingCard from '../components/subscription/PricingCard';
+import PricingCard from '@/components/subscription/PricingCard';
 
 export default function Subscription() {
   const [user, setUser] = useState(null);

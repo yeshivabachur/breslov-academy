@@ -28,7 +28,11 @@ export default function LearningPaths() {
     queryKey: ['subscription', user?.email],
     queryFn: async () => {
       if (!user?.email) return null;
-      const subs = await base44.entities.Subscription.filter({ user_email: user.email });
+      import { scopedFilter } from '@/components/api/scoped';
+
+// ...
+
+const subs = await scopedFilter('Subscription', activeSchoolId, { user_email: user.email });
       return subs[0] || null;
     },
     enabled: !!user?.email

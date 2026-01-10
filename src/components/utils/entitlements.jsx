@@ -1,6 +1,6 @@
 // Entitlement checking utilities for course access control
 
-import { base44 } from '@/api/base44Client';
+import { scopedFilter, scopedCreate, scopedUpdate } from '@/components/api/scoped';
 
 /**
  * Check if entitlement is active (expiry-aware)
@@ -33,9 +33,8 @@ export async function hasAccessToCourse(userEmail, courseId, schoolId) {
   const now = new Date();
 
   // Check for ALL_COURSES entitlement
-  const allCoursesEntitlements = await base44.entities.Entitlement.filter({
+  const allCoursesEntitlements = await scopedFilter('Entitlement', schoolId, {
     user_email: userEmail,
-    school_id: schoolId,
     type: 'ALL_COURSES'
   });
 
@@ -44,9 +43,8 @@ export async function hasAccessToCourse(userEmail, courseId, schoolId) {
   if (validAllCourses) return true;
 
   // Check for specific COURSE entitlement
-  const courseEntitlements = await base44.entities.Entitlement.filter({
+  const courseEntitlements = await scopedFilter('Entitlement', schoolId, {
     user_email: userEmail,
-    school_id: schoolId,
     type: 'COURSE',
     course_id: courseId
   });
@@ -102,8 +100,7 @@ export async function createEntitlementsForPurchase(transaction, offer, schoolId
   const skipped = [];
   
   // Check existing entitlements to avoid duplicates
-  const existing = await base44.entities.Entitlement.filter({
-    school_id: schoolId,
+  const existing = await scopedFilter('Entitlement', schoolId, {
     user_email: transaction.user_email,
     source_id: transaction.id
   });
@@ -117,7 +114,7 @@ export async function createEntitlementsForPurchase(transaction, offer, schoolId
     if (alreadyExists) {
       skipped.push({ type: licenseType, reason: 'already_exists' });
     } else {
-      const ent = await base44.entities.Entitlement.create({
+      const ent = await scopedCreate('Entitlement', schoolId, {
         school_id: schoolId,
         user_email: transaction.user_email,
         type: licenseType,
@@ -136,7 +133,7 @@ export async function createEntitlementsForPurchase(transaction, offer, schoolId
     if (alreadyExists) {
       skipped.push({ type: 'ALL_COURSES', reason: 'already_exists' });
     } else {
-      const ent = await base44.entities.Entitlement.create({
+      const ent = await scopedCreate('Entitlement', schoolId, {
         school_id: schoolId,
         user_email: transaction.user_email,
         type: 'ALL_COURSES',
@@ -147,9 +144,7 @@ export async function createEntitlementsForPurchase(transaction, offer, schoolId
       created.push(ent);
     }
   } else if (offer.access_scope === 'SELECTED_COURSES' || offer.offer_type === 'COURSE' || offer.offer_type === 'BUNDLE') {
-    const offerCourses = await base44.entities.OfferCourse.filter({ 
-      offer_id: offer.id 
-    });
+    const offerCourses = await scopedFilter('OfferCourse', schoolId, { offer_id: offer.id });
     
     for (const oc of offerCourses) {
       const alreadyExists = existing.some(e => 
@@ -159,7 +154,7 @@ export async function createEntitlementsForPurchase(transaction, offer, schoolId
       if (alreadyExists) {
         skipped.push({ type: 'COURSE', course_id: oc.course_id, reason: 'already_exists' });
       } else {
-        const ent = await base44.entities.Entitlement.create({
+        const ent = await scopedCreate('Entitlement', schoolId, {
           school_id: schoolId,
           user_email: transaction.user_email,
           type: 'COURSE',
@@ -187,7 +182,7 @@ export async function createEntitlementsForSubscription(subscription, offer, sch
   const endsAt = subscription.current_period_end || subscription.end_date;
   
   if (offer.access_scope === 'ALL_COURSES') {
-    await base44.entities.Entitlement.create({
+    await scopedCreate('Entitlement', schoolId, {
       school_id: schoolId,
       user_email: subscription.user_email,
       type: 'ALL_COURSES',
@@ -197,12 +192,10 @@ export async function createEntitlementsForSubscription(subscription, offer, sch
       ends_at: endsAt
     });
   } else if (offer.access_scope === 'SELECTED_COURSES') {
-    const offerCourses = await base44.entities.OfferCourse.filter({ 
-      offer_id: offer.id 
-    });
+    const offerCourses = await scopedFilter('OfferCourse', schoolId, { offer_id: offer.id });
     
     for (const oc of offerCourses) {
-      await base44.entities.Entitlement.create({
+      await scopedCreate('Entitlement', schoolId, {
         school_id: schoolId,
         user_email: subscription.user_email,
         type: 'COURSE',
@@ -284,8 +277,7 @@ export async function processReferral(transaction, schoolId) {
     if (!refCode) return { created: null, skipped: 'no_ref' };
     
     // Check if referral already exists for this transaction (idempotent)
-    const existingReferrals = await base44.entities.Referral.filter({
-      school_id: schoolId,
+    const existingReferrals = await scopedFilter('Referral', schoolId, {
       transaction_id: transaction.id
     });
     
@@ -294,8 +286,7 @@ export async function processReferral(transaction, schoolId) {
     }
     
     // Find affiliate
-    const affiliates = await base44.entities.Affiliate.filter({
-      school_id: schoolId,
+    const affiliates = await scopedFilter('Affiliate', schoolId, {
       code: refCode
     });
     
@@ -305,7 +296,7 @@ export async function processReferral(transaction, schoolId) {
     const commissionCents = Math.floor(transaction.amount_cents * (affiliate.commission_rate / 100));
     
     // Create referral record
-    const referral = await base44.entities.Referral.create({
+    const referral = await scopedCreate('Referral', schoolId, {
       school_id: schoolId,
       affiliate_id: affiliate.id,
       referred_email: transaction.user_email,
@@ -316,10 +307,10 @@ export async function processReferral(transaction, schoolId) {
     });
     
     // Update affiliate totals
-    await base44.entities.Affiliate.update(affiliate.id, {
+    await scopedUpdate('Affiliate', affiliate.id, {
       total_earnings_cents: (affiliate.total_earnings_cents || 0) + commissionCents,
       total_referrals: (affiliate.total_referrals || 0) + 1
-    });
+    }, schoolId, true);
     
     return { created: referral, skipped: null };
   } catch (error) {
@@ -335,8 +326,7 @@ export async function processReferral(transaction, schoolId) {
 export async function recordCouponRedemption({ school_id, coupon, transaction, user_email }) {
   try {
     // Check if already recorded
-    const existing = await base44.entities.CouponRedemption.filter({
-      school_id,
+    const existing = await scopedFilter('CouponRedemption', school_id, {
       transaction_id: transaction.id
     });
     
@@ -344,7 +334,7 @@ export async function recordCouponRedemption({ school_id, coupon, transaction, u
       return { created: false, skipped: 'already_exists' };
     }
     
-    await base44.entities.CouponRedemption.create({
+    await scopedCreate('CouponRedemption', school_id, {
       school_id,
       coupon_id: coupon.id,
       user_email,
@@ -353,9 +343,9 @@ export async function recordCouponRedemption({ school_id, coupon, transaction, u
     });
     
     // Increment coupon usage
-    await base44.entities.Coupon.update(coupon.id, {
+    await scopedUpdate('Coupon', coupon.id, {
       usage_count: (coupon.usage_count || 0) + 1
-    });
+    }, school_id, true);
     
     return { created: true, skipped: null };
   } catch (error) {

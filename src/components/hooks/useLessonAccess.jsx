@@ -1,11 +1,11 @@
 // Lesson Access Control Hook
-// v9.0: tenancy-safe, expiry-aware, drip-aware, and React-hook-rule compliant
+// v10.0-r6: membership-first, drip-aware, and does NOT fetch full Lesson content (caller provides lessonMeta)
 
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
-import { getEnrollDate, computeLessonAvailability, formatAvailabilityCountdown } from '../drip/dripEngine';
-import { isEntitlementActive } from '../utils/entitlements';
+import { scopedFilter } from '@/components/api/scoped';
+import { getEnrollDate, computeLessonAvailability, formatAvailabilityCountdown } from '@/components/drip/dripEngine';
+import { isEntitlementActive } from '@/components/utils/entitlements';
 
 const DEFAULT_POLICY = {
   protect_content: true,
@@ -20,41 +20,55 @@ const DEFAULT_POLICY = {
   download_mode: 'DISALLOW',
 };
 
-export const useLessonAccess = (courseId, lessonId, user, schoolId) => {
-  // Fetch content protection policy (scoped)
+const STAFF_ROLES = new Set(['OWNER', 'ADMIN', 'INSTRUCTOR', 'TA', 'TEACHER', 'RAV', 'RABBI']);
+
+/**
+ * useLessonAccess(courseId, lessonId, user, schoolId, options?)
+ * options:
+ *  - lessonMeta: { is_preview, drip_publish_at, drip_days_after_enroll }
+ *  - membership: preloaded membership record (optional)
+ */
+export const useLessonAccess = (courseId, lessonId, user, schoolId, options = {}) => {
+  const lessonMeta = options?.lessonMeta || null;
+
+  // Content protection policy (scoped)
   const { data: policy = DEFAULT_POLICY } = useQuery({
     queryKey: ['protection-policy', schoolId],
     queryFn: async () => {
-      const policies = await base44.entities.ContentProtectionPolicy.filter({ school_id: schoolId });
+      if (!schoolId) return DEFAULT_POLICY;
+      const policies = await scopedFilter('ContentProtectionPolicy', schoolId, {});
       return policies?.[0] || DEFAULT_POLICY;
     },
     enabled: !!schoolId,
     staleTime: 60_000,
   });
 
-  // Fetch user entitlements (scoped + expiry-aware)
+  // Membership (membership-first). Caller may pass membership to avoid refetch.
+  const { data: membershipRecords = [] } = useQuery({
+    queryKey: ['membership', schoolId, user?.email],
+    queryFn: async () => {
+      if (!schoolId || !user?.email) return [];
+      if (options?.membership) return [options.membership];
+      return scopedFilter('SchoolMembership', schoolId, { user_email: user.email });
+    },
+    enabled: !!schoolId && !!user?.email,
+    staleTime: 30_000,
+  });
+
+  const membership = useMemo(() => membershipRecords?.[0] || null, [membershipRecords]);
+  const membershipRole = (membership?.role || '').toUpperCase();
+  const isMember = !!membership;
+  const isStaff = STAFF_ROLES.has(membershipRole);
+
+  // Entitlements (scoped + expiry-aware). Only meaningful for members (non-staff).
   const { data: entitlementsRaw = [] } = useQuery({
     queryKey: ['entitlements', schoolId, user?.email],
     queryFn: async () => {
       if (!user?.email || !schoolId) return [];
-      return base44.entities.Entitlement.filter({
-        school_id: schoolId,
-        user_email: user.email,
-      });
+      if (!isMember && !isStaff) return [];
+      return scopedFilter('Entitlement', schoolId, { user_email: user.email });
     },
     enabled: !!user?.email && !!schoolId,
-    staleTime: 30_000,
-  });
-
-  // Fetch lesson (scoped)
-  const { data: lesson = null } = useQuery({
-    queryKey: ['lesson', schoolId, lessonId],
-    queryFn: async () => {
-      if (!lessonId || !schoolId) return null;
-      const lessons = await base44.entities.Lesson.filter({ id: lessonId, school_id: schoolId });
-      return lessons?.[0] || null;
-    },
-    enabled: !!lessonId && !!schoolId,
     staleTime: 30_000,
   });
 
@@ -66,15 +80,18 @@ export const useLessonAccess = (courseId, lessonId, user, schoolId) => {
 
   const hasCourseAccess = useMemo(() => {
     if (!courseId) return false;
+    if (isStaff) return true;
+    if (!isMember) return false;
     return activeEntitlements.some((e) => {
-      const type = e.entitlement_type || e.type;
+      const type = (e.entitlement_type || e.type || '').toUpperCase();
       return (type === 'COURSE' && e.course_id === courseId) || type === 'ALL_COURSES';
     });
-  }, [activeEntitlements, courseId]);
+  }, [activeEntitlements, courseId, isMember, isStaff]);
 
-  const previewAllowed = !!(policy?.allow_previews && lesson?.is_preview);
+  // Preview only if the lesson is explicitly marked as preview and policy allows it
+  const previewAllowed = !!(policy?.allow_previews && lessonMeta?.is_preview);
 
-  // Enrollment date (for drip). Only needed if user has course access.
+  // Enrollment date (for drip). Only needed if user has course access and is not staff.
   const { data: enrollDate = null } = useQuery({
     queryKey: ['enroll-date', schoolId, user?.email, courseId],
     queryFn: () => getEnrollDate({
@@ -82,19 +99,30 @@ export const useLessonAccess = (courseId, lessonId, user, schoolId) => {
       user_email: user.email,
       course_id: courseId,
     }),
-    enabled: !!schoolId && !!user?.email && !!courseId && hasCourseAccess,
+    enabled: !!schoolId && !!user?.email && !!courseId && hasCourseAccess && !isStaff,
     staleTime: 5 * 60 * 1000,
   });
 
   // Base access level
-  let accessLevel = hasCourseAccess ? 'FULL' : (previewAllowed ? 'PREVIEW' : 'LOCKED');
-  let dripInfo = { isAvailable: true, availableAt: null, countdownLabel: null, reason: null };
+  let accessLevel = 'LOCKED';
+  if (hasCourseAccess) accessLevel = 'FULL';
+  else if (previewAllowed) accessLevel = 'PREVIEW';
+  else accessLevel = 'LOCKED';
 
-  if (hasCourseAccess && lesson && enrollDate) {
-    const availability = computeLessonAvailability({ lesson, enrollDate, now: new Date() });
+  // Drip lock (only for non-staff with course access)
+  let dripInfo = { isAvailable: true, availableAt: null, countdownLabel: null, reason: null };
+  if (hasCourseAccess && !isStaff && enrollDate && lessonMeta) {
+    const availability = computeLessonAvailability({
+      lesson: {
+        drip_publish_at: lessonMeta.drip_publish_at,
+        drip_days_after_enroll: lessonMeta.drip_days_after_enroll,
+      },
+      enrollDate,
+      now,
+    });
     if (!availability.isAvailable) {
       accessLevel = 'DRIP_LOCKED';
-      const countdown = formatAvailabilityCountdown(availability.availableAt, new Date());
+      const countdown = formatAvailabilityCountdown(availability.availableAt, now);
       dripInfo = {
         isAvailable: false,
         availableAt: availability.availableAt,
@@ -105,32 +133,33 @@ export const useLessonAccess = (courseId, lessonId, user, schoolId) => {
   }
 
   // Licenses
-  const hasCopyLicense = activeEntitlements.some((e) => {
-    const type = e.entitlement_type || e.type;
-    return type === 'COPY_LICENSE';
-  });
-  const hasDownloadLicense = activeEntitlements.some((e) => {
-    const type = e.entitlement_type || e.type;
-    return type === 'DOWNLOAD_LICENSE';
-  });
+  const hasCopyLicense = useMemo(() => {
+    if (isStaff) return true;
+    return activeEntitlements.some((e) => {
+      const type = (e.entitlement_type || e.type || '').toUpperCase();
+      return type === 'COPY_LICENSE' || type === 'COPY';
+    });
+  }, [activeEntitlements, isStaff]);
 
-  // CRITICAL: Add-ons require BOTH course access AND the license
-  const canCopy = policy?.copy_mode === 'INCLUDED_WITH_ACCESS'
-    ? accessLevel === 'FULL'
-    : policy?.copy_mode === 'ADDON'
-    ? (accessLevel === 'FULL' && hasCopyLicense)
-    : false;
+  const hasDownloadLicense = useMemo(() => {
+    if (isStaff) return true;
+    return activeEntitlements.some((e) => {
+      const type = (e.entitlement_type || e.type || '').toUpperCase();
+      return type === 'DOWNLOAD_LICENSE' || type === 'DOWNLOAD';
+    });
+  }, [activeEntitlements, isStaff]);
 
-  const canDownload = policy?.download_mode === 'INCLUDED_WITH_ACCESS'
-    ? accessLevel === 'FULL'
-    : policy?.download_mode === 'ADDON'
-    ? (accessLevel === 'FULL' && hasDownloadLicense)
-    : false;
+  const canCopy = (policy?.copy_mode || 'DISALLOW') !== 'DISALLOW' && hasCopyLicense;
+  const canDownload = (policy?.download_mode || 'DISALLOW') !== 'DISALLOW' && hasDownloadLicense;
 
   const watermarkText = user ? `${user.email} • ${new Date().toLocaleDateString()}` : '';
 
   return {
     policy,
+    membership,
+    isMember,
+    membershipRole,
+    isStaff,
     entitlements: activeEntitlements,
     hasCourseAccess,
     previewAllowed,

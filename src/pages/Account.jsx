@@ -7,8 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { User, CreditCard, Award, Users } from 'lucide-react';
 import { toast } from 'sonner';
-import { scopedFilter } from '../components/api/scoped';
-import { isSubscriptionActive } from '../components/subscriptions/subscriptionEngine';
+import { scopedFilter, scopedUpdate } from '@/components/api/scoped';
+import { isSubscriptionActive } from '@/components/subscriptions/subscriptionEngine';
 import { isEntitlementActive } from '@/components/utils/entitlements';
 
 export default function Account() {
@@ -66,11 +66,11 @@ export default function Account() {
 
   const cancelSubscriptionMutation = useMutation({
     mutationFn: async (subId) => {
-      await base44.entities.Subscription.update(subId, {
+      await scopedUpdate('Subscription', subId, {
         status: 'cancelled',
         canceled_at: new Date().toISOString(),
         auto_renew: false
-      });
+      }, activeSchoolId, true);
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['my-subscriptions']);

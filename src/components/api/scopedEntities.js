@@ -7,10 +7,10 @@
 
 export const SCHOOL_SCOPED_ENTITIES = [
   'Course', 'Lesson', 'Post', 'Comment', 'UserProgress',
-  'Offer', 'Coupon', 'Transaction', 'Entitlement', 'Purchase',
+  'Offer', 'Coupon', 'Transaction', 'Entitlement', 'Purchase', 'OfferCourse', 'CouponRedemption',
   'StudySet', 'StudyCard', 'LanguageVariant', 'SpacedRepetitionItem',
   'Cohort', 'CohortMember', 'CohortScheduleItem',
-  'SchoolMembership', 'SchoolInvite', 'StaffInvite', 'ContentProtectionPolicy',
+  'SchoolMembership', 'CourseStaff', 'SchoolInvite', 'StaffInvite', 'ContentProtectionPolicy',
   'Testimonial', 'InstructorPayout', 'AuditLog', 'EventLog',
   'Announcement', 'UserAnnouncementRead', 'Affiliate', 'Referral',
   'AiTutorSession', 'AiTutorPolicyLog', 'RateLimitLog',
@@ -19,13 +19,14 @@ export const SCHOOL_SCOPED_ENTITIES = [
   'ModerationAction', 'SchoolMetricDaily', 'CourseMetricDaily',
   'Assignment', 'Submission', 'Quiz', 'QuizAttempt',
   'QuizQuestion',
-  'Download', 'Bundle', 'SubscriptionPlan', 'PayoutBatch',
+  'Download', 'Bundle', 'SubscriptionPlan', 'Subscription', 'PayoutBatch',
   'AnalyticsEvent', 'SubscriptionInvoice', 'Certificate', 'StudySession'
 ];
 
 export const GLOBAL_ENTITIES = [
   'User', 'School', 'GoogleOAuthToken', 'GoogleDriveToken',
-  'Notification', 'Integration', 'UserSchoolPreference'
+  'Notification', 'Integration', 'UserSchoolPreference',
+  'TenantApplication'
 ];
 
 export function requiresSchoolScope(entityName) {

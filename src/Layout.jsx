@@ -13,6 +13,7 @@ import ThemeToggle from '@/components/theme/ThemeToggle';
 import NotificationCenter from '@/components/notifications/NotificationCenter';
 import SchoolSwitcher from '@/components/school/SchoolSwitcher';
 import CommandPalette from '@/components/navigation/CommandPalette';
+import PortalSidebar from '@/portals/shared/PortalSidebar';
 import { FEATURES, getNavGroupsForAudience } from '@/components/config/features';
 
 export default function Layout({ children, currentPageName }) {
@@ -44,47 +45,8 @@ export default function Layout({ children, currentPageName }) {
 
   // Build nav from registry
   const navGroups = useMemo(() => getNavGroupsForAudience(userAudience), [userAudience]);
-  const coreNav = navGroups.find(g => g.label === 'Core Learning')?.features || [];
-  const teachNav = navGroups.find(g => g.label === 'Teaching Tools')?.features || [];
-
-  // Core navigation (registry-driven, fallback to hardcoded)
-  const coreNavigation = coreNav.length > 0 
-    ? coreNav.map(f => ({
-        name: f.label,
-        path: f.key,
-        icon: BookOpen
-      }))
-    : [
-        { name: 'Dashboard', path: 'Dashboard', icon: BookOpen },
-        { name: 'Courses', path: 'Courses', icon: GraduationCap },
-        { name: 'Reader', path: 'Reader', icon: BookMarked },
-        { name: 'Community', path: 'Feed', icon: Users },
-        { name: 'Search', path: 'SchoolSearch', icon: Search },
-      ];
-
-  // Add teaching nav if applicable
-  if (canTeach && teachNav.length > 0) {
-    teachNav.forEach(f => {
-      if (!f.hidden && !f.vaultOnly) {
-        coreNavigation.push({
-          name: f.label,
-          path: f.key,
-          icon: BookOpen
-        });
-      }
-    });
-  }
-
-  // Labs features - advanced/experimental
-  const labsFeatures = [
-    { name: 'Language Learning', path: 'Languages', icon: BookOpen },
-    { name: 'Study Sets', path: 'StudySets', icon: BookOpen },
-    { name: 'Challenges', path: 'Challenges', icon: BookOpen },
-    { name: 'Achievements', path: 'Achievements', icon: BookOpen },
-    { name: 'Live Streams', path: 'LiveStreams', icon: BookOpen },
-    { name: 'Analytics', path: 'Analytics', icon: BookOpen },
-    { name: 'Career Paths', path: 'CareerPaths', icon: BookOpen },
-  ];
+  const coreNavigation = navGroups.find(g => g.label === 'Core Learning')?.features || [];
+  const labsFeatures = navGroups.find(g => g.label === 'Labs & Experiments')?.features || [];
 
   return (
     <div className={tokens.page.outer}>
@@ -107,19 +69,19 @@ export default function Layout({ children, currentPageName }) {
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center space-x-1">
               {coreNavigation.map((item) => {
-                const Icon = item.icon;
-                const isActive = currentPageName === item.path;
+                const Icon = BookOpen;
+                const isActive = currentPageName === item.key;
                 return (
                   <Link
-                    key={item.name}
-                    to={createPageUrl(item.path)}
+                    key={item.key}
+                    to={createPageUrl(item.key)}
                     className={cx(
                       tokens.glass.navItem,
                       isActive ? tokens.glass.navItemActive : 'text-muted-foreground hover:text-foreground'
                     )}
                   >
                     <Icon className="w-4 h-4" />
-                    <span className="font-medium text-sm">{item.name}</span>
+                    <span className="font-medium text-sm">{item.label}</span>
                   </Link>
                 );
               })}
@@ -137,9 +99,9 @@ export default function Layout({ children, currentPageName }) {
                   <DropdownMenuLabel>Experimental Features</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   {labsFeatures.map((feature) => (
-                    <DropdownMenuItem key={feature.name} asChild>
-                      <Link to={createPageUrl(feature.path)} className="cursor-pointer">
-                        {feature.name}
+                    <DropdownMenuItem key={feature.key} asChild>
+                      <Link to={createPageUrl(feature.key)} className="cursor-pointer">
+                        {feature.label}
                       </Link>
                     </DropdownMenuItem>
                   ))}
@@ -233,12 +195,12 @@ export default function Layout({ children, currentPageName }) {
           <div className="md:hidden border-t border-border bg-background/70 backdrop-blur">
             <div className="px-4 py-4 space-y-2">
               {coreNavigation.map((item) => {
-                const Icon = item.icon;
-                const isActive = currentPageName === item.path;
+                const Icon = BookOpen;
+                const isActive = currentPageName === item.key;
                 return (
                   <Link
-                    key={item.name}
-                    to={createPageUrl(item.path)}
+                    key={item.key}
+                    to={createPageUrl(item.key)}
                     onClick={() => setMobileMenuOpen(false)}
                     className={cx(
                       tokens.glass.navItem,
@@ -247,7 +209,7 @@ export default function Layout({ children, currentPageName }) {
                     )}
                   >
                     <Icon className="w-5 h-5" />
-                    <span className="font-medium">{item.name}</span>
+                    <span className="font-medium">{item.label}</span>
                   </Link>
                 );
               })}
@@ -258,13 +220,13 @@ export default function Layout({ children, currentPageName }) {
               </div>
               {labsFeatures.map((feature) => (
                 <Link
-                  key={feature.name}
-                  to={createPageUrl(feature.path)}
+                  key={feature.key}
+                  to={createPageUrl(feature.key)}
                   onClick={() => setMobileMenuOpen(false)}
                   className={cx(tokens.glass.navItem, 'justify-start px-4 py-3 text-muted-foreground hover:text-foreground')}
                 >
                   <Beaker className="w-5 h-5" />
-                  <span className="font-medium">{feature.name}</span>
+                  <span className="font-medium">{feature.label}</span>
                 </Link>
               ))}
 
@@ -311,9 +273,16 @@ export default function Layout({ children, currentPageName }) {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {children}
-      </main>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex gap-6">
+          <aside className="hidden md:block w-72 shrink-0">
+            <PortalSidebar currentPageName={currentPageName} />
+          </aside>
+          <main className="min-w-0 flex-1">
+            {children}
+          </main>
+        </div>
+      </div>
 
       {/* Footer */}
       <footer className="bg-slate-900 border-t border-slate-800 mt-20">
