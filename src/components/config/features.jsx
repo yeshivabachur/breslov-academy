@@ -19,6 +19,7 @@ export const FEATURES = {
   lessonViewer: { key: 'LessonViewer', label: 'Lesson Viewer', route: '/lessonviewer', area: 'core', audiences: ['student', 'teacher', 'admin'], icon: 'Play', hidden: true },
   lessonViewerPremium: { key: 'LessonViewerPremium', label: 'Lesson Viewer Premium', route: '/lessonviewerpremium', area: 'core', audiences: ['student', 'teacher', 'admin'], icon: 'Play', hidden: true },
   reader: { key: 'Reader', label: 'Smart Reader', route: '/reader', area: 'core', audiences: ['student', 'teacher', 'admin'], icon: 'BookMarked', order: 3 },
+  aiTutor: { key: 'AITutor', label: 'AI Tutor', route: '/ai-tutor', area: 'core', audiences: ['student', 'teacher', 'admin'], icon: 'Bot', order: 3.5 },
   feed: { key: 'Feed', label: 'Community', route: '/feed', area: 'core', audiences: ['student', 'teacher', 'admin'], icon: 'Users', order: 4 },
   schoolSearch: { key: 'SchoolSearch', label: 'Search', route: '/schoolsearch', area: 'core', audiences: ['student', 'teacher', 'admin'], icon: 'Search', order: 5 },
   myProgress: { key: 'MyProgress', label: 'My Progress', route: '/myprogress', area: 'core', audiences: ['student'], icon: 'TrendingUp', vaultOnly: true },

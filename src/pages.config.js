@@ -40,6 +40,7 @@ const Integrity = React.lazy(() => import('./pages/Integrity'));
 
 // Lazy-Loaded: Labs & Experimental (Non-critical)
 const Achievements = React.lazy(() => import('./pages/Achievements'));
+const AITutorPage = React.lazy(() => import('./pages/AITutorPage'));
 const Leaderboard = React.lazy(() => import('./pages/Leaderboard'));
 const StudyBuddies = React.lazy(() => import('./pages/StudyBuddies'));
 const Tournaments = React.lazy(() => import('./pages/Tournaments'));
@@ -95,6 +96,7 @@ const InviteAccept = React.lazy(() => import('./pages/InviteAccept'));
 
 export const PAGES = {
     "Achievements": Achievements,
+    "AITutor": AITutorPage,
     "AdaptiveLearning": AdaptiveLearning,
     "AdminHardening": AdminHardening,
     "Affiliate": Affiliate,
