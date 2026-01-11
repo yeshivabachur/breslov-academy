@@ -1,36 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Target, TrendingUp, BookOpen } from 'lucide-react';
+import { useSession } from '@/components/hooks/useSession';
+import { buildCacheKey, scopedFilter } from '@/components/api/scoped';
 
 export default function Skills() {
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-      } catch (error) {
-        base44.auth.redirectToLogin();
-      }
-    };
-    loadUser();
-  }, []);
+  const { user, activeSchoolId } = useSession();
 
   const { data: assessments = [] } = useQuery({
-    queryKey: ['skill-assessments', user?.email],
-    queryFn: () => base44.entities.SkillAssessment.filter({ user_email: user.email }),
-    enabled: !!user?.email
+    queryKey: buildCacheKey('skill-assessments', activeSchoolId, user?.email),
+    queryFn: () => scopedFilter('SkillAssessment', activeSchoolId, { user_email: user.email }),
+    enabled: !!user?.email && !!activeSchoolId
   });
 
   const { data: skillGaps = [] } = useQuery({
-    queryKey: ['skill-gaps', user?.email],
-    queryFn: () => base44.entities.SkillGap.filter({ user_email: user.email }),
-    enabled: !!user?.email
+    queryKey: buildCacheKey('skill-gaps', activeSchoolId, user?.email),
+    queryFn: () => scopedFilter('SkillGap', activeSchoolId, { user_email: user.email }),
+    enabled: !!user?.email && !!activeSchoolId
   });
 
   return (

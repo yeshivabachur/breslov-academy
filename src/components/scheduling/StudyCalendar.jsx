@@ -3,15 +3,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar, Clock, Plus } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { buildCacheKey, scopedFilter } from '@/components/api/scoped';
 
-export default function StudyCalendar({ userEmail }) {
+export default function StudyCalendar({ userEmail, schoolId }) {
   const [selectedDate, setSelectedDate] = useState(new Date());
 
   const { data: schedules = [] } = useQuery({
-    queryKey: ['study-schedules', userEmail],
-    queryFn: () => base44.entities.StudySchedule.filter({ user_email: userEmail }),
-    enabled: !!userEmail
+    queryKey: buildCacheKey('study-schedules', schoolId, userEmail),
+    queryFn: () => scopedFilter('StudySchedule', schoolId, { user_email: userEmail }),
+    enabled: !!userEmail && !!schoolId
   });
 
   const today = new Date();

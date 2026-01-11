@@ -1,39 +1,85 @@
 import React from 'react';
-import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Shield, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
+import { buildCacheKey, scopedCreate, scopedFilter, scopedUpdate } from '@/components/api/scoped';
 
 export default function SchoolModeration({ school, user, membership }) {
   const [selectedReport, setSelectedReport] = React.useState(null);
   const queryClient = useQueryClient();
 
   const canModerate = ['OWNER', 'ADMIN', 'MODERATOR'].includes(membership?.role);
+  const reportFields = [
+    'id',
+    'reason',
+    'entity_type',
+    'entity_id',
+    'details',
+    'reporter_user',
+    'created_date',
+    'status'
+  ];
 
   const { data: reports = [] } = useQuery({
-    queryKey: ['reports', school.id],
-    queryFn: () => base44.entities.ContentReport.filter({ school_id: school.id }, '-created_date'),
+    queryKey: buildCacheKey('reports', school?.id),
+    queryFn: () => scopedFilter(
+      'ContentReport',
+      school.id,
+      {},
+      '-created_date',
+      200,
+      { fields: reportFields }
+    ),
     enabled: !!school && canModerate
   });
 
   const resolveReportMutation = useMutation({
-    mutationFn: ({ reportId }) => base44.entities.ContentReport.update(reportId, {
-      status: 'RESOLVED',
-      resolved_by_user: user.email,
-      resolved_at: new Date().toISOString()
-    }),
+    mutationFn: async ({ reportId }) => {
+      const result = await scopedUpdate('ContentReport', reportId, {
+        status: 'RESOLVED',
+        resolved_by_user: user.email,
+        resolved_at: new Date().toISOString()
+      }, school.id, true);
+      try {
+        await scopedCreate('AuditLog', school.id, {
+          school_id: school.id,
+          user_email: user.email,
+          action: 'REPORT_RESOLVED',
+          entity_type: 'ContentReport',
+          entity_id: reportId
+        });
+      } catch (error) {
+        // Best effort audit
+      }
+      return result;
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries(['reports']);
+      queryClient.invalidateQueries(buildCacheKey('reports', school?.id));
       setSelectedReport(null);
       toast.success('Report resolved');
     }
   });
 
   const moderateContentMutation = useMutation({
-    mutationFn: (data) => base44.entities.ModerationAction.create(data),
+    mutationFn: async (data) => {
+      const action = await scopedCreate('ModerationAction', school.id, data);
+      try {
+        await scopedCreate('AuditLog', school.id, {
+          school_id: school.id,
+          user_email: user.email,
+          action: 'CONTENT_MODERATED',
+          entity_type: data.entity_type,
+          entity_id: data.entity_id,
+          metadata: { action_type: data.action_type }
+        });
+      } catch (error) {
+        // Best effort audit
+      }
+      return action;
+    },
     onSuccess: () => {
       toast.success('Moderation action recorded');
     }

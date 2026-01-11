@@ -1,0 +1,9 @@
+# CODEOWNERS
+# Update owners as the team forms.
+
+* @yeshivabachur
+
+/docs/ @yeshivabachur
+/functions/ @yeshivabachur
+/src/components/api/ @yeshivabachur
+/src/components/security/ @yeshivabachur

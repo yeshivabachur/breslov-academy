@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { base44 } from '@/api/base44Client';
 
 export default function SchoolHero({ school, user, slug }) {
   if (!school) return null;
@@ -60,13 +59,15 @@ export default function SchoolHero({ school, user, slug }) {
           </Link>
           
           {!user && (
-            <Button 
-              size="lg" 
-              variant="outline" 
+            <Button
+              size="lg"
+              variant="outline"
               className="h-14 px-8 text-lg border-white/20 bg-white/5 hover:bg-white/10 text-white hover:text-white backdrop-blur-sm"
-              onClick={() => base44.auth.redirectToLogin()}
+              asChild
             >
-              Sign In
+              <Link to={`/login/student?schoolSlug=${encodeURIComponent(slug || '')}`}>
+                Sign In
+              </Link>
             </Button>
           )}
         </div>

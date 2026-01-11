@@ -1,5 +1,4 @@
 import React from 'react';
-import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
@@ -9,6 +8,7 @@ import { BookOpen, Plus, FileText, CheckCircle, Users } from 'lucide-react';
 import { useSession } from '@/components/hooks/useSession';
 import { tokens, cx } from '@/components/theme/tokens';
 import StatCard from '@/components/dashboard/StatCard';
+import { buildCacheKey, scopedFilter } from '@/components/api/scoped';
 
 export default function Teach() {
   const { user, activeSchoolId, isTeacher, isLoading } = useSession();
@@ -20,19 +20,17 @@ export default function Teach() {
   }
 
   const { data: myCourses = [] } = useQuery({
-    queryKey: ['my-courses', user?.email, activeSchoolId],
+    queryKey: buildCacheKey('my-courses', activeSchoolId, user?.email),
     queryFn: async () => {
       if (!user?.email || !activeSchoolId) return [];
       
       // Get courses created by user
-      const created = await base44.entities.Course.filter({
-        school_id: activeSchoolId,
+      const created = await scopedFilter('Course', activeSchoolId, {
         created_by: user.email
       });
       
       // Get courses where user is staff
-      const staffRecords = await base44.entities.CourseStaff.filter({
-        school_id: activeSchoolId,
+      const staffRecords = await scopedFilter('CourseStaff', activeSchoolId, {
         user_email: user.email
       });
       
@@ -40,7 +38,7 @@ export default function Teach() {
       const staffCourses = [];
       
       for (const id of staffCourseIds) {
-        const courses = await base44.entities.Course.filter({ id });
+        const courses = await scopedFilter('Course', activeSchoolId, { id });
         if (courses.length > 0) staffCourses.push(courses[0]);
       }
       

@@ -4,11 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { base44 } from '@/api/base44Client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { buildCacheKey, scopedCreate, scopedUpdate } from '@/components/api/scoped';
 
-export default function CourseBuilder({ course, onSave }) {
+export default function CourseBuilder({ course, onSave, schoolId }) {
   const [courseData, setCourseData] = useState(course || {
     title: '',
     description: '',
@@ -23,13 +23,13 @@ export default function CourseBuilder({ course, onSave }) {
   const saveMutation = useMutation({
     mutationFn: async (data) => {
       if (course?.id) {
-        return await base44.entities.Course.update(course.id, data);
+        return await scopedUpdate('Course', course.id, data, schoolId, true);
       } else {
-        return await base44.entities.Course.create(data);
+        return await scopedCreate('Course', schoolId, data);
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['courses']);
+      queryClient.invalidateQueries(buildCacheKey('courses', schoolId));
       toast.success('Course saved successfully!');
       onSave?.();
     }

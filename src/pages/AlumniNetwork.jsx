@@ -1,29 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Users, LinkedinIcon } from 'lucide-react';
+import { useSession } from '@/components/hooks/useSession';
+import { buildCacheKey, scopedFilter } from '@/components/api/scoped';
 
 export default function AlumniNetwork() {
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-      } catch (error) {
-        base44.auth.redirectToLogin();
-      }
-    };
-    loadUser();
-  }, []);
+  const { activeSchoolId } = useSession();
 
   const { data: alumni = [] } = useQuery({
-    queryKey: ['alumni'],
-    queryFn: () => base44.entities.Alumni.filter({ open_to_networking: true })
+    queryKey: buildCacheKey('alumni', activeSchoolId),
+    queryFn: () => scopedFilter('Alumni', activeSchoolId, { open_to_networking: true }),
+    enabled: !!activeSchoolId
   });
 
   return (

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
@@ -9,9 +9,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Building2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useSession } from '@/components/hooks/useSession';
+import { scopedCreate } from '@/components/api/scoped';
 
 export default function SchoolNew() {
-  const [user, setUser] = useState(null);
+  const { user, isLoading } = useSession();
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
@@ -22,18 +24,6 @@ export default function SchoolNew() {
   });
   const [creating, setCreating] = useState(false);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-      } catch (error) {
-        base44.auth.redirectToLogin();
-      }
-    };
-    loadUser();
-  }, []);
 
   const generateSlug = (name) => {
     return name
@@ -77,8 +67,7 @@ export default function SchoolNew() {
       });
 
       // Create membership as OWNER
-      await base44.entities.SchoolMembership.create({
-        school_id: school.id,
+      await scopedCreate('SchoolMembership', school.id, {
         user_email: user.email,
         role: 'OWNER',
         joined_at: new Date().toISOString()
@@ -113,7 +102,7 @@ export default function SchoolNew() {
     }
   };
 
-  if (!user) return null;
+  if (!user || isLoading) return null;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 flex items-center justify-center p-6">

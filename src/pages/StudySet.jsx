@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -9,32 +8,22 @@ import { createPageUrl } from '@/utils';
 import FlashcardPractice from '@/components/language/FlashcardPractice';
 import MatchGame from '@/components/study/MatchGame';
 import WriteMode from '@/components/study/WriteMode';
+import { useSession } from '@/components/hooks/useSession';
+import { buildCacheKey, scopedFilter } from '@/components/api/scoped';
 
 export default function StudySet() {
-  const [user, setUser] = useState(null);
+  const { activeSchoolId } = useSession();
   const [mode, setMode] = useState(null);
   const urlParams = new URLSearchParams(window.location.search);
   const setId = urlParams.get('id');
 
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-      } catch (error) {
-        base44.auth.redirectToLogin();
-      }
-    };
-    loadUser();
-  }, []);
-
   const { data: studySet } = useQuery({
-    queryKey: ['study-set', setId],
+    queryKey: buildCacheKey('study-set', activeSchoolId, setId),
     queryFn: async () => {
-      const sets = await base44.entities.StudySet.filter({ id: setId });
+      const sets = await scopedFilter('StudySet', activeSchoolId, { id: setId });
       return sets[0];
     },
-    enabled: !!setId
+    enabled: !!setId && !!activeSchoolId
   });
 
   if (!studySet) return <div>Loading...</div>;

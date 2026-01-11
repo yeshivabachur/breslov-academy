@@ -111,11 +111,13 @@ export async function requestJson(path, options = {}) {
 function createEntityClient(entityName) {
   const encoded = encodeURIComponent(entityName);
   return {
-    filter: (filters = {}, sort, limit) => requestJson(`/entities/${encoded}`, {
+    filter: (filters = {}, sort, limit, options = {}) => requestJson(`/entities/${encoded}`, {
       params: {
         filter: filters,
         sort,
         limit,
+        fields: options?.fields,
+        previewChars: options?.previewChars,
       },
     }),
     list: (sort, limit) => requestJson(`/entities/${encoded}`, {

@@ -20,13 +20,23 @@ export const SCHOOL_SCOPED_ENTITIES = [
   'Assignment', 'Submission', 'Quiz', 'QuizAttempt',
   'QuizQuestion',
   'Download', 'Bundle', 'SubscriptionPlan', 'Subscription', 'PayoutBatch',
-  'AnalyticsEvent', 'SubscriptionInvoice', 'Certificate', 'StudySession'
+  'AnalyticsEvent', 'SubscriptionInvoice', 'Certificate', 'StudySession',
+  'Achievement', 'AdaptiveLearning', 'Alumni', 'Analytics', 'CareerPath', 'Challenge',
+  'ContentModeration', 'Event', 'FeatureFlag', 'Forum', 'Habit', 'Leaderboard',
+  'LearningInsight', 'LearningPath', 'LiveClass', 'LiveStream', 'Mentorship', 'Message',
+  'Microlesson', 'Portfolio', 'PowerUp', 'Recommendation', 'Reward', 'Scholarship',
+  'SchoolSetting', 'SkillAssessment', 'SkillGap', 'StudyBuddy', 'StudyGroup',
+  'StudySchedule', 'Tournament', 'UserPowerUp', 'VideoAnnotation', 'WellnessCheck',
+  'PricingChangeRequest', 'DownloadToken', 'SchoolAuthPolicy',
+  'StripeAccount', 'StripeWebhookEvent',
+  'DomainVerification', 'IntegrationConnection', 'StreamUpload'
 ];
 
 export const GLOBAL_ENTITIES = [
   'User', 'School', 'GoogleOAuthToken', 'GoogleDriveToken',
   'Notification', 'Integration', 'UserSchoolPreference',
-  'TenantApplication'
+  'TenantApplication', 'AuthSession', 'AuthState', 'IdentityLink',
+  'IntegrationState', 'IntegrationSecret'
 ];
 
 export function requiresSchoolScope(entityName) {

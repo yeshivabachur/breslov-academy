@@ -1,34 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Eye } from 'lucide-react';
+import { useSession } from '@/components/hooks/useSession';
+import { buildCacheKey, scopedFilter } from '@/components/api/scoped';
 
 export default function Portfolio() {
-  const [user, setUser] = useState(null);
+  const { user, activeSchoolId } = useSession();
   const urlParams = new URLSearchParams(window.location.search);
   const email = urlParams.get('email');
 
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-      } catch (error) {
-        base44.auth.redirectToLogin();
-      }
-    };
-    loadUser();
-  }, []);
-
   const { data: portfolio } = useQuery({
-    queryKey: ['portfolio', email],
+    queryKey: buildCacheKey('portfolio', activeSchoolId, email || user?.email),
     queryFn: async () => {
-      const portfolios = await base44.entities.Portfolio.filter({ user_email: email || user?.email });
+      const portfolios = await scopedFilter('Portfolio', activeSchoolId, { user_email: email || user?.email });
       return portfolios[0];
     },
-    enabled: !!(email || user?.email)
+    enabled: !!activeSchoolId && !!(email || user?.email)
   });
 
   if (!portfolio) return <div>Loading...</div>;

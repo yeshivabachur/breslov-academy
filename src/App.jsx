@@ -21,6 +21,7 @@ import LoginChooser from '@/portals/public/pages/LoginChooser';
 import LoginStudent from '@/portals/public/pages/LoginStudent';
 import LoginTeacher from '@/portals/public/pages/LoginTeacher';
 import LoginAdmin from '@/portals/public/pages/LoginAdmin';
+import PublicSchools from '@/portals/public/pages/PublicSchools';
 import SignupChooser from '@/portals/public/pages/SignupChooser';
 import SignupStudent from '@/portals/public/pages/SignupStudent';
 import SignupTeacher from '@/portals/public/pages/SignupTeacher';
@@ -54,6 +55,7 @@ function App() {
                 <Route path="pricing" element={<PublicPricing />} />
                 <Route path="faq" element={<PublicFAQ />} />
                 <Route path="contact" element={<PublicContact />} />
+                <Route path="schools" element={<PublicSchools />} />
 
                 {/* Dedicated logins (v9.1 spec) */}
                 <Route path="login" element={<LoginChooser />} />

@@ -1,15 +1,18 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Briefcase, TrendingUp, Clock, DollarSign } from 'lucide-react';
+import { useSession } from '@/components/hooks/useSession';
+import { buildCacheKey, scopedList } from '@/components/api/scoped';
 
 export default function CareerPaths() {
+  const { activeSchoolId } = useSession();
   const { data: paths = [] } = useQuery({
-    queryKey: ['career-paths'],
-    queryFn: () => base44.entities.CareerPath.list()
+    queryKey: buildCacheKey('career-paths', activeSchoolId),
+    queryFn: () => scopedList('CareerPath', activeSchoolId),
+    enabled: !!activeSchoolId
   });
 
   return (

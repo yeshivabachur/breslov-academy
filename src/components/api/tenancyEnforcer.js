@@ -104,7 +104,7 @@ function injectSchoolId({ entityName, filters, activeSchoolId, userEmail, isGlob
 }
 
 function makeGuardedFilter(base44, entityName, raw, ctx) {
-  return async (filters = {}, sort, limit) => {
+  return async (filters = {}, sort, limit, options) => {
     try {
       const activeSchoolId = ctx.getActiveSchoolId?.();
       const userEmail = ctx.getUserEmail?.();
@@ -146,7 +146,7 @@ function makeGuardedFilter(base44, entityName, raw, ctx) {
         }
       }
 
-      return raw.filter(injected || filters, sort, normalizeLimit(limit));
+      return raw.filter(injected || filters, sort, normalizeLimit(limit), options);
     } catch (e) {
       console.warn(`TenancyEnforcer: ${entityName}.filter failed`, e);
       return [];
@@ -155,7 +155,7 @@ function makeGuardedFilter(base44, entityName, raw, ctx) {
 }
 
 function makeGuardedList(base44, entityName, raw, ctx) {
-  return async (sort, limit) => {
+  return async (sort, limit, options) => {
     try {
       if (!requiresSchoolScope(entityName)) {
         return raw.list(sort, normalizeLimit(limit));
@@ -179,7 +179,7 @@ function makeGuardedList(base44, entityName, raw, ctx) {
       }
 
       // Translate list() into a scoped filter().
-      return raw.filter({ school_id: activeSchoolId }, sort, normalizeLimit(limit));
+      return raw.filter({ school_id: activeSchoolId }, sort, normalizeLimit(limit), options);
     } catch (e) {
       console.warn(`TenancyEnforcer: ${entityName}.list failed`, e);
       return [];
@@ -282,7 +282,7 @@ function attachGlobalEscapeHatches(entityName, entity, raw, ctx) {
   if (!requiresSchoolScope(entityName)) return;
 
   if (!entity.filterGlobal) {
-    entity.filterGlobal = async (filters = {}, sort, limit) => {
+    entity.filterGlobal = async (filters = {}, sort, limit, options) => {
       const email = ctx.getUserEmail?.();
       const isGlobal = typeof ctx.isGlobalAdmin === 'function' ? ctx.isGlobalAdmin(email) : false;
       if (!isGlobal) {
@@ -296,7 +296,7 @@ function attachGlobalEscapeHatches(entityName, entity, raw, ctx) {
         });
         return [];
       }
-      return raw.filter(filters, sort, normalizeLimit(limit));
+      return raw.filter(filters, sort, normalizeLimit(limit), options);
     };
   }
 

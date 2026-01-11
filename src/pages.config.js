@@ -34,6 +34,7 @@ const SchoolFeatures = React.lazy(() => import('./pages/SchoolFeatures'));
 const SchoolStaff = React.lazy(() => import('./pages/SchoolStaff'));
 const AuditLogViewer = React.lazy(() => import('./pages/AuditLogViewer'));
 const AdminHardening = React.lazy(() => import('./pages/AdminHardening'));
+const AdminOnboarding = React.lazy(() => import('./pages/AdminOnboarding'));
 const LegacyMigration = React.lazy(() => import('./pages/LegacyMigration'));
 const NetworkAdmin = React.lazy(() => import('./pages/NetworkAdmin'));
 const Integrity = React.lazy(() => import('./pages/Integrity'));
@@ -104,6 +105,7 @@ export const PAGES = {
     "AITutor": AITutorPage,
     "AdaptiveLearning": AdaptiveLearning,
     "AdminHardening": AdminHardening,
+    "AdminOnboarding": AdminOnboarding,
     "Affiliate": Affiliate,
     "AffiliateProgram": AffiliateProgram,
     "AlumniNetwork": AlumniNetwork,

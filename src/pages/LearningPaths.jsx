@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
@@ -8,35 +7,38 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MapPin, Clock, Crown, BookOpen, ArrowRight } from 'lucide-react';
 import { useSession } from '@/components/hooks/useSession';
+import { buildCacheKey, scopedFilter } from '@/components/api/scoped';
 
 export default function LearningPaths() {
   const { user, activeSchoolId } = useSession();
   const [userTier, setUserTier] = useState('free');
 
   const { data: subscription } = useQuery({
-    queryKey: ['subscription', user?.email],
+    queryKey: buildCacheKey('subscription', activeSchoolId, user?.email),
     queryFn: async () => {
       if (!user?.email) return null;
       const subs = await scopedFilter('Subscription', activeSchoolId, { user_email: user.email });
       return subs[0] || null;
     },
-    enabled: !!user?.email
+    enabled: !!user?.email && !!activeSchoolId
   });
 
   const { data: paths = [] } = useQuery({
-    queryKey: ['learning-paths'],
-    queryFn: () => base44.entities.LearningPath.filter({ is_published: true })
+    queryKey: buildCacheKey('learning-paths', activeSchoolId),
+    queryFn: () => scopedFilter('LearningPath', activeSchoolId, { is_published: true }),
+    enabled: !!activeSchoolId
   });
 
   const { data: courses = [] } = useQuery({
-    queryKey: ['courses'],
-    queryFn: () => base44.entities.Course.filter({ is_published: true })
+    queryKey: buildCacheKey('courses', activeSchoolId),
+    queryFn: () => scopedFilter('Course', activeSchoolId, { is_published: true }),
+    enabled: !!activeSchoolId
   });
 
   const { data: progress = [] } = useQuery({
-    queryKey: ['progress', user?.email],
-    queryFn: () => base44.entities.UserProgress.filter({ user_email: user.email }),
-    enabled: !!user?.email
+    queryKey: buildCacheKey('progress', activeSchoolId, user?.email),
+    queryFn: () => scopedFilter('UserProgress', activeSchoolId, { user_email: user.email }),
+    enabled: !!user?.email && !!activeSchoolId
   });
 
   useEffect(() => {

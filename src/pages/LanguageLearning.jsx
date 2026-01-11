@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
@@ -7,48 +6,31 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Plus } from 'lucide-react';
+import { useSession } from '@/components/hooks/useSession';
+import { buildCacheKey, scopedFilter } from '@/components/api/scoped';
 
 export default function LanguageLearning() {
-  const [user, setUser] = useState(null);
-  const [activeSchoolId, setActiveSchoolId] = useState(null);
-
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-        
-        const schoolId = localStorage.getItem('active_school_id');
-        setActiveSchoolId(schoolId);
-      } catch (error) {
-        base44.auth.redirectToLogin();
-      }
-    };
-    loadUser();
-  }, []);
+  const { user, activeSchoolId } = useSession();
 
   const { data: variants = [] } = useQuery({
-    queryKey: ['language-variants', activeSchoolId],
-    queryFn: () => base44.entities.LanguageVariant.filter({
-      school_id: activeSchoolId,
+    queryKey: buildCacheKey('language-variants', activeSchoolId),
+    queryFn: () => scopedFilter('LanguageVariant', activeSchoolId, {
       enabled: true
     }),
     enabled: !!activeSchoolId
   });
 
   const { data: mySets = [] } = useQuery({
-    queryKey: ['my-study-sets', user?.email, activeSchoolId],
-    queryFn: () => base44.entities.StudySet.filter({
-      school_id: activeSchoolId,
+    queryKey: buildCacheKey('my-study-sets', activeSchoolId, user?.email),
+    queryFn: () => scopedFilter('StudySet', activeSchoolId, {
       creator_user: user.email
     }),
     enabled: !!user && !!activeSchoolId
   });
 
   const { data: schoolSets = [] } = useQuery({
-    queryKey: ['school-study-sets', activeSchoolId],
-    queryFn: () => base44.entities.StudySet.filter({
-      school_id: activeSchoolId,
+    queryKey: buildCacheKey('school-study-sets', activeSchoolId),
+    queryFn: () => scopedFilter('StudySet', activeSchoolId, {
       visibility: { $in: ['SCHOOL', 'PUBLIC_WITHIN_SCHOOL'] }
     }),
     enabled: !!activeSchoolId

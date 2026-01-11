@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { useSession } from '@/components/hooks/useSession';
-import { scopedFilter, scopedUpdate } from '@/components/api/scoped';
+import { scopedCreate, scopedFilter, scopedUpdate } from '@/components/api/scoped';
 import { getQuizMeta, loadQuizForAccess, saveQuiz } from '@/components/academic/quizEngine';
 import { toast } from 'sonner';
 import { Plus, Pencil, Eye, Copy, ToggleLeft, ToggleRight } from 'lucide-react';
@@ -55,7 +55,20 @@ export default function TeachQuizzes() {
 
   const togglePublish = useMutation({
     mutationFn: async (quiz) => {
-      await scopedUpdate('Quiz', quiz.id, { is_published: !quiz.is_published }, activeSchoolId, true);
+      const nextPublished = !quiz.is_published;
+      await scopedUpdate('Quiz', quiz.id, { is_published: nextPublished }, activeSchoolId, true);
+      try {
+        await scopedCreate('AuditLog', activeSchoolId, {
+          school_id: activeSchoolId,
+          user_email: user?.email,
+          action: nextPublished ? 'PUBLISH_QUIZ' : 'UNPUBLISH_QUIZ',
+          entity_type: 'Quiz',
+          entity_id: quiz.id,
+          metadata: { status: nextPublished ? 'published' : 'draft' }
+        });
+      } catch {
+        // best effort
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['quizzes', activeSchoolId] });

@@ -13,7 +13,8 @@ import React, { useEffect, useState } from 'react';
  * @param {Object} policy - Content protection policy from school settings
  * @param {string} userEmail - Current user email for watermark
  * @param {string} schoolName - School name for watermark
- * @param {boolean} isEntitled - Whether user has full access rights
+ * @param {boolean} canCopy - Whether the user is allowed to copy protected content
+ * @param {boolean} canDownload - Whether the user is allowed to download protected content
  * @param {React.ReactNode} children - Content to protect
  */
 export default function ProtectedContent({ 
@@ -109,7 +110,7 @@ export default function ProtectedContent({
       const printStyle = document.getElementById('print-block-style');
       if (printStyle) printStyle.remove();
     };
-  }, [policy, isEntitled]);
+  }, [policy, canCopy]);
 
   return (
     <div className="relative">

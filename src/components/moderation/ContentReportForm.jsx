@@ -4,16 +4,16 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Flag } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
+import { scopedCreate } from '@/components/api/scoped';
 
-export default function ContentReportForm({ contentId, contentType, userEmail, onClose }) {
+export default function ContentReportForm({ contentId, contentType, userEmail, schoolId, onClose }) {
   const [reason, setReason] = useState('');
   const [description, setDescription] = useState('');
 
   const handleSubmit = async () => {
     try {
-      await base44.entities.ContentModeration.create({
+      await scopedCreate('ContentModeration', schoolId, {
         content_id: contentId,
         content_type: contentType,
         reported_by: userEmail,

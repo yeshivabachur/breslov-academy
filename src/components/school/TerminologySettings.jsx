@@ -3,8 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
+import { scopedCreate, scopedUpdate } from '@/components/api/scoped';
 
 const PRESETS = {
   breslov: {
@@ -46,15 +46,14 @@ export default function TerminologySettings({ school, user, onSave }) {
 
   const handleSave = async () => {
     try {
-      await base44.entities.School.update(school.id, {
+      await scopedUpdate('School', school.id, {
         terminology_preset: preset,
         ...terms
       });
 
       // Audit Log
       try {
-        await base44.entities.AuditLog.create({
-          school_id: school.id,
+        await scopedCreate('AuditLog', school.id, {
           user_email: user?.email,
           action: 'UPDATE_TERMINOLOGY',
           entity_type: 'School',

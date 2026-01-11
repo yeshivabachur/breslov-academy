@@ -13,7 +13,10 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "predev": "node scripts/generate-public-pages.mjs",
-    "prebuild": "node scripts/generate-public-pages.mjs"
+    "prebuild": "node scripts/generate-public-pages.mjs",
+    "spec:validate": "node scripts/validate-v11-spec.mjs",
+    "spec:parity": "node scripts/parity-sweep.mjs",
+    "spec:check": "npm run spec:validate && npm run spec:parity"
   },
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",

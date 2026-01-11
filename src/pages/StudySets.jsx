@@ -1,30 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
+import { useSession } from '@/components/hooks/useSession';
+import { buildCacheKey, scopedFilter } from '@/components/api/scoped';
 
 export default function StudySets() {
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-      } catch (error) {
-        base44.auth.redirectToLogin();
-      }
-    };
-    loadUser();
-  }, []);
+  const { activeSchoolId } = useSession();
 
   const { data: studySets = [] } = useQuery({
-    queryKey: ['study-sets'],
-    queryFn: () => base44.entities.StudySet.filter({ is_public: true }, '-created_date', 50)
+    queryKey: buildCacheKey('study-sets', activeSchoolId),
+    queryFn: () => scopedFilter('StudySet', activeSchoolId, { is_public: true }, '-created_date', 50),
+    enabled: !!activeSchoolId
   });
 
   return (

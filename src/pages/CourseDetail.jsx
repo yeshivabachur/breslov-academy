@@ -162,10 +162,27 @@ export default function CourseDetail() {
   }, [course, userTier]);
 
   const hasCourseAccess = !!(hasEntitledCourseAccess || hasTierAccess);
+  const lessonListFields = useMemo(() => ([
+    'id',
+    'course_id',
+    'title',
+    'title_hebrew',
+    'order',
+    'is_preview',
+    'duration_minutes',
+    'status'
+  ]), []);
 
   const { data: lessons = [] } = useQuery({
     queryKey: ['lessons', courseSchoolId, courseId],
-    queryFn: () => scopedFilter('Lesson', courseSchoolId, { course_id: courseId }, 'order', 1000),
+    queryFn: () => scopedFilter(
+      'Lesson',
+      courseSchoolId,
+      { course_id: courseId },
+      'order',
+      1000,
+      { fields: lessonListFields }
+    ),
     enabled: !!courseSchoolId && !!courseId,
   });
 

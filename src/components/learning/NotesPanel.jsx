@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,19 +7,21 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { StickyNote, Save } from 'lucide-react';
 import { toast } from 'sonner';
+import { buildCacheKey, scopedCreate, scopedFilter, scopedUpdate } from '@/components/api/scoped';
 
 export default function NotesPanel({ lesson, user }) {
   const [noteBody, setNoteBody] = useState('');
   const [shareWithCourse, setShareWithCourse] = useState(false);
   const queryClient = useQueryClient();
+  const schoolId = lesson?.school_id;
 
   const { data: notes = [] } = useQuery({
-    queryKey: ['lesson-notes', lesson.id, user.email],
-    queryFn: () => base44.entities.LessonNote.filter({
+    queryKey: buildCacheKey('lesson-notes', schoolId, lesson?.id, user?.email),
+    queryFn: () => scopedFilter('LessonNote', schoolId, {
       lesson_id: lesson.id,
       user_email: user.email
     }),
-    enabled: !!lesson && !!user,
+    enabled: !!lesson && !!user && !!schoolId,
     onSuccess: (data) => {
       if (data.length > 0) {
         setNoteBody(data[0].body);
@@ -32,20 +33,19 @@ export default function NotesPanel({ lesson, user }) {
   const saveNoteMutation = useMutation({
     mutationFn: async (data) => {
       if (notes.length > 0) {
-        return await base44.entities.LessonNote.update(notes[0].id, data);
+        return await scopedUpdate('LessonNote', notes[0].id, data, schoolId, true);
       } else {
-        return await base44.entities.LessonNote.create(data);
+        return await scopedCreate('LessonNote', schoolId, data);
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['lesson-notes']);
+      queryClient.invalidateQueries(buildCacheKey('lesson-notes', schoolId, lesson?.id, user?.email));
       toast.success('Note saved!');
     }
   });
 
   const handleSave = () => {
     saveNoteMutation.mutate({
-      school_id: lesson.school_id,
       lesson_id: lesson.id,
       user_email: user.email,
       body: noteBody,

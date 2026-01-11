@@ -1,47 +1,37 @@
-import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Crown, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import PricingCard from '@/components/subscription/PricingCard';
+import { useSession } from '@/components/hooks/useSession';
+import { buildCacheKey, scopedCreate, scopedFilter, scopedUpdate } from '@/components/api/scoped';
 
 export default function Subscription() {
-  const [user, setUser] = useState(null);
+  const { user, activeSchoolId } = useSession();
   const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-      } catch (error) {
-        base44.auth.redirectToLogin();
-      }
-    };
-    loadUser();
-  }, []);
-
   const { data: subscription } = useQuery({
-    queryKey: ['subscription', user?.email],
+    queryKey: buildCacheKey('subscription', activeSchoolId, user?.email),
     queryFn: async () => {
       if (!user?.email) return null;
-      const subs = await base44.entities.Subscription.filter({ user_email: user.email });
+      const subs = await scopedFilter('Subscription', activeSchoolId, { user_email: user.email });
       return subs[0] || null;
     },
-    enabled: !!user?.email
+    enabled: !!user?.email && !!activeSchoolId
   });
 
   const subscribeMutation = useMutation({
     mutationFn: async (tier) => {
       if (subscription) {
-        return await base44.entities.Subscription.update(subscription.id, {
+        const updated = await scopedUpdate('Subscription', subscription.id, {
           tier,
           status: 'active',
           start_date: new Date().toISOString().split('T')[0],
           end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-        });
+        }, activeSchoolId, true);
+        return { subscription: updated, action: 'UPDATED', tier };
       } else {
-        return await base44.entities.Subscription.create({
+        const created = await scopedCreate('Subscription', activeSchoolId, {
           user_email: user.email,
           tier,
           status: 'active',
@@ -49,10 +39,22 @@ export default function Subscription() {
           end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
           auto_renew: true
         });
+        return { subscription: created, action: 'CREATED', tier };
       }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries(['subscription']);
+    onSuccess: async (result) => {
+      queryClient.invalidateQueries(buildCacheKey('subscription', activeSchoolId, user?.email));
+      try {
+        await scopedCreate('AuditLog', activeSchoolId, {
+          user_email: user.email,
+          action: result?.action === 'CREATED' ? 'SUBSCRIPTION_CREATED' : 'SUBSCRIPTION_UPDATED',
+          entity_type: 'Subscription',
+          entity_id: result?.subscription?.id || null,
+          metadata: { tier: result?.tier || currentTier }
+        });
+      } catch (error) {
+        // Best-effort audit logging.
+      }
       toast.success('Subscription updated successfully!');
     }
   });

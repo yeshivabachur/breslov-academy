@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { scopedFilter } from '@/components/api/scoped';
 import { useSession } from '@/components/hooks/useSession';
@@ -30,6 +30,47 @@ export default function LessonViewerPremium() {
   
   const urlParams = new URLSearchParams(window.location.search);
   const lessonId = urlParams.get('id');
+  const lessonMetaFields = useMemo(() => ([
+    'id',
+    'school_id',
+    'course_id',
+    'title',
+    'title_hebrew',
+    'is_preview',
+    'drip_publish_at',
+    'drip_days_after_enroll',
+    'order',
+    'duration_minutes',
+    'duration_seconds'
+  ]), []);
+  const lessonContentFields = useMemo(() => ([
+    'id',
+    'school_id',
+    'course_id',
+    'title',
+    'title_hebrew',
+    'content',
+    'content_json',
+    'video_url',
+    'video_stream_id',
+    'audio_url',
+    'duration_seconds',
+    'duration_minutes',
+    'is_preview',
+    'drip_publish_at',
+    'drip_days_after_enroll',
+    'order'
+  ]), []);
+  const lessonListFields = useMemo(() => ([
+    'id',
+    'course_id',
+    'title',
+    'title_hebrew',
+    'order',
+    'is_preview',
+    'duration_minutes',
+    'status'
+  ]), []);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -42,7 +83,7 @@ export default function LessonViewerPremium() {
     queryKey: ['lesson-meta', activeSchoolId, lessonId],
     queryFn: async () => {
       if (!activeSchoolId || !lessonId) return null;
-      const lessons = await scopedFilter('Lesson', activeSchoolId, { id: lessonId });
+      const lessons = await scopedFilter('Lesson', activeSchoolId, { id: lessonId }, null, 1, { fields: lessonMetaFields });
       const l = lessons?.[0] || null;
       if (!l) return null;
       return {
@@ -72,9 +113,19 @@ export default function LessonViewerPremium() {
 
   // Full lesson payload (only when FULL or PREVIEW)
   const { data: lesson } = useQuery({
-    queryKey: ['lesson-full', activeSchoolId, lessonId],
+    queryKey: ['lesson-full', activeSchoolId, lessonId, access.accessLevel, access.maxPreviewChars],
     queryFn: async () => {
-      const lessons = await scopedFilter('Lesson', activeSchoolId, { id: lessonId });
+      const previewChars = access.accessLevel === 'PREVIEW'
+        ? (access.maxPreviewChars || 1500)
+        : null;
+      const lessons = await scopedFilter(
+        'Lesson',
+        activeSchoolId,
+        { id: lessonId },
+        null,
+        1,
+        { fields: lessonContentFields, previewChars }
+      );
       return lessons?.[0] || null;
     },
     enabled: !!activeSchoolId && !!lessonId && shouldLoadLesson,
@@ -95,7 +146,14 @@ export default function LessonViewerPremium() {
 
   const { data: allLessons = [] } = useQuery({
     queryKey: ['lessons', activeSchoolId, effectiveCourseId],
-    queryFn: () => scopedFilter('Lesson', activeSchoolId, { course_id: effectiveCourseId }, 'order'),
+    queryFn: () => scopedFilter(
+      'Lesson',
+      activeSchoolId,
+      { course_id: effectiveCourseId },
+      'order',
+      1000,
+      { fields: lessonListFields }
+    ),
     enabled: !!activeSchoolId && !!effectiveCourseId && allowCourseData
   });
 

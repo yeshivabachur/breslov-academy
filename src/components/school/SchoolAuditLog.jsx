@@ -1,16 +1,31 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { ScrollText, Search } from 'lucide-react';
+import { buildCacheKey, scopedFilter } from '@/components/api/scoped';
 
 export default function SchoolAuditLog({ school }) {
   const [searchQuery, setSearchQuery] = useState('');
+  const auditFields = [
+    'id',
+    'action',
+    'user_email',
+    'entity_type',
+    'entity_id',
+    'created_date'
+  ];
 
   const { data: auditLogs = [] } = useQuery({
-    queryKey: ['audit-logs', school.id],
-    queryFn: () => base44.entities.AuditLog.filter({ school_id: school.id }, '-created_date', 100),
+    queryKey: buildCacheKey('audit-logs', school?.id),
+    queryFn: () => scopedFilter(
+      'AuditLog',
+      school.id,
+      {},
+      '-created_date',
+      200,
+      { fields: auditFields }
+    ),
     enabled: !!school
   });
 

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
-import { scopedCreate } from '@/components/api/scoped';
+import { buildCacheKey, scopedCreate, scopedFilter, scopedUpdate } from '@/components/api/scoped';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -59,9 +58,9 @@ export default function SchoolProtectionSettings({ schoolId }) {
   const queryClient = useQueryClient();
   
   const { data: policyRecord, isLoading } = useQuery({
-    queryKey: ['protection-policy', schoolId],
+    queryKey: buildCacheKey('protection-policy', schoolId),
     queryFn: async () => {
-      const policies = await base44.entities.ContentProtectionPolicy.filter({ school_id: schoolId });
+      const policies = await scopedFilter('ContentProtectionPolicy', schoolId, {}, null, 1);
       return policies[0];
     },
     enabled: !!schoolId
@@ -90,13 +89,10 @@ export default function SchoolProtectionSettings({ schoolId }) {
     mutationFn: async () => {
       let policyId;
       if (policyRecord) {
-        await base44.entities.ContentProtectionPolicy.update(policyRecord.id, policy);
+        await scopedUpdate('ContentProtectionPolicy', policyRecord.id, policy, schoolId, true);
         policyId = policyRecord.id;
       } else {
-        const newPolicy = await base44.entities.ContentProtectionPolicy.create({
-          school_id: schoolId,
-          ...policy
-        });
+        const newPolicy = await scopedCreate('ContentProtectionPolicy', schoolId, policy);
         policyId = newPolicy.id;
       }
 
@@ -113,7 +109,7 @@ export default function SchoolProtectionSettings({ schoolId }) {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['protection-policy']);
+      queryClient.invalidateQueries(buildCacheKey('protection-policy', schoolId));
       toast.success('Protection settings saved');
     }
   });

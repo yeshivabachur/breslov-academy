@@ -3,7 +3,7 @@
  * Handles lesson release scheduling based on enrollment dates
  */
 
-import { base44 } from '@/api/base44Client';
+import { scopedFilter } from '@/components/api/scoped';
 
 /**
  * Parse date safely
@@ -26,8 +26,7 @@ export function parseDateSafe(value) {
 export async function getEnrollDate({ school_id, user_email, course_id }) {
   try {
     // Get entitlements for this course
-    const entitlements = await base44.entities.Entitlement.filter({
-      school_id,
+    const entitlements = await scopedFilter('Entitlement', school_id, {
       user_email
     });
     

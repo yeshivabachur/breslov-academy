@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { scopedFilter } from '@/components/api/scoped';
+import { buildCacheKey, scopedFilter } from '@/components/api/scoped';
 import { useSession } from '@/components/hooks/useSession';
 import { useQuery } from '@tanstack/react-query';
 import { BookOpen, CheckCircle, Clock, Crown, ArrowRight, Star } from 'lucide-react';
@@ -13,28 +13,29 @@ import CourseCard from '@/components/courses/CourseCard';
 import CourseRecommendations from '@/components/ai/CourseRecommendations';
 import AnnouncementsPanel from '@/components/announcements/AnnouncementsPanel';
 import { DashboardSkeleton } from '@/components/ui/SkeletonLoaders';
+import StudyCalendar from '@/components/scheduling/StudyCalendar';
+import WellnessTracker from '@/components/wellness/WellnessTracker';
 
 export default function Dashboard() {
   const { user, activeSchoolId, isLoading } = useSession();
   const [userTier, setUserTier] = useState('free');
 
   const { data: subscription, isLoading: subLoading } = useQuery({
-    queryKey: ['subscription', user?.email],
+    queryKey: buildCacheKey('subscription', activeSchoolId, user?.email),
     queryFn: async () => {
       if (!user?.email) return null;
       const subs = await scopedFilter('Subscription', activeSchoolId, { user_email: user.email });
       return subs[0] || null;
     },
-    enabled: !!user?.email
+    enabled: !!user?.email && !!activeSchoolId
   });
 
   const { data: courses = [], isLoading: coursesLoading } = useQuery({
-    queryKey: ['courses', activeSchoolId],
+    queryKey: buildCacheKey('courses', activeSchoolId),
     queryFn: async () => {
       if (!activeSchoolId) return [];
-      let schoolCourses = await base44.entities.Course.filter({ 
-        is_published: true, 
-        school_id: activeSchoolId 
+      let schoolCourses = await scopedFilter('Course', activeSchoolId, {
+        is_published: true,
       }, '-created_date', 6);
       
       // Fallback to legacy school if no courses
@@ -51,10 +52,10 @@ export default function Dashboard() {
   });
 
   const { data: progress = [] } = useQuery({
-    queryKey: ['progress', user?.email],
+    queryKey: buildCacheKey('progress', activeSchoolId, user?.email),
     queryFn: async () => {
       const courseProgress = await scopedFilter('UserProgress', activeSchoolId, { user_email: user.email });
-      const insights = await base44.entities.LearningInsight.filter({ user_email: user.email, is_read: false });
+      const insights = await scopedFilter('LearningInsight', activeSchoolId, { user_email: user.email, is_read: false });
       return { courseProgress, insights };
     },
     enabled: !!activeSchoolId && !!user?.email
@@ -162,6 +163,7 @@ export default function Dashboard() {
         user={user} 
         userProgress={progress} 
         courses={courses} 
+        schoolId={activeSchoolId}
       />
 
       {/* Featured Courses */}
@@ -190,6 +192,14 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+
+      {/* Wellness + Schedule */}
+      {user?.email && activeSchoolId && (
+        <div className={cx("grid grid-cols-1 lg:grid-cols-2", tokens.layout.gridGap)}>
+          <StudyCalendar userEmail={user.email} schoolId={activeSchoolId} />
+          <WellnessTracker userEmail={user.email} schoolId={activeSchoolId} />
+        </div>
+      )}
     </div>
   );
 }

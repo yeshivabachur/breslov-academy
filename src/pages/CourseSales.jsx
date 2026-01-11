@@ -15,6 +15,14 @@ export default function CourseSales() {
   const [hasAccess, setHasAccess] = useState(false);
   
   const { schoolSlug: slug, courseId } = useStorefrontContext();
+  const lessonListFields = [
+    'id',
+    'course_id',
+    'title',
+    'title_hebrew',
+    'order',
+    'is_preview'
+  ];
 
   useEffect(() => {
     const loadUser = async () => {
@@ -46,7 +54,7 @@ export default function CourseSales() {
   const { data: school } = useQuery({
     queryKey: ['school-by-slug', slug],
     queryFn: async () => {
-      const schools = await base44.entities.School.filter({ slug });
+      const schools = await base44.entities.School.filter({ slug, is_public: true });
       return schools[0];
     },
     enabled: !!slug
@@ -55,7 +63,7 @@ export default function CourseSales() {
   const { data: course } = useQuery({
     queryKey: ['course', school?.id, courseId],
     queryFn: async () => {
-      const courses = await scopedFilter('Course', school.id, { id: courseId });
+      const courses = await scopedFilter('Course', school.id, { id: courseId, is_published: true });
       return courses[0];
     },
     enabled: !!school?.id && !!courseId
@@ -63,7 +71,7 @@ export default function CourseSales() {
 
   const { data: lessons = [] } = useQuery({
     queryKey: ['course-lessons', school?.id, courseId],
-    queryFn: () => scopedFilter('Lesson', school.id, { course_id: courseId }, 'order'),
+    queryFn: () => scopedFilter('Lesson', school.id, { course_id: courseId }, 'order', 1000, { fields: lessonListFields }),
     enabled: !!school?.id && !!courseId
   });
 
@@ -76,7 +84,7 @@ export default function CourseSales() {
   const { data: offers = [] } = useQuery({
     queryKey: ['course-offers', school?.id, courseId],
     queryFn: async () => {
-      const allOffers = await base44.entities.Offer.filter({ school_id: school.id });
+      const allOffers = await scopedFilter('Offer', school.id, { is_active: true });
       return allOffers.filter(o => 
         o.offer_type === 'COURSE' && o.courses?.includes(courseId) ||
         o.offer_type === 'ALL_COURSES'
@@ -87,10 +95,7 @@ export default function CourseSales() {
 
   const { data: entitlements = [] } = useQuery({
     queryKey: ['my-entitlements', user?.email, school?.id],
-    queryFn: () => base44.entities.Entitlement.filter({
-      school_id: school.id,
-      user_email: user.email
-    }),
+    queryFn: () => scopedFilter('Entitlement', school.id, { user_email: user.email }),
     enabled: !!user && !!school
   });
 
@@ -167,7 +172,7 @@ export default function CourseSales() {
                         Enroll for Free
                       </Button>
                     ) : (
-                      <Button size="lg" onClick={() => base44.auth.redirectToLogin()}>
+                      <Button size="lg" onClick={() => window.location.assign(`/login/student?schoolSlug=${encodeURIComponent(slug || '')}`)}>
                         Sign up to Enroll
                       </Button>
                     )
@@ -181,7 +186,7 @@ export default function CourseSales() {
                         </Link>
                       )
                     ) : (
-                      <Button size="lg" onClick={() => base44.auth.redirectToLogin()}>
+                      <Button size="lg" onClick={() => window.location.assign(`/login/student?schoolSlug=${encodeURIComponent(slug || '')}`)}>
                         Sign up to Purchase
                       </Button>
                     )

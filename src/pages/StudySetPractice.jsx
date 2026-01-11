@@ -1,15 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
+import { useSession } from '@/components/hooks/useSession';
+import { buildCacheKey, scopedCreate, scopedFilter } from '@/components/api/scoped';
 
 export default function StudySetPractice() {
-  const [user, setUser] = useState(null);
-  const [activeSchoolId, setActiveSchoolId] = useState(null);
+  const { user, activeSchoolId } = useSession();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showBack, setShowBack] = useState(false);
   const [mode, setMode] = useState('FLASHCARDS');
@@ -18,39 +18,25 @@ export default function StudySetPractice() {
   const urlParams = new URLSearchParams(window.location.search);
   const setId = urlParams.get('id');
 
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-        const schoolId = localStorage.getItem('active_school_id');
-        setActiveSchoolId(schoolId);
-      } catch (error) {
-        base44.auth.redirectToLogin();
-      }
-    };
-    loadUser();
-  }, []);
-
   const { data: studySet } = useQuery({
-    queryKey: ['study-set', setId],
+    queryKey: buildCacheKey('study-set', activeSchoolId, setId),
     queryFn: async () => {
-      const sets = await base44.entities.StudySet.filter({ id: setId });
+      const sets = await scopedFilter('StudySet', activeSchoolId, { id: setId });
       return sets[0];
     },
-    enabled: !!setId
+    enabled: !!setId && !!activeSchoolId
   });
 
   const { data: cards = [] } = useQuery({
-    queryKey: ['study-cards', setId],
-    queryFn: () => base44.entities.StudyCard.filter({ study_set_id: setId }, 'order'),
-    enabled: !!setId
+    queryKey: buildCacheKey('study-cards', activeSchoolId, setId),
+    queryFn: () => scopedFilter('StudyCard', activeSchoolId, { study_set_id: setId }, 'order'),
+    enabled: !!setId && !!activeSchoolId
   });
 
   const recordSessionMutation = useMutation({
-    mutationFn: (data) => base44.entities.StudySession.create(data),
+    mutationFn: (data) => scopedCreate('StudySession', activeSchoolId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['study-sessions']);
+      queryClient.invalidateQueries(buildCacheKey('study-sessions', activeSchoolId, user?.email));
     }
   });
 
@@ -61,7 +47,6 @@ export default function StudySetPractice() {
     } else {
       // Session complete
       recordSessionMutation.mutate({
-        school_id: activeSchoolId,
         user_email: user.email,
         study_set_id: setId,
         mode: 'FLASHCARDS',

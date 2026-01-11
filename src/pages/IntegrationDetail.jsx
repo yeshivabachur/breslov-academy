@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { getIntegrationById } from '@/components/config/integrations';
+import { scopedFilter } from '@/components/api/scoped';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -10,14 +12,36 @@ import { cx } from '@/components/theme/tokens';
 import PageShell from '@/components/ui/PageShell';
 import GlassCard from '@/components/ui/GlassCard';
 import { toast } from 'sonner';
+import { useSession } from '@/components/hooks/useSession';
+import { base44 } from '@/api/base44Client';
+import { buildApiUrl } from '@/api/appClient';
 
 export default function IntegrationDetail() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const appId = params.get('id');
   const app = getIntegrationById(appId);
+  const { activeSchoolId } = useSession();
   const [isConnecting, setIsConnecting] = useState(false);
   const [isConnected, setIsConnected] = useState(app?.status === 'connected');
+
+  const isOAuth = app?.connectMode === 'oauth';
+  const providerKey = app?.providerKey || app?.id;
+
+  const { data: connectionRows = [], refetch: refetchConnection } = useQuery({
+    queryKey: ['integration-connection', activeSchoolId, providerKey],
+    queryFn: () => scopedFilter(
+      'IntegrationConnection',
+      activeSchoolId,
+      { provider: providerKey },
+      '-updated_at',
+      1,
+      { fields: ['id', 'provider', 'status', 'connected_at', 'updated_at'] }
+    ),
+    enabled: !!activeSchoolId && !!providerKey && isOAuth,
+  });
+
+  const connection = useMemo(() => connectionRows?.[0] || null, [connectionRows]);
 
   useEffect(() => {
     if (!app) {
@@ -25,11 +49,31 @@ export default function IntegrationDetail() {
     }
   }, [app, navigate]);
 
+  useEffect(() => {
+    if (isOAuth) return;
+    setIsConnected(app?.status === 'connected');
+  }, [app, isOAuth]);
+
   if (!app) return null;
 
+  const connected = isOAuth ? connection?.status === 'connected' : isConnected;
+
   const handleConnect = () => {
+    if (isOAuth) {
+      if (!activeSchoolId) {
+        toast.error('Select a school first');
+        return;
+      }
+      const url = buildApiUrl(app.oauthStartPath, {
+        school_id: activeSchoolId,
+        provider: providerKey,
+        return_url: window.location.href,
+      });
+      window.location.assign(url);
+      return;
+    }
+
     setIsConnecting(true);
-    // Mock connection delay
     setTimeout(() => {
       setIsConnecting(false);
       setIsConnected(true);
@@ -37,11 +81,25 @@ export default function IntegrationDetail() {
     }, 1500);
   };
 
-  const handleDisconnect = () => {
-    if (confirm(`Are you sure you want to disconnect ${app.name}?`)) {
-      setIsConnected(false);
-      toast.info(`Disconnected from ${app.name}`);
+  const handleDisconnect = async () => {
+    if (!confirm(`Are you sure you want to disconnect ${app.name}?`)) return;
+
+    if (isOAuth) {
+      try {
+        await base44.request('/integrations/disconnect', {
+          method: 'POST',
+          body: { school_id: activeSchoolId, provider: providerKey },
+        });
+        await refetchConnection();
+        toast.info(`Disconnected from ${app.name}`);
+      } catch (error) {
+        toast.error('Unable to disconnect integration');
+      }
+      return;
     }
+
+    setIsConnected(false);
+    toast.info(`Disconnected from ${app.name}`);
   };
 
   return (
@@ -61,7 +119,7 @@ export default function IntegrationDetail() {
       }
       subtitle={app.category}
       actions={
-        isConnected ? (
+        connected ? (
           <Button variant="outline" className="text-destructive hover:text-destructive" onClick={handleDisconnect}>
             Disconnect
           </Button>
@@ -146,12 +204,12 @@ export default function IntegrationDetail() {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Developer</span>
-                <span className="font-medium">Breslov Academy</span>
+                <span className="font-medium">{app.developer || 'Breslov Academy'}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Status</span>
-                <Badge variant={app.status === 'beta' ? 'secondary' : 'default'} className="capitalize">
-                  {app.status}
+                <Badge variant={connected ? 'default' : app.status === 'beta' ? 'secondary' : 'outline'} className="capitalize">
+                  {connected ? 'connected' : app.status}
                 </Badge>
               </div>
             </div>

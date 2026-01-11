@@ -12,6 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Building2, Trash2, Copy } from 'lucide-react';
 import { toast } from 'sonner';
+import { useSession } from '@/components/hooks/useSession';
+import { scopedCreate, scopedDelete, scopedFilter, scopedUpdate } from '@/components/api/scoped';
 import SchoolAnalytics from '@/components/school/SchoolAnalytics';
 import SchoolAnnouncements from '@/components/school/SchoolAnnouncements';
 import SchoolModeration from '@/components/school/SchoolModeration';
@@ -19,29 +21,33 @@ import SchoolAuditLog from '@/components/school/SchoolAuditLog';
 import SchoolPayouts from '@/components/school/SchoolPayouts';
 import ContentProtectionSettings from '@/components/admin/ContentProtectionSettings';
 import TerminologySettings from '@/components/school/TerminologySettings';
+import SchoolAuthSettings from '@/components/school/SchoolAuthSettings';
 
 export default function SchoolAdmin() {
-  const [user, setUser] = useState(null);
   const [school, setSchool] = useState(null);
+  const [originalSchool, setOriginalSchool] = useState(null);
   const [membership, setMembership] = useState(null);
   const [members, setMembers] = useState([]);
   const [invites, setInvites] = useState([]);
   const [activeTab, setActiveTab] = useState('overview');
+  const { user, activeSchoolId, isLoading: isSessionLoading } = useSession();
   const navigate = useNavigate();
 
   useEffect(() => {
-    loadSchoolData();
-  }, []);
+    if (!isSessionLoading) {
+      loadSchoolData();
+    }
+  }, [isSessionLoading, activeSchoolId, user?.email]);
 
   const loadSchoolData = async () => {
     try {
-      const currentUser = await base44.auth.me();
-      setUser(currentUser);
-
       // Get active school
-      const activeSchoolId = localStorage.getItem('active_school_id');
       if (!activeSchoolId) {
         navigate(createPageUrl('Dashboard'));
+        return;
+      }
+      if (!user?.email) {
+        base44.auth.redirectToLogin();
         return;
       }
 
@@ -51,11 +57,11 @@ export default function SchoolAdmin() {
         return;
       }
       setSchool(schools[0]);
+      setOriginalSchool({ ...schools[0] });
 
       // Check permission
-      const userMembership = await base44.entities.SchoolMembership.filter({
-        school_id: activeSchoolId,
-        user_email: currentUser.email
+      const userMembership = await scopedFilter('SchoolMembership', activeSchoolId, {
+        user_email: user.email
       });
 
       if (userMembership.length === 0) {
@@ -80,19 +86,39 @@ export default function SchoolAdmin() {
   };
 
   const loadMembers = async (schoolId) => {
-    const schoolMembers = await base44.entities.SchoolMembership.filter({ school_id: schoolId });
+    const schoolMembers = await scopedFilter('SchoolMembership', schoolId, {});
     setMembers(schoolMembers);
   };
 
   const loadInvites = async (schoolId) => {
-    const schoolInvites = await base44.entities.SchoolInvite.filter({ school_id: schoolId });
+    const schoolInvites = await scopedFilter('SchoolInvite', schoolId, {});
     setInvites(schoolInvites);
   };
 
   const handleUpdateSchool = async (e) => {
     e.preventDefault();
     try {
-      await base44.entities.School.update(school.id, school);
+      const previous = originalSchool || {};
+      const changedFields = Object.keys(school || {}).filter((key) => school[key] !== previous[key]);
+      const updatedSchool = await scopedUpdate('School', school.id, school);
+      setSchool(updatedSchool);
+      setOriginalSchool({ ...updatedSchool });
+
+      if (activeSchoolId && user?.email) {
+        try {
+          await scopedCreate('AuditLog', activeSchoolId, {
+            school_id: activeSchoolId,
+            user_email: user.email,
+            action: 'UPDATE_SCHOOL_BRANDING',
+            entity_type: 'School',
+            entity_id: school.id,
+            metadata: { changed_fields: changedFields }
+          });
+        } catch (error) {
+          // Best effort audit
+        }
+      }
+
       toast.success('School updated successfully');
     } catch (error) {
       toast.error('Failed to update school');
@@ -106,12 +132,16 @@ export default function SchoolAdmin() {
     const role = formData.get('role');
 
     try {
+      if (!activeSchoolId) {
+        toast.error('No active school selected');
+        return;
+      }
       const token = Math.random().toString(36).substring(2) + Date.now().toString(36);
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 7); // 7 days expiry
 
-      await base44.entities.SchoolInvite.create({
-        school_id: school.id,
+      const invite = await scopedCreate('SchoolInvite', activeSchoolId, {
+        school_id: activeSchoolId,
         email,
         role,
         invited_by_user: user.email,
@@ -124,6 +154,19 @@ export default function SchoolAdmin() {
       // Copy to clipboard
       navigator.clipboard.writeText(inviteUrl);
       toast.success('Invite created! Link copied to clipboard');
+
+      try {
+        await scopedCreate('AuditLog', activeSchoolId, {
+          school_id: activeSchoolId,
+          user_email: user.email,
+          action: 'SCHOOL_INVITE_CREATED',
+          entity_type: 'SchoolInvite',
+          entity_id: invite?.id,
+          metadata: { invited_email: email, role }
+        });
+      } catch (error) {
+        // Best effort audit
+      }
       
       loadInvites(school.id);
       e.target.reset();
@@ -136,9 +179,20 @@ export default function SchoolAdmin() {
     if (!confirm('Are you sure you want to remove this member?')) return;
     
     try {
-      await base44.entities.SchoolMembership.delete(memberId);
+      await scopedDelete('SchoolMembership', memberId, activeSchoolId, true);
       toast.success('Member removed');
-      loadMembers(school.id);
+      try {
+        await scopedCreate('AuditLog', activeSchoolId, {
+          school_id: activeSchoolId,
+          user_email: user.email,
+          action: 'SCHOOL_MEMBER_REMOVED',
+          entity_type: 'SchoolMembership',
+          entity_id: memberId
+        });
+      } catch (error) {
+        // Best effort audit
+      }
+      loadMembers(activeSchoolId);
     } catch (error) {
       toast.error('Failed to remove member');
     }
@@ -150,7 +204,7 @@ export default function SchoolAdmin() {
     toast.success('Invite link copied!');
   };
 
-  if (!school || !membership) {
+  if (isSessionLoading || !school || !membership) {
     return <div className="text-center py-20">Loading...</div>;
   }
 
@@ -179,6 +233,7 @@ export default function SchoolAdmin() {
           <TabsTrigger value="audit">Audit</TabsTrigger>
           <TabsTrigger value="protection">Protection</TabsTrigger>
           <TabsTrigger value="terminology">Terms</TabsTrigger>
+          <TabsTrigger value="auth">SSO</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
 
@@ -414,6 +469,10 @@ export default function SchoolAdmin() {
 
         <TabsContent value="terminology">
           <TerminologySettings school={school} user={user} onSave={loadSchoolData} />
+        </TabsContent>
+
+        <TabsContent value="auth">
+          <SchoolAuthSettings schoolId={school.id} />
         </TabsContent>
 
         <TabsContent value="settings">

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
 import { useSession } from '@/components/hooks/useSession';
@@ -10,10 +10,7 @@ import {
   X, 
   LogOut, 
   User, 
-  ChevronDown, 
   Archive,
-  Bell,
-  Search,
   Settings
 } from 'lucide-react';
 
@@ -50,10 +47,14 @@ export default function PortalLayout({ children, currentPageName, audienceOverri
     memberships,
     activeSchool,
     audience: sessionAudience,
+    role,
+    isGlobalAdmin,
     isAdmin,
     isTeacher,
     changeActiveSchool,
+    setAudienceIntent,
   } = useSession();
+  const navigate = useNavigate();
 
   const isNative = useIsNative();
 
@@ -61,8 +62,29 @@ export default function PortalLayout({ children, currentPageName, audienceOverri
     await changeActiveSchool(schoolId);
   };
 
-  // Allow layout to force a specific audience (e.g. Student Portal showing student nav to an Admin)
-  const userAudience = audienceOverride || sessionAudience || (isAdmin ? 'admin' : (isTeacher ? 'teacher' : 'student'));
+  const roleName = (role || '').toUpperCase();
+  const canAdmin = isGlobalAdmin || roleName === 'OWNER' || roleName === 'ADMIN';
+  const canTeacher = canAdmin || ['INSTRUCTOR', 'TA', 'TEACHER', 'RAV', 'RABBI'].includes(roleName);
+  const userAudience = audienceOverride || sessionAudience || (canAdmin ? 'admin' : canTeacher ? 'teacher' : 'student');
+
+  const portalOptions = useMemo(() => {
+    const options = [
+      { value: 'student', label: 'Student portal' }
+    ];
+    if (canTeacher) {
+      options.push({ value: 'teacher', label: 'Teacher portal' });
+    }
+    if (canAdmin) {
+      options.push({ value: 'admin', label: 'Admin portal' });
+    }
+    return options;
+  }, [canAdmin, canTeacher]);
+
+  const handlePortalSwitch = (nextAudience) => {
+    const resolved = setAudienceIntent ? setAudienceIntent(nextAudience) : nextAudience;
+    const target = resolved === 'admin' ? '/admin' : resolved === 'teacher' ? '/teacher' : '/student';
+    navigate(target);
+  };
 
   return (
     <div className={cx(tokens.page.outer, "min-h-screen flex flex-col bg-background")}>
@@ -149,6 +171,28 @@ export default function PortalLayout({ children, currentPageName, audienceOverri
                             <span>Vault</span>
                           </Link>
                         </DropdownMenuItem>
+                      </div>
+
+                      <DropdownMenuSeparator className="opacity-50" />
+
+                      <DropdownMenuLabel className="px-2 py-2 text-xs uppercase tracking-wide text-muted-foreground">
+                        View As
+                      </DropdownMenuLabel>
+                      <div className="py-1">
+                        {portalOptions.map((option) => (
+                          <DropdownMenuItem
+                            key={option.value}
+                            onClick={() => handlePortalSwitch(option.value)}
+                            className="rounded-md cursor-pointer"
+                          >
+                            <div className="flex w-full items-center justify-between">
+                              <span>{option.label}</span>
+                              {userAudience === option.value && (
+                                <span className="text-xs text-muted-foreground">Current</span>
+                              )}
+                            </div>
+                          </DropdownMenuItem>
+                        ))}
                       </div>
 
                       <DropdownMenuSeparator className="opacity-50" />

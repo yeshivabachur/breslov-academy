@@ -1,34 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Trophy, Star, Target, Flame, Lock } from 'lucide-react';
 import { tokens, cx } from '@/components/theme/tokens';
 import GamificationLayout from '@/components/gamification/GamificationLayout';
 import AchievementBadge from '@/components/gamification/AchievementBadge';
 import { DashboardSkeleton } from '@/components/ui/SkeletonLoaders';
+import { useSession } from '@/components/hooks/useSession';
+import { buildCacheKey, scopedFilter } from '@/components/api/scoped';
 
 export default function Achievements() {
-  const [user, setUser] = useState(null);
+  const { user, activeSchoolId, isLoading } = useSession();
 
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-      } catch (error) {
-        base44.auth.redirectToLogin();
-      }
-    };
-    loadUser();
-  }, []);
-
-  const { data: achievements = [], isLoading } = useQuery({
-    queryKey: ['achievements', user?.email],
-    queryFn: () => base44.entities.Achievement.filter({ user_email: user.email }, '-earned_date'),
-    enabled: !!user?.email
+  const { data: achievements = [], isLoading: achievementsLoading } = useQuery({
+    queryKey: buildCacheKey('achievements', activeSchoolId, user?.email),
+    queryFn: () => scopedFilter('Achievement', activeSchoolId, { user_email: user.email }, '-earned_date'),
+    enabled: !!user?.email && !!activeSchoolId
   });
 
-  if (isLoading) {
+  if (isLoading || achievementsLoading) {
     return <DashboardSkeleton />;
   }
 

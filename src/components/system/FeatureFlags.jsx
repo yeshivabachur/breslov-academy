@@ -1,20 +1,19 @@
 import React, { createContext, useContext, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
 import { useSession } from '@/components/hooks/useSession';
+import { buildCacheKey, scopedFilter } from '@/components/api/scoped';
 
 const FeatureFlagContext = createContext({});
 
 export function FeatureFlagProvider({ children }) {
-  const { activeSchoolId, user } = useSession();
+  const { activeSchoolId } = useSession();
 
   const { data: flags = {} } = useQuery({
-    queryKey: ['feature-flags', activeSchoolId],
+    queryKey: buildCacheKey('feature-flags', activeSchoolId),
     queryFn: async () => {
       if (!activeSchoolId) return {};
       
-      const settings = await base44.entities.SchoolSetting.filter({
-        school_id: activeSchoolId,
+      const settings = await scopedFilter('SchoolSetting', activeSchoolId, {
         key: { $startsWith: 'feature_' }
       });
       

@@ -1,44 +1,33 @@
-import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { MessageCircle, Send } from 'lucide-react';
 import { toast } from 'sonner';
+import { useSession } from '@/components/hooks/useSession';
+import { buildCacheKey, scopedCreate, scopedFilter } from '@/components/api/scoped';
 
 export default function Messages() {
-  const [user, setUser] = useState(null);
+  const { user, activeSchoolId } = useSession();
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [newMessage, setNewMessage] = useState('');
   const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-      } catch (error) {
-        base44.auth.redirectToLogin();
-      }
-    };
-    loadUser();
-  }, []);
-
   const { data: messages = [] } = useQuery({
-    queryKey: ['messages', user?.email],
+    queryKey: buildCacheKey('messages', activeSchoolId, user?.email),
     queryFn: async () => {
-      const sent = await base44.entities.Message.filter({ sender_email: user.email });
-      const received = await base44.entities.Message.filter({ recipient_email: user.email });
+      const sent = await scopedFilter('Message', activeSchoolId, { sender_email: user.email });
+      const received = await scopedFilter('Message', activeSchoolId, { recipient_email: user.email });
       return [...sent, ...received].sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
     },
-    enabled: !!user?.email
+    enabled: !!user?.email && !!activeSchoolId
   });
 
   const sendMutation = useMutation({
-    mutationFn: async (data) => await base44.entities.Message.create(data),
+    mutationFn: async (data) => scopedCreate('Message', activeSchoolId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['messages']);
+      queryClient.invalidateQueries(buildCacheKey('messages', activeSchoolId, user?.email));
       setNewMessage('');
       toast.success('Message sent!');
     }

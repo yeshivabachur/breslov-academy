@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
@@ -11,16 +10,18 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Plus, Edit, Eye, GripVertical, Check, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import { scopedCreate, scopedFilter, scopedUpdate } from '@/components/api/scoped';
 
 export default function TeachCourseCurriculum({ course, user }) {
   const [showDialog, setShowDialog] = useState(false);
   const [orderedLessons, setOrderedLessons] = useState([]);
   const queryClient = useQueryClient();
+  const schoolId = course?.school_id;
 
   const { data: lessons = [], isLoading } = useQuery({
     queryKey: ['course-lessons', course.id],
-    queryFn: () => base44.entities.Lesson.filter({ course_id: course.id }, 'order'),
-    enabled: !!course
+    queryFn: () => scopedFilter('Lesson', schoolId, { course_id: course.id }, 'order', 1000),
+    enabled: !!course && !!schoolId
   });
 
   useEffect(() => {
@@ -32,8 +33,7 @@ export default function TeachCourseCurriculum({ course, user }) {
   const createLessonMutation = useMutation({
     mutationFn: async (title) => {
       const maxOrder = lessons.length > 0 ? Math.max(...lessons.map(l => l.order)) : 0;
-      return await base44.entities.Lesson.create({
-        school_id: course.school_id,
+      return await scopedCreate('Lesson', schoolId, {
         course_id: course.id,
         created_by: user.email,
         title,
@@ -49,11 +49,35 @@ export default function TeachCourseCurriculum({ course, user }) {
     }
   });
 
+  const logAudit = async (action, entityType, entityId, metadata = {}) => {
+    if (!schoolId || !user?.email) return;
+    try {
+      await scopedCreate('AuditLog', schoolId, {
+        school_id: schoolId,
+        user_email: user.email,
+        action,
+        entity_type: entityType,
+        entity_id: entityId,
+        metadata
+      });
+    } catch {
+      // best effort
+    }
+  };
+
   const updateLessonMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Lesson.update(id, data),
-    onSuccess: () => {
+    mutationFn: ({ id, data }) => scopedUpdate('Lesson', id, data, schoolId, true),
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries(['course-lessons']);
       toast.success('Updated!');
+      if (variables?.audit) {
+        logAudit(
+          variables.audit.action,
+          variables.audit.entity_type,
+          variables.audit.entity_id,
+          variables.audit.metadata
+        );
+      }
     }
   });
 
@@ -65,7 +89,7 @@ export default function TeachCourseCurriculum({ course, user }) {
       // Here we update them one by one (inefficient but works for small lists)
       const promises = newOrder.map((lesson, index) => {
         if (lesson.order !== index + 1) {
-          return base44.entities.Lesson.update(lesson.id, { order: index + 1 });
+          return scopedUpdate('Lesson', lesson.id, { order: index + 1 }, schoolId, true);
         }
         return Promise.resolve();
       });
@@ -82,10 +106,18 @@ export default function TeachCourseCurriculum({ course, user }) {
   });
 
   const updateCourseMutation = useMutation({
-    mutationFn: (data) => base44.entities.Course.update(course.id, data),
-    onSuccess: () => {
+    mutationFn: ({ data }) => scopedUpdate('Course', course.id, data, schoolId, true),
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries(['course']);
       toast.success('Course published!');
+      if (variables?.audit) {
+        logAudit(
+          variables.audit.action,
+          variables.audit.entity_type,
+          variables.audit.entity_id,
+          variables.audit.metadata
+        );
+      }
     }
   });
 
@@ -97,7 +129,16 @@ export default function TeachCourseCurriculum({ course, user }) {
 
   const toggleLessonStatus = (lesson) => {
     const newStatus = lesson.status === 'draft' ? 'published' : 'draft';
-    updateLessonMutation.mutate({ id: lesson.id, data: { status: newStatus } });
+    updateLessonMutation.mutate({
+      id: lesson.id,
+      data: { status: newStatus },
+      audit: {
+        action: newStatus === 'published' ? 'PUBLISH_LESSON' : 'UNPUBLISH_LESSON',
+        entity_type: 'Lesson',
+        entity_id: lesson.id,
+        metadata: { status: newStatus }
+      }
+    });
   };
 
   const publishCourse = () => {
@@ -105,19 +146,33 @@ export default function TeachCourseCurriculum({ course, user }) {
       toast.error('Add at least one lesson before publishing');
       return;
     }
-    updateCourseMutation.mutate({ status: 'published', is_published: true });
+    updateCourseMutation.mutate({
+      data: { status: 'published', is_published: true },
+      audit: {
+        action: 'PUBLISH_COURSE',
+        entity_type: 'Course',
+        entity_id: course.id,
+        metadata: { status: 'published' }
+      }
+    });
   };
 
   const bulkUpdateStatus = useMutation({
     mutationFn: async (status) => {
       const promises = orderedLessons.map(l => 
-        base44.entities.Lesson.update(l.id, { status })
+        scopedUpdate('Lesson', l.id, { status }, schoolId, true)
       );
       await Promise.all(promises);
     },
     onSuccess: (_, status) => {
       queryClient.invalidateQueries(['course-lessons']);
       toast.success(`All lessons ${status === 'published' ? 'published' : 'moved to draft'}`);
+      logAudit(
+        status === 'published' ? 'BULK_PUBLISH_LESSONS' : 'BULK_UNPUBLISH_LESSONS',
+        'Lesson',
+        course.id,
+        { status, count: orderedLessons.length }
+      );
     }
   });
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { scopedFilter, scopedCreate, scopedUpdate } from '@/components/api/scoped';
+import { buildCacheKey, scopedFilter, scopedCreate, scopedUpdate } from '@/components/api/scoped';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
@@ -34,12 +34,12 @@ export default function InviteAccept() {
   }, [token]);
 
   const { data: invite } = useQuery({
-    queryKey: ['invite', token],
+    queryKey: buildCacheKey('invite', token),
     queryFn: async () => {
       const invites = await base44.entities.StaffInvite.filter({ token });
       return invites[0];
     },
-    enabled: !!token
+    enabled: !!token && token.length >= 16
   });
 
   const { data: school } = useQuery({

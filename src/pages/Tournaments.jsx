@@ -1,42 +1,32 @@
-import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Trophy, Users } from 'lucide-react';
 import { toast } from 'sonner';
+import { useSession } from '@/components/hooks/useSession';
+import { buildCacheKey, scopedList, scopedUpdate } from '@/components/api/scoped';
 
 export default function Tournaments() {
-  const [user, setUser] = useState(null);
+  const { user, activeSchoolId } = useSession();
   const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-      } catch (error) {
-        base44.auth.redirectToLogin();
-      }
-    };
-    loadUser();
-  }, []);
-
   const { data: tournaments = [] } = useQuery({
-    queryKey: ['tournaments'],
-    queryFn: () => base44.entities.Tournament.list('-start_date')
+    queryKey: buildCacheKey('tournaments', activeSchoolId),
+    queryFn: () => scopedList('Tournament', activeSchoolId, '-start_date'),
+    enabled: !!activeSchoolId
   });
 
   const joinMutation = useMutation({
     mutationFn: async (tournament) => {
       const participants = tournament.participants || [];
-      return await base44.entities.Tournament.update(tournament.id, {
+      return await scopedUpdate('Tournament', tournament.id, {
         participants: [...participants, user.email]
-      });
+      }, activeSchoolId, true);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['tournaments']);
+      queryClient.invalidateQueries(buildCacheKey('tournaments', activeSchoolId));
       toast.success('Joined tournament!');
     }
   });

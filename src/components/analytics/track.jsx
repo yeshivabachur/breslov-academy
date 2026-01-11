@@ -3,7 +3,7 @@
  * Lightweight, best-effort event tracking with de-duplication
  */
 
-import { base44 } from '@/api/base44Client';
+import { scopedCreate } from '@/components/api/scoped';
 
 // De-dupe cache (event+path within 5 seconds)
 const recentEvents = new Map();
@@ -37,8 +37,7 @@ export async function trackEvent({
   
   // Create event (best effort, never block UI)
   try {
-    await base44.entities.AnalyticsEvent.create({
-      school_id,
+    await scopedCreate('AnalyticsEvent', school_id, {
       user_email: user_email || null,
       event_type,
       entity_type: entity_type || null,

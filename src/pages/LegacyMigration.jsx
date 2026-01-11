@@ -80,7 +80,7 @@ export default function LegacyMigration() {
 
       // Migrate Courses
       setProgress(10);
-      const courses = await base44.entities.Course.list();
+      const courses = await base44.entities.Course.listGlobal();
       const coursesToMigrate = courses.filter(c => !c.school_id);
       for (const course of coursesToMigrate) {
         await base44.entities.Course.update(course.id, { school_id: school.id });
@@ -89,7 +89,7 @@ export default function LegacyMigration() {
 
       // Migrate Lessons
       setProgress(30);
-      const lessons = await base44.entities.Lesson.list();
+      const lessons = await base44.entities.Lesson.listGlobal();
       const lessonsToMigrate = lessons.filter(l => !l.school_id);
       for (const lesson of lessonsToMigrate) {
         // Try to match parent course school first
@@ -106,7 +106,7 @@ export default function LegacyMigration() {
 
       // Migrate UserProgress
       setProgress(50);
-      const progressRecords = await base44.entities.UserProgress.list();
+      const progressRecords = await base44.entities.UserProgress.listGlobal();
       const progressToMigrate = progressRecords.filter(p => !p.school_id);
       for (const progress of progressToMigrate) {
         let schoolId = school.id;
@@ -123,7 +123,7 @@ export default function LegacyMigration() {
 
       // Migrate Posts
       setProgress(70);
-      const posts = await base44.entities.Post.list();
+      const posts = await base44.entities.Post.listGlobal();
       const postsToMigrate = posts.filter(p => !p.school_id);
       for (const post of postsToMigrate) {
         await base44.entities.Post.update(post.id, { school_id: school.id });
@@ -132,7 +132,7 @@ export default function LegacyMigration() {
 
       // Migrate Comments
       setProgress(90);
-      const comments = await base44.entities.Comment.list();
+      const comments = await base44.entities.Comment.listGlobal();
       const commentsToMigrate = comments.filter(c => !c.school_id);
       for (const comment of commentsToMigrate) {
         await base44.entities.Comment.update(comment.id, { school_id: school.id });

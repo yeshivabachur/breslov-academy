@@ -1,4 +1,4 @@
-import { base44 } from '@/api/base44Client';
+import { scopedCreate } from '@/components/api/scoped';
 
 const LIMITS = {
   login: { max: 5, windowSeconds: 60 },
@@ -53,8 +53,7 @@ export async function checkRateLimit(action, identifier, schoolId = null) {
   if (!allowed && schoolId && bucket.count === max + 1) {
     // Log violation once per window overflow
     try {
-      await base44.entities.RateLimitLog.create({
-        school_id: schoolId,
+      await scopedCreate('RateLimitLog', schoolId, {
         user_email: identifier.includes('@') ? identifier : null,
         action,
         count: bucket.count,

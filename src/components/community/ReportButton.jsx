@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
 import { useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -8,12 +7,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Flag } from 'lucide-react';
 import { toast } from 'sonner';
+import { scopedCreate } from '@/components/api/scoped';
 
 export default function ReportButton({ entityType, entityId, schoolId, user }) {
   const [showDialog, setShowDialog] = useState(false);
 
   const reportMutation = useMutation({
-    mutationFn: (data) => base44.entities.ContentReport.create(data),
+    mutationFn: (data) => scopedCreate('ContentReport', schoolId, data),
     onSuccess: () => {
       setShowDialog(false);
       toast.success('Report submitted. Our moderators will review it.');

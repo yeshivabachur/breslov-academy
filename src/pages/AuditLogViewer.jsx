@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -8,44 +7,18 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Shield } from 'lucide-react';
-import { scopedFilter } from '@/components/api/scoped';
+import { buildCacheKey, scopedFilter } from '@/components/api/scoped';
 import { isSchoolAdmin } from '@/components/auth/roles';
+import { useSession } from '@/components/hooks/useSession';
 
 export default function AuditLogViewer() {
-  const [user, setUser] = useState(null);
-  const [activeSchoolId, setActiveSchoolId] = useState(null);
-  const [membership, setMembership] = useState(null);
+  const { user, role, activeSchoolId, isLoading } = useSession();
   const [filterAction, setFilterAction] = useState('ALL');
   const [filterEmail, setFilterEmail] = useState('');
-
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-        
-        const schoolId = localStorage.getItem('active_school_id');
-        setActiveSchoolId(schoolId);
-        
-        const memberships = await base44.entities.SchoolMembership.filter({
-          school_id: schoolId,
-          user_email: currentUser.email
-        });
-        
-        if (memberships.length === 0 || !isSchoolAdmin(memberships[0].role)) {
-          return;
-        }
-        
-        setMembership(memberships[0]);
-      } catch (error) {
-        base44.auth.redirectToLogin();
-      }
-    };
-    loadUser();
-  }, []);
+  const canView = !!user && isSchoolAdmin(role);
 
   const { data: logs = [] } = useQuery({
-    queryKey: ['audit-logs', activeSchoolId, filterAction, filterEmail],
+    queryKey: buildCacheKey('audit-logs', activeSchoolId, filterAction, filterEmail),
     queryFn: async () => {
       const filters = {};
       if (filterAction !== 'ALL') filters.action = filterAction;
@@ -53,10 +26,10 @@ export default function AuditLogViewer() {
       
       return scopedFilter('AuditLog', activeSchoolId, filters, '-created_date', 200);
     },
-    enabled: !!activeSchoolId && !!membership
+    enabled: !!activeSchoolId && canView
   });
 
-  if (!membership || !isSchoolAdmin(membership.role)) {
+  if (isLoading || !canView) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-20 text-center">
         <Card>

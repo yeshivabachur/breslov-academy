@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -7,18 +6,23 @@ import { Input } from '@/components/ui/input';
 import { Search, Star, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
+import { useSession } from '@/components/hooks/useSession';
+import { buildCacheKey, scopedFilter, scopedList } from '@/components/api/scoped';
 
 export default function Marketplace() {
   const [searchTerm, setSearchTerm] = useState('');
+  const { activeSchoolId } = useSession();
 
   const { data: courses = [] } = useQuery({
-    queryKey: ['marketplace-courses'],
-    queryFn: () => base44.entities.Course.filter({ is_published: true }, '-created_date')
+    queryKey: buildCacheKey('marketplace-courses', activeSchoolId),
+    queryFn: () => scopedFilter('Course', activeSchoolId, { is_published: true }, '-created_date'),
+    enabled: !!activeSchoolId
   });
 
   const { data: reviews = [] } = useQuery({
-    queryKey: ['all-reviews'],
-    queryFn: () => base44.entities.CourseReview.list()
+    queryKey: buildCacheKey('all-reviews', activeSchoolId),
+    queryFn: () => scopedList('CourseReview', activeSchoolId),
+    enabled: !!activeSchoolId
   });
 
   const filteredCourses = courses.filter(c => 

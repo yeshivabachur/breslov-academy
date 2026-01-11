@@ -4,18 +4,18 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { MessageSquare, Bookmark, HelpCircle } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
+import { buildCacheKey, scopedCreate } from '@/components/api/scoped';
 
-export default function VideoAnnotations({ lessonId, currentTime, userEmail, annotations = [] }) {
+export default function VideoAnnotations({ lessonId, currentTime, userEmail, schoolId, annotations = [] }) {
   const [content, setContent] = useState('');
   const [type, setType] = useState('note');
   const queryClient = useQueryClient();
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.VideoAnnotation.create(data),
+    mutationFn: (data) => scopedCreate('VideoAnnotation', schoolId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['annotations']);
+      queryClient.invalidateQueries(buildCacheKey('annotations', schoolId, lessonId, userEmail));
       setContent('');
       toast.success('Annotation added!');
     }

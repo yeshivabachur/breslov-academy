@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { 
@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-export default function AdvancedVideoPlayer({ src, onTimeUpdate, onEnded, initialTime = 0 }) {
+export default function AdvancedVideoPlayer({ src, onTimeUpdate, onEnded, onPreviewLimitReached, initialTime = 0, maxSeconds = null }) {
   const videoRef = useRef(null);
   const containerRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -23,19 +23,34 @@ export default function AdvancedVideoPlayer({ src, onTimeUpdate, onEnded, initia
   const [showControls, setShowControls] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
+  const effectiveDuration = useMemo(() => {
+    if (!Number.isFinite(maxSeconds) || maxSeconds <= 0) return duration;
+    return Math.min(duration || 0, maxSeconds);
+  }, [duration, maxSeconds]);
+
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
     const handleTimeUpdate = () => {
-      setCurrentTime(video.currentTime);
-      onTimeUpdate?.(video.currentTime);
+      const nextTime = video.currentTime;
+      if (Number.isFinite(maxSeconds) && maxSeconds > 0 && nextTime >= maxSeconds) {
+        video.pause();
+        video.currentTime = maxSeconds;
+        setIsPlaying(false);
+        setCurrentTime(maxSeconds);
+        onPreviewLimitReached?.();
+        return;
+      }
+      setCurrentTime(nextTime);
+      onTimeUpdate?.(nextTime);
     };
 
     const handleLoadedMetadata = () => {
       setDuration(video.duration);
       if (initialTime > 0) {
-        video.currentTime = initialTime;
+        const maxTime = Number.isFinite(maxSeconds) && maxSeconds > 0 ? maxSeconds : video.duration;
+        video.currentTime = Math.min(initialTime, maxTime);
       }
     };
 
@@ -53,7 +68,7 @@ export default function AdvancedVideoPlayer({ src, onTimeUpdate, onEnded, initia
       video.removeEventListener('loadedmetadata', handleLoadedMetadata);
       video.removeEventListener('ended', handleEnded);
     };
-  }, [initialTime, onTimeUpdate, onEnded]);
+  }, [initialTime, onTimeUpdate, onEnded, maxSeconds, onPreviewLimitReached]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -120,13 +135,15 @@ export default function AdvancedVideoPlayer({ src, onTimeUpdate, onEnded, initia
 
   const skip = (seconds) => {
     if (videoRef.current) {
-      videoRef.current.currentTime = Math.max(0, Math.min(duration, currentTime + seconds));
+      const maxTime = Number.isFinite(maxSeconds) && maxSeconds > 0 ? maxSeconds : duration;
+      videoRef.current.currentTime = Math.max(0, Math.min(maxTime, currentTime + seconds));
     }
   };
 
   const handleSeek = (value) => {
     if (videoRef.current) {
-      const newTime = (value[0] / 100) * duration;
+      const maxTime = Number.isFinite(maxSeconds) && maxSeconds > 0 ? maxSeconds : duration;
+      const newTime = (value[0] / 100) * maxTime;
       videoRef.current.currentTime = newTime;
       setCurrentTime(newTime);
     }
@@ -210,7 +227,7 @@ export default function AdvancedVideoPlayer({ src, onTimeUpdate, onEnded, initia
         <div className="absolute bottom-0 left-0 right-0 p-4 space-y-2">
           {/* Progress Bar */}
           <Slider
-            value={[duration ? (currentTime / duration) * 100 : 0]}
+            value={[effectiveDuration ? (currentTime / effectiveDuration) * 100 : 0]}
             onValueChange={handleSeek}
             max={100}
             step={0.1}
@@ -282,7 +299,7 @@ export default function AdvancedVideoPlayer({ src, onTimeUpdate, onEnded, initia
 
               {/* Time */}
               <span className="text-white text-sm font-medium">
-                {formatTime(currentTime)} / {formatTime(duration)}
+                {formatTime(currentTime)} / {formatTime(effectiveDuration)}
               </span>
             </div>
 

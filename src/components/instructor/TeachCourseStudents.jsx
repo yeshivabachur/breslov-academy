@@ -1,23 +1,21 @@
 import React from 'react';
-import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Users } from 'lucide-react';
+import { buildCacheKey, scopedFilter } from '@/components/api/scoped';
 
 export default function TeachCourseStudents({ course, schoolId }) {
   const { data: entitlements = [] } = useQuery({
-    queryKey: ['course-entitlements', course.id],
+    queryKey: buildCacheKey('course-entitlements', schoolId, course.id),
     queryFn: async () => {
       // Get ALL_COURSES entitlements
-      const allCourses = await base44.entities.Entitlement.filter({
-        school_id: schoolId,
+      const allCourses = await scopedFilter('Entitlement', schoolId, {
         type: 'ALL_COURSES'
       });
       
       // Get specific course entitlements
-      const specific = await base44.entities.Entitlement.filter({
-        school_id: schoolId,
+      const specific = await scopedFilter('Entitlement', schoolId, {
         type: 'COURSE',
         course_id: course.id
       });
@@ -28,9 +26,9 @@ export default function TeachCourseStudents({ course, schoolId }) {
   });
 
   const { data: progress = [] } = useQuery({
-    queryKey: ['course-progress', course.id],
-    queryFn: () => base44.entities.UserProgress.filter({ course_id: course.id }),
-    enabled: !!course
+    queryKey: buildCacheKey('course-progress', schoolId, course.id),
+    queryFn: () => scopedFilter('UserProgress', schoolId, { course_id: course.id }),
+    enabled: !!course && !!schoolId
   });
 
   // Unique students with entitlement

@@ -3,10 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Heart, Moon, Battery } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
+import { scopedCreate } from '@/components/api/scoped';
 
-export default function WellnessTracker({ userEmail }) {
+export default function WellnessTracker({ userEmail, schoolId }) {
   const [stress, setStress] = useState(5);
   const [energy, setEnergy] = useState(5);
   const [mood, setMood] = useState('okay');
@@ -14,7 +14,7 @@ export default function WellnessTracker({ userEmail }) {
 
   const handleSubmit = async () => {
     try {
-      await base44.entities.WellnessCheck.create({
+      await scopedCreate('WellnessCheck', schoolId, {
         user_email: userEmail,
         date: new Date().toISOString().split('T')[0],
         stress_level: stress,

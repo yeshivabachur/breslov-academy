@@ -4,6 +4,7 @@
  */
 
 import { base44 } from '@/api/base44Client';
+import { scopedFilter } from '@/components/api/scoped';
 
 /**
  * Determine if materials should be fetched based on access level
@@ -22,9 +23,8 @@ export function shouldFetchMaterials(accessLevel) {
 export async function getLessonMaterial({ school_id, lesson_id, course_id }) {
   try {
     // Fetch lesson metadata
-    const lessons = await base44.entities.Lesson.filter({
-      id: lesson_id,
-      school_id
+    const lessons = await scopedFilter('Lesson', school_id, { id: lesson_id }, null, 1, {
+      fields: ['id', 'school_id', 'course_id', 'content', 'video_url', 'video_stream_id', 'audio_url', 'duration_seconds']
     });
     
     if (lessons.length === 0) return null;
@@ -32,9 +32,12 @@ export async function getLessonMaterial({ school_id, lesson_id, course_id }) {
     const lesson = lessons[0];
     
     // Return material payload
+    const resolvedVideo = lesson.video_url
+      || (lesson.video_stream_id ? `https://videodelivery.net/${lesson.video_stream_id}/downloads/default.mp4` : null);
+
     return {
       content_text: lesson.content || '',
-      video_url: lesson.video_url,
+      video_url: resolvedVideo,
       audio_url: lesson.audio_url,
       duration_seconds: lesson.duration_seconds,
       lesson
@@ -99,93 +102,19 @@ export function sanitizeMaterialForAccess(material, accessLevel, policy) {
  */
 export async function getSecureDownloadUrl({ 
   school_id, 
-  download_id, 
-  user_email, 
-  entitlements,
-  policy 
+  download_id
 }) {
   try {
-    // Get download record
-    const downloads = await base44.entities.Download.filter({
-      id: download_id,
-      school_id
+    const result = await base44.request('/downloads/secure', {
+      method: 'POST',
+      body: { school_id, download_id }
     });
-    
-    if (downloads.length === 0) {
-      return { allowed: false, url: null, reason: 'not_found' };
+
+    if (!result) {
+      return { allowed: false, url: null, reason: 'no_response' };
     }
-    
-    const download = downloads[0];
-    
-    // Check if free
-    const isFree = !download.course_id || download.price === 0;
-    if (isFree) {
-      // Log download
-      try {
-        await base44.entities.EventLog.create({
-          school_id,
-          user_email,
-          event_type: 'download_granted',
-          entity_type: 'DOWNLOAD',
-          entity_id: download.id,
-          metadata: { free: true }
-        });
-      } catch (e) {
-        // Best effort
-      }
-      
-      return { allowed: true, url: download.file_url, reason: 'free' };
-    }
-    
-    // Check download license
-    const hasDownloadLicense = entitlements.some(e => {
-      const type = e.type || e.entitlement_type;
-      return type === 'DOWNLOAD_LICENSE';
-    });
-    
-    // Check course access
-    const hasCourseAccess = download.course_id
-      ? entitlements.some(e => {
-          const type = e.type || e.entitlement_type;
-          return (type === 'COURSE' && e.course_id === download.course_id) || type === 'ALL_COURSES';
-        })
-      : true;
-    
-    // Determine access
-    let allowed = false;
-    let reason = 'no_access';
-    
-    if (policy?.download_mode === 'INCLUDED_WITH_ACCESS') {
-      allowed = hasCourseAccess;
-      reason = allowed ? 'course_access' : 'course_required';
-    } else if (policy?.download_mode === 'ADDON') {
-      allowed = hasCourseAccess && hasDownloadLicense;
-      reason = !hasCourseAccess ? 'course_required' : !hasDownloadLicense ? 'license_required' : 'addon_access';
-    } else {
-      // DISALLOW mode
-      allowed = false;
-      reason = 'downloads_disabled';
-    }
-    
-    // Log attempt
-    try {
-      await base44.entities.EventLog.create({
-        school_id,
-        user_email,
-        event_type: allowed ? 'download_granted' : 'download_blocked',
-        entity_type: 'DOWNLOAD',
-        entity_id: download.id,
-        metadata: { reason, has_license: hasDownloadLicense, has_course: hasCourseAccess }
-      });
-    } catch (e) {
-      // Best effort
-    }
-    
-    return {
-      allowed,
-      url: allowed ? download.file_url : null,
-      reason
-    };
+
+    return result;
   } catch (error) {
     console.error('getSecureDownloadUrl error:', error);
     return { allowed: false, url: null, reason: 'error' };

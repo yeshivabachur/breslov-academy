@@ -17,6 +17,7 @@ These are **non-negotiable** rules enforced by architecture.
 - Locked users must not receive full premium lesson content.
 - Preview content must be strictly limited by policy.
 - Watermarks must include user identity (email) when protected.
+- Lesson and quiz payloads are sanitized server-side for non-entitled users (no full content leakage).
 
 ## Quizzes
 - If questions are stored in `QuizQuestion`, do **not** fetch them when access is LOCKED.

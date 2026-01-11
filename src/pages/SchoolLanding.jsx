@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import useStorefrontContext from '@/components/hooks/useStorefrontContext';
+import { scopedFilter } from '@/components/api/scoped';
 import { Button } from '@/components/ui/button';
 import { Star, BookOpen, Users, HelpCircle } from 'lucide-react';
 import SchoolHero from '@/components/storefront/SchoolHero';
@@ -14,6 +15,40 @@ import { DashboardSkeleton } from '@/components/ui/SkeletonLoaders';
 export default function SchoolLanding() {
   const [user, setUser] = useState(null);
   const { schoolSlug: slug } = useStorefrontContext();
+  const schoolFields = [
+    'id',
+    'name',
+    'slug',
+    'logo_url',
+    'hero_image_url',
+    'tagline',
+    'description'
+  ];
+  const courseFields = [
+    'id',
+    'title',
+    'title_hebrew',
+    'description',
+    'category',
+    'level',
+    'access_tier',
+    'thumbnail_url',
+    'instructor',
+    'duration_hours'
+  ];
+  const testimonialFields = [
+    'id',
+    'name',
+    'role',
+    'quote',
+    'rating',
+    'avatar_url'
+  ];
+  const instructorFields = [
+    'id',
+    'user_email',
+    'role'
+  ];
 
   useEffect(() => {
     const loadUser = async () => {
@@ -33,56 +68,70 @@ export default function SchoolLanding() {
       import('@/components/analytics/attribution').then(({ captureAttributionFromUrl }) => {
         captureAttributionFromUrl({ schoolSlug: slug });
       });
-      
-      import('@/components/analytics/track').then(({ trackPageView }) => {
-        import('@/components/analytics/attribution').then(({ getAttribution, attachAttribution }) => {
-          base44.entities.School.filter({ slug }).then(schools => {
-            if (schools[0]) {
-              const attribution = getAttribution({ schoolSlug: slug });
-              trackPageView({
-                school_id: schools[0].id,
-                user_email: user?.email,
-                path: '/schoollanding',
-                meta: attachAttribution({ slug }, attribution)
-              });
-            }
-          });
-        });
-      });
     }
   }, [slug, user]);
 
   const { data: school, isLoading: isLoadingSchool } = useQuery({
     queryKey: ['school-by-slug', slug],
     queryFn: async () => {
-      const schools = await base44.entities.School.filter({ slug });
+      const schools = await base44.entities.School.filter({ slug, is_public: true }, null, 1, { fields: schoolFields });
       return schools[0];
     },
     enabled: !!slug
   });
 
+  useEffect(() => {
+    if (!school?.id) return;
+    import('@/components/analytics/track').then(({ trackPageView }) => {
+      import('@/components/analytics/attribution').then(({ getAttribution, attachAttribution }) => {
+        const attribution = getAttribution({ schoolSlug: slug });
+        trackPageView({
+          school_id: school.id,
+          user_email: user?.email,
+          path: '/schoollanding',
+          meta: attachAttribution({ slug }, attribution)
+        });
+      });
+    });
+  }, [school?.id, slug, user?.email]);
+
   const { data: courses = [] } = useQuery({
     queryKey: ['public-courses', school?.id],
-    queryFn: () => base44.entities.Course.filter({
-      school_id: school.id,
-      is_published: true
-    }, '-created_date', 6),
+    queryFn: () => scopedFilter(
+      'Course',
+      school.id,
+      { is_published: true },
+      '-created_date',
+      6,
+      { fields: courseFields }
+    ),
     enabled: !!school?.id
   });
 
   const { data: testimonials = [] } = useQuery({
     queryKey: ['testimonials', school?.id],
-    queryFn: () => base44.entities.Testimonial.filter({ school_id: school.id }, '-created_date', 6),
+    queryFn: () => scopedFilter(
+      'Testimonial',
+      school.id,
+      {},
+      '-created_date',
+      6,
+      { fields: testimonialFields }
+    ),
     enabled: !!school?.id
   });
 
   const { data: instructors = [] } = useQuery({
     queryKey: ['instructors', school?.id],
     queryFn: async () => {
-      const members = await base44.entities.SchoolMembership.filter({
-        school_id: school.id,
-        role: { $in: ['INSTRUCTOR', 'ADMIN', 'OWNER'] }
-      });
+      const members = await scopedFilter(
+        'SchoolMembership',
+        school.id,
+        { role: { $in: ['INSTRUCTOR', 'ADMIN', 'OWNER'] } },
+        null,
+        4,
+        { fields: instructorFields }
+      );
       return members.slice(0, 4);
     },
     enabled: !!school?.id

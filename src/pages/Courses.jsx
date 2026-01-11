@@ -2,58 +2,40 @@ import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Search } from 'lucide-react';
-import { scopedFilter } from '@/components/api/scoped';
+import { buildCacheKey, scopedFilter } from '@/components/api/scoped';
 import CourseCard from '@/components/courses/CourseCard';
 import AdvancedSearch from '@/components/search/AdvancedSearch';
+import { useSession } from '@/components/hooks/useSession';
 
 export default function Courses() {
-  const [user, setUser] = useState(null);
   const [userTier, setUserTier] = useState('free');
   const [filteredCourses, setFilteredCourses] = useState([]);
-  const [activeSchoolId, setActiveSchoolId] = useState(null);
-
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-        
-        // Get active school
-        const schoolId = localStorage.getItem('active_school_id');
-        setActiveSchoolId(schoolId);
-      } catch (error) {
-        base44.auth.redirectToLogin();
-      }
-    };
-    loadUser();
-  }, []);
+  const { user, activeSchoolId } = useSession();
 
   const { data: subscription } = useQuery({
-    queryKey: ['subscription', user?.email],
+    queryKey: buildCacheKey('subscription', activeSchoolId, user?.email),
     queryFn: async () => {
       if (!user?.email) return null;
       const subs = await scopedFilter('Subscription', activeSchoolId, { user_email: user.email });
       return subs[0] || null;
     },
-    enabled: !!user?.email
+    enabled: !!user?.email && !!activeSchoolId
   });
 
   const { data: courses = [], isLoading } = useQuery({
-    queryKey: ['courses', activeSchoolId],
+    queryKey: buildCacheKey('courses', activeSchoolId),
     queryFn: async () => {
       if (!activeSchoolId) return [];
-      let schoolCourses = await base44.entities.Course.filter({ 
-        is_published: true, 
-        school_id: activeSchoolId 
+      let schoolCourses = await scopedFilter('Course', activeSchoolId, {
+        is_published: true,
       }, 'sort_order');
       
       // Fallback to legacy school if no courses found
       if (schoolCourses.length === 0) {
         const legacySchools = await base44.entities.School.filter({ slug: 'legacy' });
         if (legacySchools.length > 0) {
-          schoolCourses = await base44.entities.Course.filter({ 
-            is_published: true, 
-            school_id: legacySchools[0].id 
+          schoolCourses = await scopedFilter('Course', legacySchools[0].id, {
+            is_published: true,
           }, 'sort_order');
         }
       }

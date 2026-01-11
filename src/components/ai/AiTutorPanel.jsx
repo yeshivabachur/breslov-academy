@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Sparkles, Send, BookOpen, HelpCircle, List } from 'lucide-react';
 import { toast } from 'sonner';
+import { buildCacheKey, scopedCreate, scopedFilter, scopedUpdate } from '@/components/api/scoped';
 
 export default function AiTutorPanel({ contextType, contextId, contextTitle, contextContent, user, schoolId }) {
   const [input, setInput] = useState('');
@@ -14,10 +14,9 @@ export default function AiTutorPanel({ contextType, contextId, contextTitle, con
   const queryClient = useQueryClient();
 
   const { data: session } = useQuery({
-    queryKey: ['ai-session', contextId],
+    queryKey: buildCacheKey('ai-session', schoolId, contextId),
     queryFn: async () => {
-      const sessions = await base44.entities.AiTutorSession.filter({
-        school_id: schoolId,
+      const sessions = await scopedFilter('AiTutorSession', schoolId, {
         user_email: user.email,
         context_id: contextId
       }, '-updated_date', 1);
@@ -46,12 +45,11 @@ export default function AiTutorPanel({ contextType, contextId, contextTitle, con
 
       // Save session
       if (session) {
-        await base44.entities.AiTutorSession.update(session.id, {
+        await scopedUpdate('AiTutorSession', session.id, {
           messages: newMessages
-        });
+        }, schoolId, true);
       } else {
-        await base44.entities.AiTutorSession.create({
-          school_id: schoolId,
+        await scopedCreate('AiTutorSession', schoolId, {
           user_email: user.email,
           context_type: contextType,
           context_id: contextId,
@@ -60,8 +58,7 @@ export default function AiTutorPanel({ contextType, contextId, contextTitle, con
       }
 
       // Log for safety
-      await base44.entities.AiTutorPolicyLog.create({
-        school_id: schoolId,
+      await scopedCreate('AiTutorPolicyLog', schoolId, {
         user_email: user.email,
         action: 'ALLOWED',
         reason: `AI ${action} request`
@@ -72,7 +69,7 @@ export default function AiTutorPanel({ contextType, contextId, contextTitle, con
     onSuccess: (newMessages) => {
       setMessages(newMessages);
       setInput('');
-      queryClient.invalidateQueries(['ai-session']);
+      queryClient.invalidateQueries(buildCacheKey('ai-session', schoolId, contextId));
     },
     onError: () => {
       toast.error('Request limit reached. Please try again later.');

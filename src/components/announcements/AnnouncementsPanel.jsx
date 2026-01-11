@@ -1,42 +1,62 @@
 import React from 'react';
-import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Megaphone, Pin } from 'lucide-react';
+import { buildCacheKey, scopedCreate, scopedFilter } from '@/components/api/scoped';
 
 export default function AnnouncementsPanel({ user, schoolId }) {
   const queryClient = useQueryClient();
+  const announcementFields = [
+    'id',
+    'title',
+    'body',
+    'audience',
+    'pinned',
+    'published_at',
+    'created_date'
+  ];
+  const readFields = [
+    'id',
+    'announcement_id',
+    'read_at'
+  ];
 
   const { data: announcements = [] } = useQuery({
-    queryKey: ['announcements', schoolId],
-    queryFn: () => base44.entities.Announcement.filter(
-      { school_id: schoolId, published_at: { $ne: null } },
+    queryKey: buildCacheKey('announcements', schoolId),
+    queryFn: () => scopedFilter(
+      'Announcement',
+      schoolId,
+      { published_at: { $ne: null } },
       '-created_date',
-      10
+      10,
+      { fields: announcementFields }
     ),
     enabled: !!schoolId
   });
 
   const { data: readStatus = [] } = useQuery({
-    queryKey: ['announcement-reads', user?.email, schoolId],
-    queryFn: () => base44.entities.UserAnnouncementRead.filter({
-      school_id: schoolId,
-      user_email: user.email
-    }),
+    queryKey: buildCacheKey('announcement-reads', schoolId, user?.email),
+    queryFn: () => scopedFilter(
+      'UserAnnouncementRead',
+      schoolId,
+      { user_email: user.email },
+      null,
+      500,
+      { fields: readFields }
+    ),
     enabled: !!user && !!schoolId
   });
 
   const markReadMutation = useMutation({
-    mutationFn: (announcementId) => base44.entities.UserAnnouncementRead.create({
-      school_id: schoolId,
+    mutationFn: (announcementId) => scopedCreate('UserAnnouncementRead', schoolId, {
       announcement_id: announcementId,
       user_email: user.email,
       read_at: new Date().toISOString()
     }),
     onSuccess: () => {
-      queryClient.invalidateQueries(['announcement-reads']);
+      queryClient.invalidateQueries(buildCacheKey('announcement-reads', schoolId, user?.email));
     }
   });
 

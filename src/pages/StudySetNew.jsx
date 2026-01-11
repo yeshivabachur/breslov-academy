@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import React, { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
@@ -11,10 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useSession } from '@/components/hooks/useSession';
+import { scopedCreate } from '@/components/api/scoped';
 
 export default function StudySetNew() {
-  const [user, setUser] = useState(null);
-  const [activeSchoolId, setActiveSchoolId] = useState(null);
+  const { user, activeSchoolId } = useSession();
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -27,25 +27,10 @@ export default function StudySetNew() {
   ]);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-        const schoolId = localStorage.getItem('active_school_id');
-        setActiveSchoolId(schoolId);
-      } catch (error) {
-        base44.auth.redirectToLogin();
-      }
-    };
-    loadUser();
-  }, []);
-
   const createMutation = useMutation({
     mutationFn: async () => {
       // Create study set
-      const studySet = await base44.entities.StudySet.create({
-        school_id: activeSchoolId,
+      const studySet = await scopedCreate('StudySet', activeSchoolId, {
         creator_user: user.email,
         ...formData
       });
@@ -54,8 +39,7 @@ export default function StudySetNew() {
       for (let i = 0; i < cards.length; i++) {
         const card = cards[i];
         if (card.front && card.back) {
-          await base44.entities.StudyCard.create({
-            school_id: activeSchoolId,
+          await scopedCreate('StudyCard', activeSchoolId, {
             study_set_id: studySet.id,
             front: card.front,
             back: card.back,

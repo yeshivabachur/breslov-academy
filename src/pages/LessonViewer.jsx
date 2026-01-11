@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useSession } from '@/components/hooks/useSession';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -14,7 +14,7 @@ import ReactMarkdown from 'react-markdown';
 import { shouldFetchMaterials } from '@/components/materials/materialsEngine';
 import { toast } from 'sonner';
 import { useLessonAccess } from '@/components/hooks/useLessonAccess';
-import { scopedFilter, scopedCreate, scopedUpdate } from '@/components/api/scoped';
+import { buildCacheKey, scopedFilter, scopedCreate, scopedUpdate } from '@/components/api/scoped';
 import ProtectedContent from '@/components/protection/ProtectedContent';
 import AccessGate from '@/components/security/AccessGate';
 import { tokens, cx } from '@/components/theme/tokens';
@@ -26,6 +26,48 @@ export default function LessonViewer() {
   const queryClient = useQueryClient();
   const urlParams = new URLSearchParams(window.location.search);
   const lessonId = urlParams.get('id');
+  const lessonMetaFields = useMemo(() => ([
+    'id',
+    'school_id',
+    'course_id',
+    'title',
+    'title_hebrew',
+    'is_preview',
+    'drip_publish_at',
+    'drip_days_after_enroll',
+    'order',
+    'duration_minutes',
+    'duration_seconds'
+  ]), []);
+  const lessonContentFields = useMemo(() => ([
+    'id',
+    'school_id',
+    'course_id',
+    'title',
+    'title_hebrew',
+    'content',
+    'content_json',
+    'text',
+    'video_url',
+    'video_stream_id',
+    'audio_url',
+    'duration_seconds',
+    'duration_minutes',
+    'is_preview',
+    'drip_publish_at',
+    'drip_days_after_enroll',
+    'order'
+  ]), []);
+  const lessonListFields = useMemo(() => ([
+    'id',
+    'course_id',
+    'title',
+    'title_hebrew',
+    'order',
+    'is_preview',
+    'duration_minutes',
+    'status'
+  ]), []);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -38,7 +80,7 @@ export default function LessonViewer() {
     queryKey: ['lesson-meta', lessonId, activeSchoolId],
     queryFn: async () => {
       if (!lessonId || !activeSchoolId) return null;
-      const lessons = await scopedFilter('Lesson', activeSchoolId, { id: lessonId });
+      const lessons = await scopedFilter('Lesson', activeSchoolId, { id: lessonId }, null, 1, { fields: lessonMetaFields });
       const l = lessons?.[0] || null;
       if (!l) return null;
       return {
@@ -70,9 +112,19 @@ export default function LessonViewer() {
 
   // Full lesson payload (only when FULL or PREVIEW)
   const { data: lesson, isLoading: isLoadingLesson } = useQuery({
-    queryKey: ['lesson-full', lessonId, activeSchoolId],
+    queryKey: ['lesson-full', lessonId, activeSchoolId, access.accessLevel, access.maxPreviewChars],
     queryFn: async () => {
-      const lessons = await scopedFilter('Lesson', activeSchoolId, { id: lessonId });
+      const previewChars = access.accessLevel === 'PREVIEW'
+        ? (access.maxPreviewChars || 1500)
+        : null;
+      const lessons = await scopedFilter(
+        'Lesson',
+        activeSchoolId,
+        { id: lessonId },
+        null,
+        1,
+        { fields: lessonContentFields, previewChars }
+      );
       return lessons?.[0] || null;
     },
     enabled: !!lessonId && !!activeSchoolId && shouldLoadLesson,
@@ -92,7 +144,14 @@ export default function LessonViewer() {
 
   const { data: allLessons = [] } = useQuery({
     queryKey: ['lessons', effectiveCourseId, activeSchoolId],
-    queryFn: () => scopedFilter('Lesson', activeSchoolId, { course_id: effectiveCourseId }, 'order'),
+    queryFn: () => scopedFilter(
+      'Lesson',
+      activeSchoolId,
+      { course_id: effectiveCourseId },
+      'order',
+      1000,
+      { fields: lessonListFields }
+    ),
     enabled: !!effectiveCourseId && !!activeSchoolId && allowCourseData
   });
 
@@ -109,7 +168,7 @@ export default function LessonViewer() {
   });
 
   const { data: discussions = [] } = useQuery({
-    queryKey: ['discussions', effectiveCourseId, lessonId, activeSchoolId],
+    queryKey: buildCacheKey('discussions', activeSchoolId, effectiveCourseId, lessonId),
     queryFn: () => scopedFilter('Discussion', activeSchoolId, { 
       course_id: effectiveCourseId,
       lesson_id: lessonId 
@@ -208,6 +267,9 @@ export default function LessonViewer() {
   const previousLesson = currentIndex > 0 ? allLessons[currentIndex - 1] : null;
   const nextLesson = currentIndex < allLessons.length - 1 ? allLessons[currentIndex + 1] : null;
 
+  const videoUrl = lesson?.video_url
+    || (lesson?.video_stream_id ? `https://videodelivery.net/${lesson.video_stream_id}/downloads/default.mp4` : null);
+
   return (
     <div className={tokens.page.content}>
       {/* Header */}
@@ -236,10 +298,10 @@ export default function LessonViewer() {
       </div>
 
       {/* Video/Audio Player */}
-      {canFetchMaterials && lesson.video_url && (
+      {canFetchMaterials && videoUrl && (
         <div className="mb-10 rounded-2xl overflow-hidden shadow-2xl ring-1 ring-border/50">
           <AdvancedVideoPlayer
-            src={lesson.video_url}
+            src={videoUrl}
             onTimeUpdate={(time) => {
               // Auto-save progress
               if (progress) {
@@ -254,7 +316,13 @@ export default function LessonViewer() {
                 markCompleteMutation.mutate();
               }
             }}
+            onPreviewLimitReached={() => {
+              if (access.accessLevel === 'PREVIEW') {
+                toast.info('Preview limit reached. Unlock full access to continue.');
+              }
+            }}
             initialTime={progress?.last_position_seconds || 0}
+            maxSeconds={access.accessLevel === 'PREVIEW' ? access.maxPreviewSeconds : null}
           />
         </div>
       )}
@@ -357,6 +425,7 @@ export default function LessonViewer() {
               courseId={effectiveCourseId}
               lessonId={lessonId}
               user={user}
+              schoolId={activeSchoolId}
             />
           </div>
         </div>

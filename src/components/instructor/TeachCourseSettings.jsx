@@ -1,12 +1,14 @@
 import React from 'react';
-import { base44 } from '@/api/base44Client';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { useSession } from '@/components/hooks/useSession';
+import { buildCacheKey, scopedCreate, scopedFilter, scopedUpdate } from '@/components/api/scoped';
 
 const LANGUAGES = [
   { code: 'en', label: 'English' },
@@ -18,11 +20,48 @@ const LANGUAGES = [
 
 export default function TeachCourseSettings({ course }) {
   const queryClient = useQueryClient();
+  const { user } = useSession();
+  const courseSchoolId = course?.school_id;
+
+  const { data: auditEntries = [] } = useQuery({
+    queryKey: buildCacheKey('course-settings-audit', courseSchoolId, course?.id),
+    queryFn: () => scopedFilter(
+      'AuditLog',
+      courseSchoolId,
+      { entity_type: 'Course', entity_id: course.id },
+      '-created_date',
+      5
+    ),
+    enabled: !!courseSchoolId && !!course?.id
+  });
 
   const updateCourseMutation = useMutation({
-    mutationFn: (data) => base44.entities.Course.update(course.id, data),
+    mutationFn: async ({ payload, changes }) => {
+      await scopedUpdate('Course', course.id, payload, courseSchoolId, true);
+
+      if (!courseSchoolId || !user?.email || !changes || Object.keys(changes).length === 0) return;
+
+      const nextStatus = changes.status?.to;
+      let action = 'COURSE_SETTINGS_UPDATED';
+      if (nextStatus === 'published') action = 'PUBLISH_COURSE';
+      else if (nextStatus === 'archived') action = 'ARCHIVE_COURSE';
+      else if (nextStatus === 'draft') action = 'UNPUBLISH_COURSE';
+
+      try {
+        await scopedCreate('AuditLog', courseSchoolId, {
+          user_email: user.email,
+          action,
+          entity_type: 'Course',
+          entity_id: course.id,
+          metadata: { changes }
+        });
+      } catch (error) {
+        // Best-effort audit logging.
+      }
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries(['course']);
+      queryClient.invalidateQueries(buildCacheKey('course', courseSchoolId, course?.id));
+      queryClient.invalidateQueries(buildCacheKey('course-settings-audit', courseSchoolId, course?.id));
       toast.success('Settings updated!');
     }
   });
@@ -31,12 +70,27 @@ export default function TeachCourseSettings({ course }) {
     e.preventDefault();
     const formData = new FormData(e.target);
     
-    updateCourseMutation.mutate({
+    const payload = {
       status: formData.get('status'),
       visibility: formData.get('visibility'),
       language: formData.get('language'),
       drip_enabled: formData.get('drip_enabled') === 'on'
-    });
+    };
+    const changes = {};
+    if (payload.status !== (course?.status || 'draft')) {
+      changes.status = { from: course?.status || 'draft', to: payload.status };
+    }
+    if (payload.visibility !== (course?.visibility || 'school_only')) {
+      changes.visibility = { from: course?.visibility || 'school_only', to: payload.visibility };
+    }
+    if (payload.language !== (course?.language || 'en')) {
+      changes.language = { from: course?.language || 'en', to: payload.language };
+    }
+    if (payload.drip_enabled !== !!course?.drip_enabled) {
+      changes.drip_enabled = { from: !!course?.drip_enabled, to: payload.drip_enabled };
+    }
+
+    updateCourseMutation.mutate({ payload, changes });
   };
 
   return (
@@ -104,6 +158,30 @@ export default function TeachCourseSettings({ course }) {
 
           <Button type="submit" className="w-full">Save Settings</Button>
         </form>
+
+        <div className="mt-6 border-t pt-4">
+          <div className="flex items-center justify-between">
+            <h4 className="text-sm font-semibold text-slate-700">Recent changes</h4>
+            <Badge variant="outline">{auditEntries.length}</Badge>
+          </div>
+          <div className="mt-3 space-y-2">
+            {auditEntries.length === 0 ? (
+              <p className="text-xs text-muted-foreground">No recent course settings updates.</p>
+            ) : (
+              auditEntries.map((entry) => (
+                <div key={entry.id} className="flex items-center justify-between rounded-lg border border-border/60 px-3 py-2 text-xs">
+                  <div>
+                    <p className="font-semibold text-foreground">{entry.action || 'UPDATE'}</p>
+                    <p className="text-muted-foreground">{entry.user_email || 'Unknown user'}</p>
+                  </div>
+                  <span className="text-muted-foreground">
+                    {entry.created_date ? new Date(entry.created_date).toLocaleString() : 'Just now'}
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
       </CardContent>
     </Card>
   );

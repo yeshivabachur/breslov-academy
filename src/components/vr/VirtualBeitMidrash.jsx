@@ -1,6 +1,7 @@
+/* eslint-disable react/no-unknown-property */
 import React, { Suspense, useRef, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Stars, Text, Float, useGLTF } from '@react-three/drei';
+import { OrbitControls, Stars, Text, Float } from '@react-three/drei';
 import { tokens, cx } from '@/components/theme/tokens';
 import { Button } from '@/components/ui/button';
 import { Loader2, MonitorPlay, Mic, Users, BookOpen } from 'lucide-react';

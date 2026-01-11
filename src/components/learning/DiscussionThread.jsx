@@ -4,12 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { MessageCircle, ThumbsUp, Pin, CheckCircle, Send } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
+import { buildCacheKey, scopedCreate, scopedUpdate } from '@/components/api/scoped';
 
-export default function DiscussionThread({ discussions, courseId, lessonId, user }) {
+export default function DiscussionThread({ discussions, courseId, lessonId, user, schoolId }) {
   const [showNewPost, setShowNewPost] = useState(false);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -18,9 +18,9 @@ export default function DiscussionThread({ discussions, courseId, lessonId, user
   const queryClient = useQueryClient();
 
   const createPostMutation = useMutation({
-    mutationFn: (data) => base44.entities.Discussion.create(data),
+    mutationFn: (data) => scopedCreate('Discussion', schoolId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['discussions']);
+      queryClient.invalidateQueries(buildCacheKey('discussions', schoolId, courseId, lessonId));
       setTitle('');
       setContent('');
       setShowNewPost(false);
@@ -29,9 +29,9 @@ export default function DiscussionThread({ discussions, courseId, lessonId, user
   });
 
   const replyMutation = useMutation({
-    mutationFn: (data) => base44.entities.Discussion.create(data),
+    mutationFn: (data) => scopedCreate('Discussion', schoolId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['discussions']);
+      queryClient.invalidateQueries(buildCacheKey('discussions', schoolId, courseId, lessonId));
       setReplyContent('');
       setReplyTo(null);
       toast.success('Reply posted!');
@@ -40,9 +40,9 @@ export default function DiscussionThread({ discussions, courseId, lessonId, user
 
   const upvoteMutation = useMutation({
     mutationFn: ({ id, upvotes }) => 
-      base44.entities.Discussion.update(id, { upvotes: upvotes + 1 }),
+      scopedUpdate('Discussion', id, { upvotes: upvotes + 1 }, schoolId, true),
     onSuccess: () => {
-      queryClient.invalidateQueries(['discussions']);
+      queryClient.invalidateQueries(buildCacheKey('discussions', schoolId, courseId, lessonId));
     }
   });
 

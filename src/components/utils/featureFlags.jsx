@@ -1,4 +1,4 @@
-import { base44 } from '@/api/base44Client';
+import { scopedFilter } from '@/components/api/scoped';
 
 /**
  * Check if a feature is enabled for a given user
@@ -6,10 +6,12 @@ import { base44 } from '@/api/base44Client';
  * @param {object} user - The current user object
  * @returns {Promise<boolean>} - Whether the feature is enabled for this user
  */
-export async function isFeatureEnabled(featureKey, user) {
+export async function isFeatureEnabled(featureKey, user, schoolId = null) {
   try {
+    const effectiveSchoolId = schoolId || user?.school_id || user?.active_school_id;
+    if (!effectiveSchoolId) return false;
     // Fetch the feature flag
-    const flags = await base44.entities.FeatureFlag.filter({ key: featureKey });
+    const flags = await scopedFilter('FeatureFlag', effectiveSchoolId, { key: featureKey });
     
     if (!flags || flags.length === 0) {
       // If no flag exists, default to disabled
@@ -53,13 +55,15 @@ export async function isFeatureEnabled(featureKey, user) {
  * @param {object} user - The current user object
  * @returns {Promise<string[]>} - Array of enabled feature keys
  */
-export async function getEnabledFeatures(user) {
+export async function getEnabledFeatures(user, schoolId = null) {
   try {
-    const allFlags = await base44.entities.FeatureFlag.filter({ enabled: true });
+    const effectiveSchoolId = schoolId || user?.school_id || user?.active_school_id;
+    if (!effectiveSchoolId) return [];
+    const allFlags = await scopedFilter('FeatureFlag', effectiveSchoolId, { enabled: true });
     const enabledKeys = [];
 
     for (const flag of allFlags) {
-      const isEnabled = await isFeatureEnabled(flag.key, user);
+      const isEnabled = await isFeatureEnabled(flag.key, user, effectiveSchoolId);
       if (isEnabled) {
         enabledKeys.push(flag.key);
       }

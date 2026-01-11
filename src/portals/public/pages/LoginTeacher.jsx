@@ -1,9 +1,17 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
 import { Button } from '@/components/ui/button';
+import AuthProviderButtons from '@/portals/public/components/AuthProviderButtons';
 
 export default function LoginTeacher() {
   const { navigateToLogin } = useAuth();
+  const [params] = useSearchParams();
+
+  const schoolSlug = params.get('schoolSlug') || params.get('school_slug') || '';
+  const schoolId = params.get('schoolId') || params.get('school_id') || '';
+  const authError = params.get('authError');
+  const authErrorMessage = params.get('authErrorMessage');
 
   useEffect(() => {
     try {
@@ -18,19 +26,20 @@ export default function LoginTeacher() {
     } catch {}
   }, []);
 
+  const nextPath = useMemo(() => {
+    const returnTo = params.get('returnTo');
+    if (returnTo) {
+      const value = String(returnTo);
+      if (!value.includes('://') && (value.startsWith('/teacher') || value.startsWith('/admin'))) {
+        return value;
+      }
+    }
+    return '/teacher?loginRole=teacher';
+  }, [params]);
+
   const handle = () => {
     const origin = window.location.origin;
-    const params = new URLSearchParams(window.location.search);
-    const returnTo = params.get('returnTo');
-    const safeReturnTo = (() => {
-      if (!returnTo) return null;
-      const p = String(returnTo);
-      if (p.includes('://')) return null;
-      if (!(p.startsWith('/teacher') || p.startsWith('/admin'))) return null;
-      return p;
-    })();
-
-    navigateToLogin(safeReturnTo ? `${origin}${safeReturnTo}` : `${origin}/teacher?loginRole=teacher`);
+    navigateToLogin(`${origin}${nextPath}`);
   };
 
   return (
@@ -39,12 +48,26 @@ export default function LoginTeacher() {
       <p className="mt-4 text-base text-muted-foreground">
         Sign in to manage courses, lessons, quizzes, and analytics for your school.
       </p>
-      <div className="mt-8 flex gap-3">
-        <Button onClick={handle}>Continue to sign in</Button>
+      {authError && (
+        <div className="mt-6 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+          {authErrorMessage || 'Sign-in failed. Please try again or contact your school admin.'}
+        </div>
+      )}
+      <div className="mt-8">
+        <AuthProviderButtons
+          audience="teacher"
+          schoolSlug={schoolSlug}
+          schoolId={schoolId}
+          nextPath={nextPath}
+          onFallback={handle}
+          fallbackLabel="Use secure login"
+        />
+      </div>
+      <div className="mt-6">
         <Button variant="outline" onClick={() => window.history.back()}>Go back</Button>
       </div>
       <p className="mt-8 text-xs text-muted-foreground">
-        After sign in, you’ll be returned to the teaching portal.
+        After sign in, you'll be returned to the teaching portal.
       </p>
     </div>
   );

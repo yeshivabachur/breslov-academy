@@ -1,44 +1,17 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Download, FileText, BookOpen, Headphones, Lock } from 'lucide-react';
-import { scopedFilter } from '@/components/api/scoped';
+import { scopedFilter, scopedUpdate } from '@/components/api/scoped';
 import { isEntitlementActive } from '@/components/utils/entitlements';
 import { checkRateLimit } from '@/components/security/rateLimiter';
 import { toast } from 'sonner';
+import { useSession } from '@/components/hooks/useSession';
 
 export default function Downloads() {
-  const [user, setUser] = useState(null);
-  const [activeSchoolId, setActiveSchoolId] = useState(null);
-  const [entitlements, setEntitlements] = useState([]);
-
-  const activeEnts = useMemo(() => (entitlements || []).filter((e) => isEntitlementActive(e)), [entitlements]);
-
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-        
-        const schoolId = localStorage.getItem('active_school_id');
-        setActiveSchoolId(schoolId);
-        
-        // Load entitlements (use scoped helper)
-        if (schoolId && currentUser) {
-          const ents = await scopedFilter('Entitlement', schoolId, {
-            user_email: currentUser.email
-          });
-          setEntitlements(ents);
-        }
-      } catch (error) {
-        base44.auth.redirectToLogin();
-      }
-    };
-    loadUser();
-  }, []);
+  const { user, activeSchoolId, isLoading } = useSession();
 
   const { data: downloads = [] } = useQuery({
     queryKey: ['downloads', activeSchoolId],
@@ -46,10 +19,16 @@ export default function Downloads() {
     enabled: !!activeSchoolId
   });
 
+  const { data: entitlements = [] } = useQuery({
+    queryKey: ['entitlements', activeSchoolId, user?.email],
+    queryFn: () => scopedFilter('Entitlement', activeSchoolId, { user_email: user.email }, '-created_date', 250),
+    enabled: !!activeSchoolId && !!user?.email
+  });
+
   const { data: policy } = useQuery({
     queryKey: ['protection-policy', activeSchoolId],
     queryFn: async () => {
-      const policies = await base44.entities.ContentProtectionPolicy.filter({ school_id: activeSchoolId });
+      const policies = await scopedFilter('ContentProtectionPolicy', activeSchoolId, {});
       return policies[0] || { download_mode: 'DISALLOW' };
     },
     enabled: !!activeSchoolId
@@ -62,6 +41,12 @@ export default function Downloads() {
     workbook: BookOpen,
     template: FileText
   };
+
+  const activeEnts = useMemo(() => (entitlements || []).filter((e) => isEntitlementActive(e)), [entitlements]);
+
+  if (isLoading) {
+    return <div className="text-center py-20">Loading...</div>;
+  }
 
   return (
     <div className="space-y-8">
@@ -94,7 +79,7 @@ export default function Downloads() {
           const canDownload = policy?.download_mode === 'INCLUDED_WITH_ACCESS' 
             ? hasCourseAccess
             : policy?.download_mode === 'ADDON'
-            ? hasDownloadLicense
+            ? (hasCourseAccess && hasDownloadLicense)
             : policy?.download_mode === 'DISALLOW'
             ? false
             : true; // Free downloads or no policy
@@ -133,18 +118,15 @@ export default function Downloads() {
                         const { getSecureDownloadUrl } = await import('@/components/materials/materialsEngine');
                         const result = await getSecureDownloadUrl({
                           school_id: activeSchoolId,
-                          download_id: download.id,
-                          user_email: user.email,
-                          entitlements,
-                          policy
+                          download_id: download.id
                         });
                         
                         if (result.allowed && result.url) {
                           window.open(result.url, '_blank');
                           // Update count
-                          base44.entities.Download.update(download.id, {
+                          scopedUpdate('Download', download.id, {
                             download_count: (download.download_count || 0) + 1
-                          }).catch(() => {});
+                          }, activeSchoolId, true).catch(() => {});
                         } else {
                           toast.error(`Download blocked: ${result.reason}`);
                         }

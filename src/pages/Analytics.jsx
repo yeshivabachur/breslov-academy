@@ -1,40 +1,34 @@
-import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { BarChart3 } from 'lucide-react';
 import StudentDashboard from '@/components/analytics/StudentDashboard';
+import { useSession } from '@/components/hooks/useSession';
+import { buildCacheKey, scopedFilter } from '@/components/api/scoped';
 
 export default function Analytics() {
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-      } catch (error) {
-        base44.auth.redirectToLogin();
-      }
-    };
-    loadUser();
-  }, []);
+  const { user, activeSchoolId, isLoading } = useSession();
 
   const { data: analytics = [] } = useQuery({
-    queryKey: ['analytics', user?.email],
-    queryFn: () => base44.entities.Analytics.filter({ user_email: user.email }),
-    enabled: !!user?.email
+    queryKey: buildCacheKey('analytics', activeSchoolId, user?.email),
+    queryFn: () => scopedFilter('Analytics', activeSchoolId, { user_email: user.email }),
+    enabled: !!user?.email && !!activeSchoolId
   });
 
   const { data: progress = [] } = useQuery({
-    queryKey: ['progress', user?.email],
-    queryFn: () => base44.entities.UserProgress.filter({ user_email: user.email }),
-    enabled: !!user?.email
+    queryKey: buildCacheKey('progress', activeSchoolId, user?.email),
+    queryFn: () => scopedFilter('UserProgress', activeSchoolId, { user_email: user.email }),
+    enabled: !!user?.email && !!activeSchoolId
   });
 
   const { data: courses = [] } = useQuery({
-    queryKey: ['courses'],
-    queryFn: () => base44.entities.Course.filter({ is_published: true })
+    queryKey: buildCacheKey('courses', activeSchoolId),
+    queryFn: () => scopedFilter('Course', activeSchoolId, { is_published: true }),
+    enabled: !!activeSchoolId
   });
+
+  if (isLoading) {
+    return <div className="text-center py-20">Loading...</div>;
+  }
 
   return (
     <div className="space-y-8">

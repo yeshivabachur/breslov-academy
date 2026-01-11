@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,30 +8,75 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Megaphone, Pin } from 'lucide-react';
 import { toast } from 'sonner';
+import { buildCacheKey, scopedCreate, scopedFilter, scopedUpdate } from '@/components/api/scoped';
 
 export default function SchoolAnnouncements({ school, user }) {
   const [showForm, setShowForm] = useState(false);
   const queryClient = useQueryClient();
+  const announcementFields = [
+    'id',
+    'title',
+    'body',
+    'audience',
+    'pinned',
+    'published_at',
+    'created_date'
+  ];
 
   const { data: announcements = [] } = useQuery({
-    queryKey: ['announcements', school.id],
-    queryFn: () => base44.entities.Announcement.filter({ school_id: school.id }, '-created_date'),
+    queryKey: buildCacheKey('announcements', school?.id),
+    queryFn: () => scopedFilter(
+      'Announcement',
+      school.id,
+      {},
+      '-created_date',
+      200,
+      { fields: announcementFields }
+    ),
     enabled: !!school
   });
 
   const createAnnouncementMutation = useMutation({
-    mutationFn: (data) => base44.entities.Announcement.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['announcements']);
+    mutationFn: (data) => scopedCreate('Announcement', school.id, data),
+    onSuccess: async (announcement) => {
+      queryClient.invalidateQueries(buildCacheKey('announcements', school?.id));
       setShowForm(false);
       toast.success('Announcement published!');
+
+      if (announcement?.id) {
+        try {
+          await scopedCreate('AuditLog', school.id, {
+            school_id: school.id,
+            user_email: user?.email,
+            action: 'ANNOUNCEMENT_PUBLISHED',
+            entity_type: 'Announcement',
+            entity_id: announcement.id
+          });
+        } catch (error) {
+          // Best effort audit
+        }
+      }
     }
   });
 
   const togglePinMutation = useMutation({
-    mutationFn: ({ id, pinned }) => base44.entities.Announcement.update(id, { pinned }),
+    mutationFn: async ({ id, pinned }) => {
+      const result = await scopedUpdate('Announcement', id, { pinned }, school.id, true);
+      try {
+        await scopedCreate('AuditLog', school.id, {
+          school_id: school.id,
+          user_email: user?.email,
+          action: pinned ? 'ANNOUNCEMENT_PINNED' : 'ANNOUNCEMENT_UNPINNED',
+          entity_type: 'Announcement',
+          entity_id: id
+        });
+      } catch (error) {
+        // Best effort audit
+      }
+      return result;
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries(['announcements']);
+      queryClient.invalidateQueries(buildCacheKey('announcements', school?.id));
     }
   });
 

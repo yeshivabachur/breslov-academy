@@ -15,6 +15,7 @@ export default function useStorefrontContext() {
   const courseId = params.courseId || urlParams.get('courseId');
   const offerId = params.offerId || urlParams.get('offerId');
   const transactionId = params.transactionId || urlParams.get('transactionId');
+  const sessionId = urlParams.get('session_id') || urlParams.get('sessionId');
   
   // Affiliate referral code from query or localStorage
   const refCode = urlParams.get('ref') || localStorage.getItem('referral_code');
@@ -29,6 +30,7 @@ export default function useStorefrontContext() {
     courseId,
     offerId,
     transactionId,
+    sessionId,
     refCode
   };
 }

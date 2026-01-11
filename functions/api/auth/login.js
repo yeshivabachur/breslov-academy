@@ -6,6 +6,20 @@ export async function onRequest({ request, env }) {
 
   const url = new URL(request.url);
   const next = url.searchParams.get('next') || '/';
+  const provider = (url.searchParams.get('provider') || '').toLowerCase();
+  const audience = url.searchParams.get('audience') || '';
+  const schoolSlug = url.searchParams.get('schoolSlug') || url.searchParams.get('school_slug') || '';
+  const schoolId = url.searchParams.get('schoolId') || url.searchParams.get('school_id') || '';
+
+  if (provider) {
+    const target = new URL('/api/auth/oidc/start', url.origin);
+    target.searchParams.set('provider', provider);
+    if (next) target.searchParams.set('next', next);
+    if (audience) target.searchParams.set('audience', audience);
+    if (schoolSlug) target.searchParams.set('schoolSlug', schoolSlug);
+    if (schoolId) target.searchParams.set('schoolId', schoolId);
+    return Response.redirect(target.toString(), 302);
+  }
 
   if (env?.AUTH_LOGIN_URL) {
     const target = new URL(env.AUTH_LOGIN_URL, url.origin);

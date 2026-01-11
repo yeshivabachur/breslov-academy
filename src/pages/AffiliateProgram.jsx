@@ -1,47 +1,36 @@
-import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DollarSign, Users, Copy, TrendingUp } from 'lucide-react';
 import { toast } from 'sonner';
+import { useSession } from '@/components/hooks/useSession';
+import { buildCacheKey, scopedCreate, scopedFilter } from '@/components/api/scoped';
 
 export default function AffiliateProgram() {
-  const [user, setUser] = useState(null);
+  const { user, activeSchoolId } = useSession();
   const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-      } catch (error) {
-        base44.auth.redirectToLogin();
-      }
-    };
-    loadUser();
-  }, []);
-
   const { data: affiliate } = useQuery({
-    queryKey: ['affiliate', user?.email],
+    queryKey: buildCacheKey('affiliate', activeSchoolId, user?.email),
     queryFn: async () => {
-      const affs = await base44.entities.Affiliate.filter({ user_email: user.email });
+      const affs = await scopedFilter('Affiliate', activeSchoolId, { user_email: user.email });
       return affs[0];
     },
-    enabled: !!user?.email
+    enabled: !!user?.email && !!activeSchoolId
   });
 
   const { data: referrals = [] } = useQuery({
-    queryKey: ['referrals', user?.email],
-    queryFn: () => base44.entities.Referral.filter({ affiliate_email: user.email }),
-    enabled: !!user?.email
+    queryKey: buildCacheKey('referrals', activeSchoolId, user?.email),
+    queryFn: () => scopedFilter('Referral', activeSchoolId, { affiliate_email: user.email }),
+    enabled: !!user?.email && !!activeSchoolId
   });
 
   const joinProgramMutation = useMutation({
     mutationFn: async () => {
       const code = `REF${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-      return await base44.entities.Affiliate.create({
+      return await scopedCreate('Affiliate', activeSchoolId, {
         user_email: user.email,
         referral_code: code,
         commission_rate: 20,
@@ -49,7 +38,7 @@ export default function AffiliateProgram() {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['affiliate']);
+      queryClient.invalidateQueries(buildCacheKey('affiliate', activeSchoolId, user?.email));
       toast.success('Welcome to the affiliate program!');
     }
   });

@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import { Trash2, Archive } from 'lucide-react';
+import { scopedDelete, scopedUpdate } from '@/components/api/scoped';
 
-export default function BulkOperations({ items, type, onComplete }) {
+export default function BulkOperations({ items, type, schoolId, onComplete }) {
   const [selected, setSelected] = useState([]);
 
   const handleSelectAll = () => {
@@ -16,7 +16,7 @@ export default function BulkOperations({ items, type, onComplete }) {
   const handleBulkDelete = async () => {
     try {
       for (const id of selected) {
-        await base44.entities[type].delete(id);
+        await scopedDelete(type, id, schoolId, true);
       }
       toast.success(`Deleted ${selected.length} items`);
       setSelected([]);
@@ -29,7 +29,7 @@ export default function BulkOperations({ items, type, onComplete }) {
   const handleBulkArchive = async () => {
     try {
       for (const id of selected) {
-        await base44.entities[type].update(id, { is_archived: true });
+        await scopedUpdate(type, id, { is_archived: true }, schoolId, true);
       }
       toast.success(`Archived ${selected.length} items`);
       setSelected([]);

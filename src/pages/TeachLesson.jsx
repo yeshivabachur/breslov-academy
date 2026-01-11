@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSession } from '@/components/hooks/useSession';
-import { scopedFilter, scopedUpdate } from '@/components/api/scoped';
+import { scopedCreate, scopedFilter, scopedUpdate } from '@/components/api/scoped';
+import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
@@ -18,8 +19,14 @@ export default function TeachLesson() {
   const { user, activeSchoolId } = useSession();
   const [lessonId, setLessonId] = useState(null);
   const [content, setContent] = useState('');
+  const [videoUrl, setVideoUrl] = useState('');
+  const [videoStreamId, setVideoStreamId] = useState('');
+  const [audioUrl, setAudioUrl] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -31,7 +38,12 @@ export default function TeachLesson() {
     queryFn: async () => {
       const lessons = await scopedFilter('Lesson', activeSchoolId, { id: lessonId });
       const l = lessons[0];
-      if (l) setContent(l.content || '');
+      if (l) {
+        setContent(l.content || '');
+        setVideoUrl(l.video_url || '');
+        setVideoStreamId(l.video_stream_id || '');
+        setAudioUrl(l.audio_url || '');
+      }
       return l;
     },
     enabled: !!lessonId && !!activeSchoolId
@@ -47,10 +59,20 @@ export default function TeachLesson() {
   });
 
   const updateLessonMutation = useMutation({
-    mutationFn: (data) => scopedUpdate('Lesson', lessonId, data, activeSchoolId, true),
-    onSuccess: () => {
+    mutationFn: ({ data }) => scopedUpdate('Lesson', lessonId, data, activeSchoolId, true),
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries(['lesson']);
       toast.success('Lesson saved!');
+      if (variables?.audit) {
+        scopedCreate('AuditLog', activeSchoolId, {
+          school_id: activeSchoolId,
+          user_email: user?.email,
+          action: variables.audit.action,
+          entity_type: variables.audit.entity_type,
+          entity_id: variables.audit.entity_id,
+          metadata: variables.audit.metadata
+        }).catch(() => {});
+      }
     }
   });
 
@@ -59,18 +81,71 @@ export default function TeachLesson() {
     const formData = new FormData(e.target);
     
     updateLessonMutation.mutate({
-      title: formData.get('title'),
-      content,
-      video_url: formData.get('video_url'),
-      audio_url: formData.get('audio_url'),
-      duration_minutes: parseInt(formData.get('duration_minutes')) || 0,
-      drip_days_after_enroll: parseInt(formData.get('drip_days_after_enroll')) || null
+      data: {
+        title: formData.get('title'),
+        content,
+        video_url: videoUrl || formData.get('video_url'),
+        video_stream_id: videoStreamId || null,
+        audio_url: audioUrl || formData.get('audio_url'),
+        duration_minutes: parseInt(formData.get('duration_minutes')) || 0,
+        drip_days_after_enroll: parseInt(formData.get('drip_days_after_enroll')) || null
+      }
     });
+  };
+
+  const handleStreamUpload = async (file) => {
+    if (!file || !activeSchoolId || !lessonId) return;
+    setIsUploading(true);
+    setUploadError('');
+    try {
+      const session = await base44.request('/media/stream/create', {
+        method: 'POST',
+        body: {
+          school_id: activeSchoolId,
+          lesson_id: lessonId,
+          course_id: lesson?.course_id || null,
+        },
+      });
+
+      const formData = new FormData();
+      formData.append('file', file, file.name);
+      const uploadResponse = await fetch(session.upload_url, {
+        method: 'POST',
+        body: formData,
+      });
+      if (!uploadResponse.ok) {
+        throw new Error('Upload failed');
+      }
+
+      const streamUrl = `https://videodelivery.net/${session.stream_uid}/downloads/default.mp4`;
+      setVideoUrl(streamUrl);
+      setVideoStreamId(session.stream_uid);
+
+      await scopedUpdate('Lesson', lessonId, {
+        video_url: streamUrl,
+        video_stream_id: session.stream_uid,
+      }, activeSchoolId, true);
+
+      toast.success('Video uploaded successfully');
+    } catch (error) {
+      setUploadError('Video upload failed. Please try again.');
+      toast.error('Video upload failed');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const toggleStatus = () => {
     const newStatus = lesson.status === 'draft' ? 'published' : 'draft';
-    updateLessonMutation.mutate({ status: newStatus });
+    updateLessonMutation.mutate({
+      data: { status: newStatus },
+      audit: {
+        action: newStatus === 'published' ? 'PUBLISH_LESSON' : 'UNPUBLISH_LESSON',
+        entity_type: 'Lesson',
+        entity_id: lesson.id,
+        metadata: { status: newStatus }
+      }
+    });
   };
 
   if (isLoading || !lesson) {
@@ -142,12 +217,55 @@ export default function TeachLesson() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Video URL</Label>
-                <Input name="video_url" defaultValue={lesson.video_url} placeholder="https://youtube.com/..." />
+                <Input
+                  name="video_url"
+                  value={videoUrl}
+                  onChange={(event) => setVideoUrl(event.target.value)}
+                  placeholder="https://youtube.com/..."
+                />
               </div>
               <div className="space-y-2">
                 <Label>Audio URL</Label>
-                <Input name="audio_url" defaultValue={lesson.audio_url} placeholder="https://..." />
+                <Input
+                  name="audio_url"
+                  value={audioUrl}
+                  onChange={(event) => setAudioUrl(event.target.value)}
+                  placeholder="https://..."
+                />
               </div>
+            </div>
+
+            <div className="rounded-lg border border-dashed border-border/60 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-medium">Upload via Cloudflare Stream</p>
+                  <p className="text-xs text-muted-foreground">Direct upload to secure video hosting.</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="video/*"
+                    className="hidden"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      if (file) handleStreamUpload(file);
+                      event.target.value = '';
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
+                  >
+                    {isUploading ? 'Uploading...' : 'Select video'}
+                  </Button>
+                </div>
+              </div>
+              {uploadError && (
+                <p className="mt-2 text-xs text-destructive">{uploadError}</p>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">

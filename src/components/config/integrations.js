@@ -6,7 +6,10 @@ import {
   Calendar,
   FileText,
   Music,
-  Share2
+  Share2,
+  GraduationCap,
+  FolderOpen,
+  Cloud
 } from 'lucide-react';
 
 export const INTEGRATIONS = {
@@ -128,6 +131,60 @@ export const INTEGRATIONS = {
       'Trigger actions on enrollment',
       'Sync data to CRMs',
       'Custom notifications'
+    ]
+  },
+  google_classroom: {
+    id: 'google_classroom',
+    name: 'Google Classroom',
+    description: 'Sync courses, rosters, and assignments with Google Classroom.',
+    category: 'Classroom Sync',
+    icon: GraduationCap,
+    color: 'text-emerald-500',
+    bg: 'bg-emerald-100 dark:bg-emerald-900/20',
+    status: 'available',
+    connectMode: 'oauth',
+    oauthStartPath: '/integrations/google/start',
+    providerKey: 'google_classroom',
+    features: [
+      'Import Classroom courses and rosters',
+      'Post assignments from Breslov to Classroom',
+      'Grade passback and sync metadata'
+    ]
+  },
+  google_drive: {
+    id: 'google_drive',
+    name: 'Google Drive',
+    description: 'Attach and manage lesson materials from Google Drive.',
+    category: 'Content Storage',
+    icon: FolderOpen,
+    color: 'text-green-600',
+    bg: 'bg-green-100 dark:bg-green-900/20',
+    status: 'available',
+    connectMode: 'oauth',
+    oauthStartPath: '/integrations/google/start',
+    providerKey: 'google_drive',
+    features: [
+      'Attach Drive files to lessons',
+      'Auto-folder creation per course',
+      'Permissions synced to student access'
+    ]
+  },
+  microsoft_onedrive: {
+    id: 'microsoft_onedrive',
+    name: 'Microsoft OneDrive',
+    description: 'Attach materials from OneDrive or SharePoint libraries.',
+    category: 'Microsoft 365',
+    icon: Cloud,
+    color: 'text-blue-600',
+    bg: 'bg-blue-100 dark:bg-blue-900/20',
+    status: 'available',
+    connectMode: 'oauth',
+    oauthStartPath: '/integrations/microsoft/start',
+    providerKey: 'microsoft_onedrive',
+    features: [
+      'Attach OneDrive or SharePoint files',
+      'Resumable uploads via Graph sessions',
+      'Permissions aligned to course rosters'
     ]
   }
 };

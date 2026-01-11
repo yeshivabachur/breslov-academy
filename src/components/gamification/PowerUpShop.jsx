@@ -1,23 +1,24 @@
 import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Zap, Star } from 'lucide-react';
 import { toast } from 'sonner';
+import { buildCacheKey, scopedCreate, scopedList } from '@/components/api/scoped';
 
-export default function PowerUpShop({ userEmail }) {
+export default function PowerUpShop({ userEmail, schoolId }) {
   const queryClient = useQueryClient();
 
   const { data: powerups = [] } = useQuery({
-    queryKey: ['powerups'],
-    queryFn: () => base44.entities.PowerUp.list()
+    queryKey: buildCacheKey('powerups', schoolId),
+    queryFn: () => scopedList('PowerUp', schoolId),
+    enabled: !!schoolId
   });
 
   const purchaseMutation = useMutation({
     mutationFn: async (powerup) => {
-      return await base44.entities.UserPowerUp.create({
+      return await scopedCreate('UserPowerUp', schoolId, {
         user_email: userEmail,
         powerup_id: powerup.id,
         activated_at: new Date().toISOString(),
@@ -25,7 +26,7 @@ export default function PowerUpShop({ userEmail }) {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['user-powerups']);
+      queryClient.invalidateQueries(buildCacheKey('user-powerups', schoolId, userEmail));
       toast.success('Power-up activated!');
     }
   });

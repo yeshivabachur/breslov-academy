@@ -1,41 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ShoppingBag, Star } from 'lucide-react';
 import { toast } from 'sonner';
+import { useSession } from '@/components/hooks/useSession';
+import { buildCacheKey, scopedCreate, scopedFilter, scopedUpdate } from '@/components/api/scoped';
 
 export default function RewardsShop() {
-  const [user, setUser] = useState(null);
+  const { user, activeSchoolId } = useSession();
   const [myPoints, setMyPoints] = useState(0);
   const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-      } catch (error) {
-        base44.auth.redirectToLogin();
-      }
-    };
-    loadUser();
-  }, []);
-
   const { data: rewards = [] } = useQuery({
-    queryKey: ['rewards'],
-    queryFn: () => base44.entities.Reward.filter({ is_available: true })
+    queryKey: buildCacheKey('rewards', activeSchoolId),
+    queryFn: () => scopedFilter('Reward', activeSchoolId, { is_available: true }),
+    enabled: !!activeSchoolId
   });
 
   const { data: leaderboard } = useQuery({
-    queryKey: ['my-points', user?.email],
+    queryKey: buildCacheKey('my-points', activeSchoolId, user?.email),
     queryFn: async () => {
-      const leaders = await base44.entities.Leaderboard.filter({ user_email: user.email });
+      const leaders = await scopedFilter('Leaderboard', activeSchoolId, { user_email: user.email });
       return leaders[0];
     },
-    enabled: !!user?.email
+    enabled: !!user?.email && !!activeSchoolId
   });
 
   useEffect(() => {
@@ -44,17 +34,33 @@ export default function RewardsShop() {
 
   const redeemMutation = useMutation({
     mutationFn: async (reward) => {
-      await base44.entities.Reward.update(reward.id, {
+      await scopedUpdate('Reward', reward.id, {
         claimed_count: (reward.claimed_count || 0) + 1,
         stock: reward.stock ? reward.stock - 1 : null
-      });
-      await base44.entities.Leaderboard.update(leaderboard.id, {
+      }, activeSchoolId, true);
+      await scopedUpdate('Leaderboard', leaderboard.id, {
         total_points: myPoints - reward.cost_points
-      });
+      }, activeSchoolId, true);
+      try {
+        await scopedCreate('AuditLog', activeSchoolId, {
+          user_email: user?.email,
+          action: 'REWARD_REDEEMED',
+          entity_type: 'Reward',
+          entity_id: reward.id,
+          metadata: {
+            reward_name: reward.name,
+            cost_points: reward.cost_points,
+            points_before: myPoints,
+            points_after: myPoints - reward.cost_points
+          }
+        });
+      } catch (error) {
+        // Best-effort audit logging.
+      }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['rewards']);
-      queryClient.invalidateQueries(['my-points']);
+      queryClient.invalidateQueries(buildCacheKey('rewards', activeSchoolId));
+      queryClient.invalidateQueries(buildCacheKey('my-points', activeSchoolId, user?.email));
       toast.success('Reward redeemed!');
     }
   });

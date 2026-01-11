@@ -3,7 +3,7 @@
  * Handles status computation, expiry checks, and reconciliation
  */
 
-import { base44 } from '@/api/base44Client';
+import { scopedFilter, scopedUpdate } from '@/components/api/scoped';
 
 /**
  * Compute current subscription status
@@ -62,8 +62,7 @@ export function isSubscriptionActive(sub, now = new Date()) {
  */
 export async function reconcileSubscriptions({ school_id, user_email }) {
   try {
-    const subs = await base44.entities.Subscription.filter({
-      school_id,
+    const subs = await scopedFilter('Subscription', school_id, {
       user_email
     });
     
@@ -74,14 +73,13 @@ export async function reconcileSubscriptions({ school_id, user_email }) {
       
       // Update if status changed
       if (sub.status !== computedStatus) {
-        await base44.entities.Subscription.update(sub.id, {
+        await scopedUpdate('Subscription', sub.id, {
           status: computedStatus
-        });
+        }, school_id, true);
         
         // If expired, mark related entitlements as expired
         if (computedStatus === 'EXPIRED') {
-          const entitlements = await base44.entities.Entitlement.filter({
-            school_id,
+          const entitlements = await scopedFilter('Entitlement', school_id, {
             user_email,
             source: 'SUBSCRIPTION',
             source_id: sub.id
@@ -90,9 +88,9 @@ export async function reconcileSubscriptions({ school_id, user_email }) {
           for (const ent of entitlements) {
             // Set ends_at to past if not set
             if (!ent.ends_at || new Date(ent.ends_at) > now) {
-              await base44.entities.Entitlement.update(ent.id, {
+              await scopedUpdate('Entitlement', ent.id, {
                 ends_at: now.toISOString()
-              });
+              }, school_id, true);
             }
           }
         }

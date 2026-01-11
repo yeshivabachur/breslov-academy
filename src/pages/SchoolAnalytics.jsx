@@ -1,72 +1,86 @@
-import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUp, Users, BookOpen, DollarSign } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useSession } from '@/components/hooks/useSession';
+import { buildCacheKey, scopedFilter } from '@/components/api/scoped';
+import PageShell from '@/components/ui/PageShell';
 
 export default function SchoolAnalytics() {
-  const [user, setUser] = useState(null);
-  const [activeSchoolId, setActiveSchoolId] = useState(null);
-  const [membership, setMembership] = useState(null);
-
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-        
-        const schoolId = localStorage.getItem('active_school_id');
-        setActiveSchoolId(schoolId);
-
-        if (schoolId) {
-          const memberships = await base44.entities.SchoolMembership.filter({
-            user_email: currentUser.email,
-            school_id: schoolId
-          });
-          
-          if (memberships.length > 0) {
-            setMembership(memberships[0]);
-            
-            if (!['OWNER', 'ADMIN'].includes(memberships[0].role)) {
-              window.location.href = '/';
-            }
-          }
-        }
-      } catch (error) {
-        base44.auth.redirectToLogin();
-      }
-    };
-    loadUser();
-  }, []);
+  const { user, activeSchoolId, isAdmin, isLoading } = useSession();
+  const metricFields = [
+    'id',
+    'date',
+    'enrollments_count',
+    'lessons_completed_count',
+    'revenue_cents',
+    'avg_completion_rate',
+    'active_users_count'
+  ];
+  const courseFields = [
+    'id',
+    'title',
+    'status'
+  ];
+  const entitlementFields = [
+    'id',
+    'course_id',
+    'entitlement_type',
+    'type'
+  ];
+  const progressFields = [
+    'id',
+    'course_id',
+    'completed'
+  ];
 
   const { data: metrics = [] } = useQuery({
-    queryKey: ['school-metrics', activeSchoolId],
-    queryFn: () => base44.entities.SchoolMetricDaily.filter(
-      { school_id: activeSchoolId },
+    queryKey: buildCacheKey('school-metrics', activeSchoolId),
+    queryFn: () => scopedFilter(
+      'SchoolMetricDaily',
+      activeSchoolId,
+      {},
       '-date',
-      30
+      30,
+      { fields: metricFields }
     ),
-    enabled: !!activeSchoolId
+    enabled: !!activeSchoolId && isAdmin
   });
 
   const { data: courses = [] } = useQuery({
-    queryKey: ['courses', activeSchoolId],
-    queryFn: () => base44.entities.Course.filter({ school_id: activeSchoolId }),
-    enabled: !!activeSchoolId
+    queryKey: buildCacheKey('courses', activeSchoolId),
+    queryFn: () => scopedFilter('Course', activeSchoolId, {}, null, 1000, { fields: courseFields }),
+    enabled: !!activeSchoolId && isAdmin
   });
 
   const { data: entitlements = [] } = useQuery({
-    queryKey: ['entitlements', activeSchoolId],
-    queryFn: () => base44.entities.Entitlement.filter({ school_id: activeSchoolId }),
-    enabled: !!activeSchoolId
+    queryKey: buildCacheKey('entitlements', activeSchoolId),
+    queryFn: () => scopedFilter('Entitlement', activeSchoolId, {}, null, 2000, { fields: entitlementFields }),
+    enabled: !!activeSchoolId && isAdmin
   });
 
   const { data: progress = [] } = useQuery({
-    queryKey: ['all-progress', activeSchoolId],
-    queryFn: () => base44.entities.UserProgress.filter({ school_id: activeSchoolId }),
-    enabled: !!activeSchoolId
+    queryKey: buildCacheKey('all-progress', activeSchoolId),
+    queryFn: () => scopedFilter('UserProgress', activeSchoolId, {}, null, 5000, { fields: progressFields }),
+    enabled: !!activeSchoolId && isAdmin
   });
+
+  if (isLoading) {
+    return <PageShell title="School Analytics" subtitle="Loading session…" />;
+  }
+
+  if (!user) {
+    return <PageShell title="School Analytics" subtitle="Please sign in to view analytics." />;
+  }
+
+  if (!activeSchoolId) {
+    return <PageShell title="School Analytics" subtitle="Select a school to view analytics." />;
+  }
+
+  if (!isAdmin) {
+    return <PageShell title="School Analytics" subtitle="School admin access required." />;
+  }
 
   const latestMetric = metrics[0] || {};
   const totalRevenue = metrics.reduce((sum, m) => sum + (m.revenue_cents || 0), 0);

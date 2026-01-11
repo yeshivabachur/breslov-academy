@@ -1,68 +1,63 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Building2, ArrowRight } from 'lucide-react';
+import { useSession } from '@/components/hooks/useSession';
+import { DashboardSkeleton } from '@/components/ui/SkeletonLoaders';
 
 export default function SchoolSelect() {
-  const [user, setUser] = useState(null);
   const [schools, setSchools] = useState([]);
-  const [memberships, setMemberships] = useState([]);
+  const [isLoadingSchools, setIsLoadingSchools] = useState(false);
+  const { memberships, activeSchoolId, isLoading: isSessionLoading, changeActiveSchool } = useSession();
   const navigate = useNavigate();
 
   useEffect(() => {
-    loadSchools();
-  }, []);
+    if (activeSchoolId) {
+      navigate(createPageUrl('Dashboard'), { replace: true });
+      return;
+    }
+    if (memberships.length > 0) {
+      loadSchools(memberships);
+    }
+  }, [activeSchoolId, memberships]);
 
-  const loadSchools = async () => {
+  const loadSchools = async (userMemberships) => {
     try {
-      const currentUser = await base44.auth.me();
-      setUser(currentUser);
+      setIsLoadingSchools(true);
+      const schoolIds = (userMemberships || []).map(m => m.school_id).filter(Boolean);
+      if (schoolIds.length === 0) {
+        setSchools([]);
+        return;
+      }
 
-      const userMemberships = await base44.entities.SchoolMembership.filter({
-        user_email: currentUser.email
-      });
-      setMemberships(userMemberships);
-
-      const schoolIds = userMemberships.map(m => m.school_id);
-      const allSchools = await base44.entities.School.list();
-      const userSchools = allSchools.filter(s => schoolIds.includes(s.id));
+      const results = await Promise.all(
+        schoolIds.map((id) => base44.entities.School.filter({ id }))
+      );
+      const userSchools = results.flat().filter(Boolean);
       setSchools(userSchools);
     } catch (error) {
       base44.auth.redirectToLogin();
+    } finally {
+      setIsLoadingSchools(false);
     }
   };
 
   const handleSelectSchool = async (schoolId) => {
-    // Update preference
-    const prefs = await base44.entities.UserSchoolPreference.filter({
-      user_email: user.email
-    });
-
-    if (prefs.length > 0) {
-      await base44.entities.UserSchoolPreference.update(prefs[0].id, {
-        active_school_id: schoolId,
-        updated_at: new Date().toISOString()
-      });
-    } else {
-      await base44.entities.UserSchoolPreference.create({
-        user_email: user.email,
-        active_school_id: schoolId,
-        updated_at: new Date().toISOString()
-      });
-    }
-
-    localStorage.setItem('active_school_id', schoolId);
+    await changeActiveSchool(schoolId);
     navigate(createPageUrl('Dashboard'));
-    window.location.reload();
   };
 
   const getRoleBadge = (schoolId) => {
     const membership = memberships.find(m => m.school_id === schoolId);
     return membership?.role || 'STUDENT';
   };
+
+  if (isSessionLoading || isLoadingSchools) {
+    return <DashboardSkeleton />;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 flex items-center justify-center p-6">
@@ -101,6 +96,21 @@ export default function SchoolSelect() {
               </CardContent>
             </Card>
           ))}
+          {schools.length === 0 && (
+            <Card className="col-span-full">
+              <CardHeader>
+                <CardTitle>No schools found</CardTitle>
+                <CardDescription>
+                  Your account does not have active memberships yet.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button variant="outline" onClick={() => navigate(createPageUrl('SchoolNew'))}>
+                  Create New School
+                </Button>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         <div className="text-center">

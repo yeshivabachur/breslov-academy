@@ -1,41 +1,33 @@
-import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, Calendar, Video, TrendingUp } from 'lucide-react';
+import { Users, Calendar, Video, TrendingUp, Trophy } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
+import { useSession } from '@/components/hooks/useSession';
+import { buildCacheKey, scopedFilter, scopedList } from '@/components/api/scoped';
 
 export default function Community() {
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-      } catch (error) {
-        base44.auth.redirectToLogin();
-      }
-    };
-    loadUser();
-  }, []);
+  const { user, activeSchoolId } = useSession();
 
   const { data: studyGroups = [] } = useQuery({
-    queryKey: ['study-groups'],
-    queryFn: () => base44.entities.StudyGroup.filter({ status: 'active' })
+    queryKey: buildCacheKey('study-groups', activeSchoolId),
+    queryFn: () => scopedFilter('StudyGroup', activeSchoolId, { status: 'active' }),
+    enabled: !!activeSchoolId
   });
 
   const { data: liveClasses = [] } = useQuery({
-    queryKey: ['live-classes'],
-    queryFn: () => base44.entities.LiveClass.list('-scheduled_date', 20)
+    queryKey: buildCacheKey('live-classes', activeSchoolId),
+    queryFn: () => scopedList('LiveClass', activeSchoolId, '-scheduled_date', 20),
+    enabled: !!activeSchoolId
   });
 
   const { data: courses = [] } = useQuery({
-    queryKey: ['courses'],
-    queryFn: () => base44.entities.Course.filter({ is_published: true })
+    queryKey: buildCacheKey('courses', activeSchoolId),
+    queryFn: () => scopedFilter('Course', activeSchoolId, { is_published: true }),
+    enabled: !!activeSchoolId
   });
 
   const upcomingClasses = liveClasses.filter(c => 

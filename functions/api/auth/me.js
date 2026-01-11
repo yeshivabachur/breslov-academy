@@ -10,7 +10,7 @@ export async function onRequest({ request, env }) {
     return errorResponse('auth_required', 401, 'Authentication required', env);
   }
 
-  const user = getUserFromToken(token, env);
+  const user = await getUserFromToken(token, env);
   if (!user) {
     return errorResponse('auth_required', 401, 'Authentication required', env);
   }

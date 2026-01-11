@@ -22,6 +22,25 @@ export const SessionProvider = ({ children }) => {
     loadSession();
   }, []);
 
+  const resolveAudienceForRole = (roleValue, intendedValue) => {
+    const defaultAudience = normalizeAudienceFromRole(roleValue);
+    const intended = String(intendedValue || '').toLowerCase();
+
+    if (!intended) return defaultAudience;
+
+    if (defaultAudience === 'admin') {
+      if (['student', 'teacher', 'admin'].includes(intended)) {
+        return intended;
+      }
+    } else if (defaultAudience === 'teacher') {
+      if (['student', 'teacher'].includes(intended)) {
+        return intended;
+      }
+    }
+
+    return defaultAudience;
+  };
+
   const loadSession = async () => {
     try {
       setIsLoading(true);
@@ -150,27 +169,7 @@ export const SessionProvider = ({ children }) => {
           // Smart Context: Check if user intends to view a specific portal
           // and has the permissions to do so.
           const intended = localStorage.getItem('ba_intended_audience');
-          const defaultAudience = normalizeAudienceFromRole(derivedRole);
-          
-          let finalAudience = defaultAudience;
-
-          if (intended) {
-            // Allow downgrading context (e.g. Admin -> Student)
-            // But prevent upgrading (Student -> Admin) without role
-            if (defaultAudience === 'admin') {
-               // Admin can be anything
-               if (['student', 'teacher', 'admin'].includes(intended)) {
-                 finalAudience = intended;
-               }
-            } else if (defaultAudience === 'teacher') {
-               // Teacher can be student or teacher
-               if (['student', 'teacher'].includes(intended)) {
-                 finalAudience = intended;
-               }
-            }
-            // Student stays student
-          }
-          
+          const finalAudience = resolveAudienceForRole(derivedRole, intended);
           setAudience(finalAudience);
         }
       } else {
@@ -213,6 +212,21 @@ export const SessionProvider = ({ children }) => {
     // Avoid full reload; react-query + scoped keys already include school_id.
   };
 
+  const setAudienceIntent = (nextAudience) => {
+    const intended = String(nextAudience || '').toLowerCase();
+    try {
+      localStorage.setItem('ba_intended_audience', intended);
+      localStorage.setItem('breslov.login.intent', intended);
+      const prefix = intended === 'admin' ? '/admin' : intended === 'teacher' ? '/teacher' : '/student';
+      localStorage.setItem('ba_portal_prefix', prefix);
+    } catch (e) {
+      // ignore storage failures
+    }
+    const resolved = resolveAudienceForRole(role, intended);
+    setAudience(resolved);
+    return resolved;
+  };
+
   const value = {
     user,
     memberships,
@@ -230,6 +244,7 @@ export const SessionProvider = ({ children }) => {
     isStudent: audience === 'student',
     isGlobalAdmin,
     changeActiveSchool,
+    setAudienceIntent,
     refreshSession: loadSession
   };
 

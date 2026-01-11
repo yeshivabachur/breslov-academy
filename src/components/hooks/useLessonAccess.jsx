@@ -149,8 +149,18 @@ export const useLessonAccess = (courseId, lessonId, user, schoolId, options = {}
     });
   }, [activeEntitlements, isStaff]);
 
-  const canCopy = (policy?.copy_mode || 'DISALLOW') !== 'DISALLOW' && hasCopyLicense;
-  const canDownload = (policy?.download_mode || 'DISALLOW') !== 'DISALLOW' && hasDownloadLicense;
+  const copyMode = policy?.copy_mode || 'DISALLOW';
+  const downloadMode = policy?.download_mode || 'DISALLOW';
+  const canCopy = copyMode === 'INCLUDED_WITH_ACCESS'
+    ? accessLevel === 'FULL'
+    : copyMode === 'ADDON'
+      ? accessLevel === 'FULL' && hasCopyLicense
+      : false;
+  const canDownload = downloadMode === 'INCLUDED_WITH_ACCESS'
+    ? accessLevel === 'FULL'
+    : downloadMode === 'ADDON'
+      ? accessLevel === 'FULL' && hasDownloadLicense
+      : false;
 
   const watermarkText = user ? `${user.email} • ${new Date().toLocaleDateString()}` : '';
 

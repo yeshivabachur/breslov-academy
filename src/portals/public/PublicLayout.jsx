@@ -35,6 +35,7 @@ export default function PublicLayout() {
             <Link to="/" className="text-sm font-semibold tracking-tight">Breslov Academy</Link>
             <nav className="hidden md:flex items-center gap-1">
               <NavLink to="/">Home</NavLink>
+              <NavLink to="/schools">Schools</NavLink>
               <NavLink to="/how-it-works">How it works</NavLink>
               <NavLink to="/pricing">Pricing</NavLink>
               <NavLink to="/faq">FAQ</NavLink>

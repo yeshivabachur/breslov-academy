@@ -3,7 +3,7 @@
  * Handles certificate issuance, verification, and email masking
  */
 
-import { base44 } from '@/api/base44Client';
+import { scopedCreate, scopedFilter } from '@/components/api/scoped';
 
 /**
  * Generate unique certificate ID
@@ -39,8 +39,7 @@ export function maskEmail(email) {
 export async function getCourseCompletionStatus({ school_id, user_email, course_id }) {
   try {
     // Get all lessons for course
-    const lessons = await base44.entities.Lesson.filter({
-      school_id,
+    const lessons = await scopedFilter('Lesson', school_id, {
       course_id,
       status: 'published'
     });
@@ -50,8 +49,7 @@ export async function getCourseCompletionStatus({ school_id, user_email, course_
     }
     
     // Get user progress
-    const progress = await base44.entities.UserProgress.filter({
-      school_id,
+    const progress = await scopedFilter('UserProgress', school_id, {
       user_email,
       course_id
     });
@@ -85,8 +83,7 @@ export async function issueCertificateIfEligible({
   force = false 
 }) {
   // Check if certificate already exists
-  const existing = await base44.entities.Certificate.filter({
-    school_id,
+  const existing = await scopedFilter('Certificate', school_id, {
     user_email,
     course_id
   });
@@ -104,7 +101,7 @@ export async function issueCertificateIfEligible({
   }
   
   // Get course details
-  const courses = await base44.entities.Course.filter({ id: course_id, school_id });
+  const courses = await scopedFilter('Course', school_id, { id: course_id });
   if (courses.length === 0) {
     throw new Error('Course not found');
   }
@@ -114,8 +111,7 @@ export async function issueCertificateIfEligible({
   // Create certificate
   const certificateId = generateCertificateId();
   
-  const certificate = await base44.entities.Certificate.create({
-    school_id,
+  const certificate = await scopedCreate('Certificate', school_id, {
     user_email,
     user_name: user_name || user_email,
     course_id,
@@ -136,8 +132,7 @@ export async function issueCertificateIfEligible({
  */
 export async function getCertificateById({ school_id, certificate_id }) {
   try {
-    const certs = await base44.entities.Certificate.filter({
-      school_id,
+    const certs = await scopedFilter('Certificate', school_id, {
       certificate_id
     });
     return certs[0] || null;

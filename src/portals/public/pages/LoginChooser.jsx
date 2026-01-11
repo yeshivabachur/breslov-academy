@@ -1,8 +1,12 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 
 export default function LoginChooser() {
+  const [params] = useSearchParams();
+  const schoolSlug = params.get('schoolSlug') || params.get('school_slug') || '';
+  const suffix = schoolSlug ? `?schoolSlug=${encodeURIComponent(schoolSlug)}` : '';
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-16">
       <h1 className="text-3xl font-semibold tracking-tight">Log in</h1>
@@ -17,7 +21,7 @@ export default function LoginChooser() {
             Access your courses, lessons, and quizzes.
           </p>
           <Button asChild className="mt-4 w-full">
-            <Link to="/login/student">Continue as student</Link>
+            <Link to={`/login/student${suffix}`}>Continue as student</Link>
           </Button>
         </div>
 
@@ -27,7 +31,7 @@ export default function LoginChooser() {
             Manage courses, students, quizzes, and content.
           </p>
           <Button asChild variant="outline" className="mt-4 w-full">
-            <Link to="/login/teacher">Continue as teacher</Link>
+            <Link to={`/login/teacher${suffix}`}>Continue as teacher</Link>
           </Button>
         </div>
 
@@ -37,7 +41,7 @@ export default function LoginChooser() {
             Configure your school, staff, settings, and storefront.
           </p>
           <Button asChild variant="outline" className="mt-4 w-full">
-            <Link to="/login/admin">Continue as admin</Link>
+            <Link to={`/login/admin${suffix}`}>Continue as admin</Link>
           </Button>
         </div>
       </div>

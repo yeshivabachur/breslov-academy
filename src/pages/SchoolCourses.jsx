@@ -3,6 +3,8 @@ import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
+import useStorefrontContext from '@/components/hooks/useStorefrontContext';
+import { scopedFilter } from '@/components/api/scoped';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -15,9 +17,23 @@ export default function SchoolCourses() {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [levelFilter, setLevelFilter] = useState('all');
   const [accessFilter, setAccessFilter] = useState('all');
-  
-  const urlParams = new URLSearchParams(window.location.search);
-  const slug = urlParams.get('slug');
+  const { schoolSlug: slug } = useStorefrontContext();
+  const schoolFields = [
+    'id',
+    'name',
+    'slug'
+  ];
+  const courseFields = [
+    'id',
+    'title',
+    'subtitle',
+    'description',
+    'category',
+    'level',
+    'access_level',
+    'access_tier',
+    'cover_image_url'
+  ];
 
   useEffect(() => {
     const loadUser = async () => {
@@ -34,7 +50,7 @@ export default function SchoolCourses() {
   const { data: school } = useQuery({
     queryKey: ['school-by-slug', slug],
     queryFn: async () => {
-      const schools = await base44.entities.School.filter({ slug });
+      const schools = await base44.entities.School.filter({ slug, is_public: true }, null, 1, { fields: schoolFields });
       return schools[0];
     },
     enabled: !!slug
@@ -42,10 +58,14 @@ export default function SchoolCourses() {
 
   const { data: courses = [] } = useQuery({
     queryKey: ['public-courses', school?.id],
-    queryFn: () => base44.entities.Course.filter({
-      school_id: school.id,
-      is_published: true
-    }),
+    queryFn: () => scopedFilter(
+      'Course',
+      school.id,
+      { is_published: true },
+      '-created_date',
+      200,
+      { fields: courseFields }
+    ),
     enabled: !!school?.id
   });
 

@@ -1,29 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DollarSign, Calendar, Users } from 'lucide-react';
+import { useSession } from '@/components/hooks/useSession';
+import { buildCacheKey, scopedList } from '@/components/api/scoped';
 
 export default function Scholarships() {
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-      } catch (error) {
-        base44.auth.redirectToLogin();
-      }
-    };
-    loadUser();
-  }, []);
+  const { activeSchoolId } = useSession();
 
   const { data: scholarships = [] } = useQuery({
-    queryKey: ['scholarships'],
-    queryFn: () => base44.entities.Scholarship.list()
+    queryKey: buildCacheKey('scholarships', activeSchoolId),
+    queryFn: () => scopedList('Scholarship', activeSchoolId),
+    enabled: !!activeSchoolId
   });
 
   return (

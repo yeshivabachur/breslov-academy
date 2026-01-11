@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { Sparkles, Star } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
 import CourseCard from '@/components/courses/CourseCard';
+import { scopedCreate } from '@/components/api/scoped';
 
-export default function CourseRecommendations({ user, userProgress, courses }) {
+export default function CourseRecommendations({ user, userProgress, courses, schoolId }) {
   const [recommendations, setRecommendations] = useState([]);
   const [isGenerating, setIsGenerating] = useState(false);
 
@@ -13,7 +13,7 @@ export default function CourseRecommendations({ user, userProgress, courses }) {
   }, [user, userProgress, courses]);
 
   const generateRecommendations = async () => {
-    if (!user || !courses || courses.length === 0) return;
+    if (!user || !courses || courses.length === 0 || !schoolId) return;
 
     setIsGenerating(true);
 
@@ -94,7 +94,7 @@ export default function CourseRecommendations({ user, userProgress, courses }) {
 
       // Save recommendations to database
       for (const rec of uniqueRecommendations) {
-        await base44.entities.Recommendation.create({
+        await scopedCreate('Recommendation', schoolId, {
           user_email: user.email,
           course_id: rec.course.id,
           reason: rec.reason,

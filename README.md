@@ -10,6 +10,11 @@
 - **[Gemini Context](./GEMINI.md):** AI agent instructions and architectural invariants.
 - **[SSOT-Aligned Roadmap](./ROADMAP.md):** Quarter-based roadmap aligned to the SSOT PDF.
 
+## V11 Spec Pack and Release Discipline
+- **[V11 Spec Pack](./docs/v11/README.md):** Master feature index, domain model, acceptance criteria, release gates, migration plan.
+- **[Base44 + GitHub Release Discipline](./docs/ops/BASE44_GITHUB_RELEASE_MODEL.md):** Branch model and required checks.
+- **[Repo Rename Log](./docs/branding/NAME_CHANGE.md):** Breslov Academy -> Breslov University rename checklist.
+
 ## Unified Strategic Goal
 Transition from a legacy single-tenant LMS into a premier, multi-tenant white-label platform for high-trust Torah education. Deliver a "WOW" academic experience through immersive 3D study (VR), conversational AI tutoring, and airtight content protection.
 
@@ -68,8 +73,44 @@ It provides minimal `/api` endpoints for auth, entity CRUD, and integrations.
 - `DEV_ROLE`: Role for the dev user (defaults to `admin`).
 - `AUTH_LOGIN_URL`: External auth login URL (if using a real IdP).
 - `AUTH_LOGOUT_URL`: External auth logout URL.
+- `AUTH_SESSION_TTL_HOURS`: Session lifetime in hours (default: 12).
 - `CORS_ORIGIN`: Allowed origin for API responses.
 - `REQUIRE_AUTH`: Set to `true` to enforce auth in public settings responses.
+- `OIDC_ALLOW_ALL`: Allow SSO without a per-school policy (default: false).
+- `GLOBAL_ADMIN_EMAILS`: Comma-separated list of global admin emails.
+- `GLOBAL_ADMIN_ROLE`: Role name treated as global admin.
+
+### Optional environment variables (Stripe)
+- `STRIPE_SECRET_KEY`: Stripe secret key for Connect onboarding.
+- `STRIPE_WEBHOOK_SECRET`: Stripe webhook signing secret.
+- `STRIPE_API_VERSION`: Stripe API version override (defaults to 2023-10-16).
+- `PLATFORM_FEE_PERCENT`: Default platform fee percent for Connect (optional).
+
+### Optional environment variables (OIDC)
+- `GOOGLE_OIDC_CLIENT_ID`: Google Workspace OAuth client ID.
+- `GOOGLE_OIDC_CLIENT_SECRET`: Google Workspace OAuth client secret.
+- `GOOGLE_OIDC_REDIRECT_URI`: Override callback URL (defaults to `/api/auth/oidc/callback`).
+- `GOOGLE_OIDC_SCOPES`: Override scopes (defaults to `openid email profile`).
+- `GOOGLE_OIDC_PROMPT`: Override prompt parameter (defaults to `select_account`).
+- `MICROSOFT_OIDC_CLIENT_ID`: Microsoft 365 OAuth client ID.
+- `MICROSOFT_OIDC_CLIENT_SECRET`: Microsoft 365 OAuth client secret.
+- `MICROSOFT_OIDC_TENANT`: Azure tenant (defaults to `common`).
+- `MICROSOFT_OIDC_REDIRECT_URI`: Override callback URL (defaults to `/api/auth/oidc/callback`).
+- `MICROSOFT_OIDC_SCOPES`: Override scopes (defaults to `openid email profile`).
+- `MICROSOFT_OIDC_PROMPT`: Override prompt parameter (defaults to `select_account`).
+
+### Optional environment variables (Integrations)
+- `GOOGLE_INTEGRATION_CLIENT_ID`: Google OAuth client ID for Classroom/Drive.
+- `GOOGLE_INTEGRATION_CLIENT_SECRET`: Google OAuth client secret for Classroom/Drive.
+- `GOOGLE_INTEGRATION_REDIRECT_URI`: Override Google integration callback URL.
+- `MICROSOFT_GRAPH_CLIENT_ID`: Microsoft OAuth client ID for OneDrive/SharePoint.
+- `MICROSOFT_GRAPH_CLIENT_SECRET`: Microsoft OAuth client secret.
+- `MICROSOFT_GRAPH_TENANT`: Microsoft tenant (defaults to `common`).
+- `MICROSOFT_GRAPH_REDIRECT_URI`: Override Microsoft integration callback URL.
+
+### Optional environment variables (Cloudflare Stream)
+- `CLOUDFLARE_ACCOUNT_ID`: Cloudflare account ID for Stream.
+- `CLOUDFLARE_STREAM_TOKEN`: API token with Stream permissions.
 
 ### D1 schema
 The API uses a simple generic entity table. Apply `cloudflare/schema.sql` to your D1 database.

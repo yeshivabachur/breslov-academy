@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,60 +8,35 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Users, Copy, Trash2, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
-import { scopedFilter, scopedCreate } from '@/components/api/scoped';
+import { buildCacheKey, scopedCreate, scopedDelete, scopedFilter, scopedUpdate } from '@/components/api/scoped';
 import { isSchoolAdmin } from '@/components/auth/roles';
+import { useSession } from '@/components/hooks/useSession';
 
 export default function SchoolStaff() {
-  const [user, setUser] = useState(null);
-  const [activeSchoolId, setActiveSchoolId] = useState(null);
-  const [membership, setMembership] = useState(null);
   const [showInviteForm, setShowInviteForm] = useState(false);
   const queryClient = useQueryClient();
-
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-        
-        const schoolId = localStorage.getItem('active_school_id');
-        setActiveSchoolId(schoolId);
-        
-        // Get membership
-        const memberships = await base44.entities.SchoolMembership.filter({
-          school_id: schoolId,
-          user_email: currentUser.email
-        });
-        
-        if (memberships.length === 0 || !isSchoolAdmin(memberships[0].role)) {
-          toast.error('School admin access required');
-          return;
-        }
-        
-        setMembership(memberships[0]);
-      } catch (error) {
-        base44.auth.redirectToLogin();
-      }
-    };
-    loadUser();
-  }, []);
+  const { user, activeSchoolId, role, isLoading } = useSession();
+  const isAdmin = isSchoolAdmin(role);
 
   const { data: staff = [] } = useQuery({
-    queryKey: ['staff', activeSchoolId],
+    queryKey: buildCacheKey('staff', activeSchoolId),
     queryFn: () => scopedFilter('SchoolMembership', activeSchoolId, {}, '-created_date', 100),
-    enabled: !!activeSchoolId
+    enabled: !!activeSchoolId && isAdmin
   });
 
   const { data: invites = [] } = useQuery({
-    queryKey: ['staff-invites', activeSchoolId],
+    queryKey: buildCacheKey('staff-invites', activeSchoolId),
     queryFn: () => scopedFilter('StaffInvite', activeSchoolId, { 
       status: 'PENDING' 
     }, '-created_date', 50),
-    enabled: !!activeSchoolId
+    enabled: !!activeSchoolId && isAdmin
   });
 
   const createInviteMutation = useMutation({
     mutationFn: async (data) => {
+      if (!activeSchoolId) {
+        throw new Error('No active school selected');
+      }
       const token = `${Date.now()}-${Math.random().toString(36).substring(7)}`;
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 7); // 7-day expiry
@@ -76,14 +50,14 @@ export default function SchoolStaff() {
       });
     },
     onSuccess: (invite) => {
-      queryClient.invalidateQueries(['staff-invites']);
+      queryClient.invalidateQueries(buildCacheKey('staff-invites', activeSchoolId));
       toast.success('Invite sent!');
       setShowInviteForm(false);
       
       // Log action
-      base44.entities.AuditLog.create({
+      scopedCreate('AuditLog', activeSchoolId, {
         school_id: activeSchoolId,
-        user_email: user.email,
+        user_email: user?.email,
         action: 'STAFF_INVITED',
         entity_type: 'StaffInvite',
         entity_id: invite.id,
@@ -94,28 +68,28 @@ export default function SchoolStaff() {
 
   const revokeInviteMutation = useMutation({
     mutationFn: async (inviteId) => {
-      await base44.entities.StaffInvite.update(inviteId, {
+      await scopedUpdate('StaffInvite', inviteId, {
         status: 'REVOKED'
-      });
+      }, activeSchoolId, true);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['staff-invites']);
+      queryClient.invalidateQueries(buildCacheKey('staff-invites', activeSchoolId));
       toast.success('Invite revoked');
     }
   });
 
   const removeMemberMutation = useMutation({
     mutationFn: async (membershipId) => {
-      await base44.entities.SchoolMembership.delete(membershipId);
+      await scopedDelete('SchoolMembership', membershipId, activeSchoolId, true);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['staff']);
+      queryClient.invalidateQueries(buildCacheKey('staff', activeSchoolId));
       toast.success('Member removed');
       
       // Log action
-      base44.entities.AuditLog.create({
+      scopedCreate('AuditLog', activeSchoolId, {
         school_id: activeSchoolId,
-        user_email: user.email,
+        user_email: user?.email,
         action: 'STAFF_REMOVED',
         entity_type: 'SchoolMembership',
         entity_id: membershipId
@@ -129,7 +103,21 @@ export default function SchoolStaff() {
     toast.success('Invite link copied!');
   };
 
-  if (!membership || !isSchoolAdmin(membership.role)) {
+  if (isLoading) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-20 text-center">
+        <Card>
+          <CardContent className="p-12">
+            <Users className="w-16 h-16 text-slate-400 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold mb-2">Loading...</h2>
+            <p className="text-slate-600">Checking access</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!user || !activeSchoolId || !isAdmin) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-20 text-center">
         <Card>

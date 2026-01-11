@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
@@ -7,39 +6,22 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Users, Calendar, BookOpen } from 'lucide-react';
+import { useSession } from '@/components/hooks/useSession';
+import { buildCacheKey, scopedFilter } from '@/components/api/scoped';
 
 export default function Cohorts() {
-  const [user, setUser] = useState(null);
-  const [activeSchoolId, setActiveSchoolId] = useState(null);
-
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-        
-        const schoolId = localStorage.getItem('active_school_id');
-        setActiveSchoolId(schoolId);
-      } catch (error) {
-        base44.auth.redirectToLogin();
-      }
-    };
-    loadUser();
-  }, []);
+  const { user, activeSchoolId } = useSession();
 
   const { data: myCohorts = [] } = useQuery({
-    queryKey: ['my-cohorts', user?.email, activeSchoolId],
+    queryKey: buildCacheKey('my-cohorts', activeSchoolId, user?.email),
     queryFn: async () => {
-      const memberships = await base44.entities.CohortMember.filter({
-        school_id: activeSchoolId,
-        user_email: user.email
-      });
+      const memberships = await scopedFilter('CohortMember', activeSchoolId, { user_email: user.email });
       
       const cohortIds = memberships.map(m => m.cohort_id);
       const cohorts = [];
       
       for (const id of cohortIds) {
-        const cohort = await base44.entities.Cohort.filter({ id });
+        const cohort = await scopedFilter('Cohort', activeSchoolId, { id });
         if (cohort[0]) cohorts.push(cohort[0]);
       }
       
@@ -49,11 +31,8 @@ export default function Cohorts() {
   });
 
   const { data: allCohorts = [] } = useQuery({
-    queryKey: ['all-cohorts', activeSchoolId],
-    queryFn: () => base44.entities.Cohort.filter({
-      school_id: activeSchoolId,
-      status: 'active'
-    }),
+    queryKey: buildCacheKey('all-cohorts', activeSchoolId),
+    queryFn: () => scopedFilter('Cohort', activeSchoolId, { status: 'active' }),
     enabled: !!activeSchoolId
   });
 

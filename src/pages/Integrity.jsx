@@ -70,18 +70,54 @@ function scanReader(source) {
   };
 }
 
+function scanAiTutor(source) {
+  const hasLockGuard = /const\s+isLocked\s*=\s*!contextContent/.test(source)
+    || /if\s*\(!contextContent\)/.test(source);
+  const disablesActions = /disabled=\{[^}]*isLocked[^}]*\}/.test(source)
+    || /disabled=\{[^}]*!contextContent[^}]*\}/.test(source);
+  return {
+    key: 'scan_ai_tutor',
+    label: 'AI tutor lock scan (AiTutorPanel)',
+    ok: hasLockGuard && disablesActions,
+    detail: [
+      hasLockGuard ? '? AI tutor checks for locked context (contextContent).' : '?? AI tutor missing locked-context guard.',
+      disablesActions ? '? AI tutor disables actions when locked.' : '?? AI tutor may allow actions while locked.'
+    ]
+  };
+}
+
+function scanDiscussion(source) {
+  const usesScopedCreate = /scopedCreate\(['"]Discussion['"]/.test(source);
+  const usesScopedUpdate = /scopedUpdate\(['"]Discussion['"]/.test(source);
+  const hasBase44 = /base44\.entities\.Discussion/.test(source);
+  return {
+    key: 'scan_discussions',
+    label: 'Discussion scoping scan (DiscussionThread)',
+    ok: usesScopedCreate && usesScopedUpdate && !hasBase44,
+    detail: [
+      usesScopedCreate ? '? Discussion uses scopedCreate.' : '?? Discussion missing scopedCreate.',
+      usesScopedUpdate ? '? Discussion uses scopedUpdate.' : '?? Discussion missing scopedUpdate.',
+      !hasBase44 ? '? No base44 direct Discussion usage detected.' : '?? base44.entities.Discussion detected (tenancy risk).'
+    ]
+  };
+}
+
 function scanScoped(source) {
   const hasDownloadScoped = /['"]Download['"]/.test(source);
   const hasBundleScoped = /['"]Bundle['"]/.test(source);
   const hasAnalyticsScoped = /['"]AnalyticsEvent['"]/.test(source);
+  const hasSchoolSettingScoped = /['"]SchoolSetting['"]/.test(source);
+  const hasMessageScoped = /['"]Message['"]/.test(source);
   return {
     key: 'scan_scoped',
     label: 'Tenancy scope list scan (scoped module)',
-    ok: hasDownloadScoped && hasBundleScoped && hasAnalyticsScoped,
+    ok: hasDownloadScoped && hasBundleScoped && hasAnalyticsScoped && hasSchoolSettingScoped && hasMessageScoped,
     detail: [
       hasDownloadScoped ? '✅ Download is in SCHOOL_SCOPED_ENTITIES.' : '⚠️ Download missing from SCHOOL_SCOPED_ENTITIES (tenant leakage risk).',
       hasBundleScoped ? '✅ Bundle is in SCHOOL_SCOPED_ENTITIES.' : '⚠️ Bundle missing from SCHOOL_SCOPED_ENTITIES.',
-      hasAnalyticsScoped ? '✅ AnalyticsEvent is in SCHOOL_SCOPED_ENTITIES.' : '⚠️ AnalyticsEvent missing from SCHOOL_SCOPED_ENTITIES.'
+      hasAnalyticsScoped ? '✅ AnalyticsEvent is in SCHOOL_SCOPED_ENTITIES.' : '⚠️ AnalyticsEvent missing from SCHOOL_SCOPED_ENTITIES.',
+      hasSchoolSettingScoped ? '✅ SchoolSetting is in SCHOOL_SCOPED_ENTITIES.' : '⚠️ SchoolSetting missing from SCHOOL_SCOPED_ENTITIES.',
+      hasMessageScoped ? '✅ Message is in SCHOOL_SCOPED_ENTITIES.' : '⚠️ Message missing from SCHOOL_SCOPED_ENTITIES.'
     ]
   };
 }
@@ -112,13 +148,15 @@ export default function Integrity() {
     const loadSources = async () => {
       try {
         setReloading(true);
-        const [schoolSearch, downloads, reader, scoped, lessonAccess, tenancyEnforcer] = await Promise.all([
+        const [schoolSearch, downloads, reader, scoped, lessonAccess, tenancyEnforcer, aiTutor, discussion] = await Promise.all([
           import('./SchoolSearch.jsx?raw'),
           import('./Downloads.jsx?raw'),
           import('./Reader.jsx?raw'),
           import('../components/api/scoped.jsx?raw'),
           import('../components/hooks/useLessonAccess.jsx?raw'),
           import('../components/api/tenancyEnforcer.js?raw'),
+          import('../components/ai/AiTutorPanel.jsx?raw'),
+          import('../components/learning/DiscussionThread.jsx?raw'),
         ]);
         if (!alive) return;
         setSources({
@@ -128,6 +166,8 @@ export default function Integrity() {
           scoped: scoped.default,
           lessonAccess: lessonAccess.default,
           tenancyEnforcer: tenancyEnforcer.default,
+          aiTutor: aiTutor.default,
+          discussion: discussion.default,
         });
       } catch (e) {
         console.warn('Integrity scans: failed to load source modules', e);
@@ -161,6 +201,8 @@ export default function Integrity() {
       scanSchoolSearch(sources.schoolSearch),
       scanDownloads(sources.downloads),
       scanReader(sources.reader),
+      scanAiTutor(sources.aiTutor),
+      scanDiscussion(sources.discussion),
       scanScoped(sources.scoped)
     ];
 
@@ -171,6 +213,8 @@ export default function Integrity() {
       scoped: { label: 'Scoped API', source: sources.scoped },
       lessonAccess: { label: 'useLessonAccess', source: sources.lessonAccess },
       tenancyEnforcer: { label: 'TenancyEnforcer', source: sources.tenancyEnforcer },
+      aiTutor: { label: 'AiTutorPanel', source: sources.aiTutor },
+      discussion: { label: 'DiscussionThread', source: sources.discussion },
     });
 
     return [...highSignal, ...generic];

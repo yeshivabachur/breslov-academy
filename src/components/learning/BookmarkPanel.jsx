@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,33 +6,35 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Bookmark, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { buildCacheKey, scopedCreate, scopedDelete, scopedFilter } from '@/components/api/scoped';
 
 export default function BookmarkPanel({ lesson, user, currentTime, onSeek }) {
   const [showDialog, setShowDialog] = useState(false);
   const queryClient = useQueryClient();
+  const schoolId = lesson?.school_id;
 
   const { data: bookmarks = [] } = useQuery({
-    queryKey: ['bookmarks', lesson.id, user.email],
-    queryFn: () => base44.entities.Bookmark.filter({
+    queryKey: buildCacheKey('bookmarks', schoolId, lesson?.id, user?.email),
+    queryFn: () => scopedFilter('Bookmark', schoolId, {
       lesson_id: lesson.id,
       user_email: user.email
     }, '-created_date'),
-    enabled: !!lesson && !!user
+    enabled: !!lesson && !!user && !!schoolId
   });
 
   const createBookmarkMutation = useMutation({
-    mutationFn: (data) => base44.entities.Bookmark.create(data),
+    mutationFn: (data) => scopedCreate('Bookmark', schoolId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['bookmarks']);
+      queryClient.invalidateQueries(buildCacheKey('bookmarks', schoolId, lesson?.id, user?.email));
       setShowDialog(false);
       toast.success('Bookmark added!');
     }
   });
 
   const deleteBookmarkMutation = useMutation({
-    mutationFn: (id) => base44.entities.Bookmark.delete(id),
+    mutationFn: (id) => scopedDelete('Bookmark', id, schoolId, true),
     onSuccess: () => {
-      queryClient.invalidateQueries(['bookmarks']);
+      queryClient.invalidateQueries(buildCacheKey('bookmarks', schoolId, lesson?.id, user?.email));
       toast.success('Bookmark deleted');
     }
   });
@@ -43,7 +44,6 @@ export default function BookmarkPanel({ lesson, user, currentTime, onSeek }) {
     const formData = new FormData(e.target);
     
     createBookmarkMutation.mutate({
-      school_id: lesson.school_id,
       lesson_id: lesson.id,
       user_email: user.email,
       label: formData.get('label'),

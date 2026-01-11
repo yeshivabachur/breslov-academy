@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -10,14 +9,15 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Shield } from 'lucide-react';
 import { toast } from 'sonner';
+import { buildCacheKey, scopedCreate, scopedFilter, scopedUpdate } from '@/components/api/scoped';
 
 export default function ContentProtectionSettings({ schoolId, user }) {
   const queryClient = useQueryClient();
 
   const { data: policy } = useQuery({
-    queryKey: ['protection-policy', schoolId],
+    queryKey: buildCacheKey('protection-policy', schoolId),
     queryFn: async () => {
-      const policies = await base44.entities.ContentProtectionPolicy.filter({ school_id: schoolId });
+      const policies = await scopedFilter('ContentProtectionPolicy', schoolId, {}, null, 1);
       return policies[0];
     },
     enabled: !!schoolId
@@ -48,9 +48,9 @@ export default function ContentProtectionSettings({ schoolId, user }) {
     mutationFn: async (data) => {
       let result;
       if (policy) {
-        result = await base44.entities.ContentProtectionPolicy.update(policy.id, data);
+        result = await scopedUpdate('ContentProtectionPolicy', policy.id, data, schoolId, true);
       } else {
-        result = await base44.entities.ContentProtectionPolicy.create({
+        result = await scopedCreate('ContentProtectionPolicy', schoolId, {
           ...data,
           school_id: schoolId
         });
@@ -58,7 +58,7 @@ export default function ContentProtectionSettings({ schoolId, user }) {
 
       // Audit Log
       try {
-        await base44.entities.AuditLog.create({
+        await scopedCreate('AuditLog', schoolId, {
           school_id: schoolId,
           user_email: user?.email,
           action: 'UPDATE_PROTECTION_POLICY',
@@ -73,7 +73,7 @@ export default function ContentProtectionSettings({ schoolId, user }) {
       return result;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['protection-policy']);
+      queryClient.invalidateQueries(buildCacheKey('protection-policy', schoolId));
       toast.success('Content protection settings saved');
     }
   });

@@ -23,9 +23,60 @@ function safeParseJson(value) {
   }
 }
 
+function normalizeFields(fields) {
+  if (!fields) return null;
+  if (Array.isArray(fields)) {
+    return fields.map((v) => String(v)).filter(Boolean);
+  }
+  if (typeof fields === 'string') {
+    return fields.split(',').map((v) => v.trim()).filter(Boolean);
+  }
+  return null;
+}
+
+function applyPreviewChars(record, previewChars) {
+  if (!previewChars || !record || typeof record !== 'object') return record;
+  const next = { ...record };
+  const max = Number(previewChars);
+  if (!Number.isFinite(max) || max <= 0) return next;
+
+  ['content', 'content_text', 'text', 'body'].forEach((key) => {
+    if (typeof next[key] === 'string' && next[key].length > max) {
+      next[key] = next[key].slice(0, max) + '...';
+    }
+  });
+  return next;
+}
+
+function projectRecord(record, fields, previewChars) {
+  if (!record || typeof record !== 'object') return record;
+  const projected = applyPreviewChars(record, previewChars);
+  const normalized = normalizeFields(fields);
+  if (!normalized || normalized.length === 0) return projected;
+
+  const allow = new Set(normalized.map((f) => String(f)));
+  allow.add('id');
+  if (record.school_id) allow.add('school_id');
+  if (record.user_email) allow.add('user_email');
+
+  const out = {};
+  allow.forEach((key) => {
+    if (Object.prototype.hasOwnProperty.call(projected, key)) {
+      out[key] = projected[key];
+    }
+  });
+  return out;
+}
+
 function matchesFilters(record, filters, ignoredKeys) {
+  if (filters && typeof filters === 'object' && Array.isArray(filters.$or)) {
+    const orMatched = filters.$or.some((clause) => matchesFilters(record, clause, ignoredKeys));
+    if (!orMatched) return false;
+  }
+
   const entries = Object.entries(filters || {}).filter(([key, value]) => {
     if (ignoredKeys.includes(key)) return false;
+    if (key === '$or') return false;
     return value !== undefined && value !== null;
   });
 
@@ -37,7 +88,23 @@ function matchesFilters(record, filters, ignoredKeys) {
       return expected.includes(actual);
     }
     if (expected && typeof expected === 'object') {
-      return actual === expected.value;
+      if (Object.prototype.hasOwnProperty.call(expected, '$in')) {
+        const list = Array.isArray(expected.$in) ? expected.$in : [];
+        if (Array.isArray(actual)) {
+          return actual.some((item) => list.includes(item));
+        }
+        return list.includes(actual);
+      }
+      if (Object.prototype.hasOwnProperty.call(expected, '$ne')) {
+        return actual !== expected.$ne;
+      }
+      if (Object.prototype.hasOwnProperty.call(expected, '$eq')) {
+        return actual === expected.$eq;
+      }
+      if (Object.prototype.hasOwnProperty.call(expected, 'value')) {
+        return actual === expected.value;
+      }
+      return actual === expected;
     }
     return actual === expected;
   });
@@ -105,7 +172,9 @@ export async function listEntities(env, entity, options = {}) {
   const ignoredKeys = ['id', 'school_id', 'user_email'];
   const records = rows.map((row) => enrichRecord(safeParseJson(row.data), row));
   const filtered = records.filter((record) => matchesFilters(record, filters, ignoredKeys));
-  return sortRecords(filtered, options.sort);
+  const sorted = sortRecords(filtered, options.sort);
+  if (!options.fields && !options.previewChars) return sorted;
+  return sorted.map((record) => projectRecord(record, options.fields, options.previewChars));
 }
 
 export async function createEntity(env, entity, payload = {}) {
@@ -201,7 +270,9 @@ function listEntitiesMemory(entity, options = {}) {
   const filtered = rows.filter((record) => matchesFilters(record, filters, ignoredKeys));
   const sorted = sortRecords(filtered, options.sort);
   const limit = normalizeLimit(options.limit, DEFAULT_LIMIT);
-  return sorted.slice(0, limit);
+  const sliced = sorted.slice(0, limit);
+  if (!options.fields && !options.previewChars) return sliced;
+  return sliced.map((record) => projectRecord(record, options.fields, options.previewChars));
 }
 
 function updateEntityMemory(entity, id, payload = {}) {

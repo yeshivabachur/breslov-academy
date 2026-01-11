@@ -1,33 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Trophy, Medal, Flame, Target, ChevronUp } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { tokens, cx } from '@/components/theme/tokens';
 import GamificationLayout from '@/components/gamification/GamificationLayout';
 import { DashboardSkeleton } from '@/components/ui/SkeletonLoaders';
+import { useSession } from '@/components/hooks/useSession';
+import { buildCacheKey, scopedList } from '@/components/api/scoped';
 
 export default function Leaderboard() {
-  const [user, setUser] = useState(null);
+  const { user, activeSchoolId, isLoading } = useSession();
 
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-      } catch (error) {
-        base44.auth.redirectToLogin();
-      }
-    };
-    loadUser();
-  }, []);
-
-  const { data: leaders = [], isLoading } = useQuery({
-    queryKey: ['leaderboard'],
-    queryFn: () => base44.entities.Leaderboard.list('-total_points', 50)
+  const { data: leaders = [], isLoading: leadersLoading } = useQuery({
+    queryKey: buildCacheKey('leaderboard', activeSchoolId),
+    queryFn: () => scopedList('Leaderboard', activeSchoolId, '-total_points', 50),
+    enabled: !!activeSchoolId
   });
 
-  if (isLoading) {
+  if (isLoading || leadersLoading) {
     return <DashboardSkeleton />;
   }
 

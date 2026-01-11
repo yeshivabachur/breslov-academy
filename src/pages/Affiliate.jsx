@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
-import { scopedFilter, scopedCreate } from '@/components/api/scoped';
+import { buildCacheKey, scopedFilter, scopedCreate } from '@/components/api/scoped';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -10,29 +10,14 @@ import { Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import { createPageUrl } from '@/utils';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { useSession } from '@/components/hooks/useSession';
 
 export default function Affiliate() {
-  const [user, setUser] = useState(null);
-  const [activeSchoolId, setActiveSchoolId] = useState(null);
+  const { user, activeSchoolId } = useSession();
   const [affiliateCode, setAffiliateCode] = useState('');
 
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-        
-        const schoolId = localStorage.getItem('active_school_id');
-        setActiveSchoolId(schoolId);
-      } catch (error) {
-        base44.auth.redirectToLogin();
-      }
-    };
-    loadUser();
-  }, []);
-
   const { data: affiliate } = useQuery({
-    queryKey: ['affiliate', user?.email, activeSchoolId],
+    queryKey: buildCacheKey('affiliate', activeSchoolId, user?.email),
     queryFn: async () => {
       const affiliates = await scopedFilter('Affiliate', activeSchoolId, {
         user_email: user.email
@@ -57,7 +42,7 @@ export default function Affiliate() {
   });
 
   const { data: referrals = [] } = useQuery({
-    queryKey: ['referrals', affiliate?.id],
+    queryKey: buildCacheKey('referrals', activeSchoolId, affiliate?.id),
     queryFn: () => scopedFilter('Referral', activeSchoolId, {
       affiliate_id: affiliate.id
     }),
@@ -80,7 +65,7 @@ export default function Affiliate() {
   }, [referrals]);
 
   const { data: school } = useQuery({
-    queryKey: ['active-school', activeSchoolId],
+    queryKey: buildCacheKey('active-school', activeSchoolId),
     queryFn: async () => {
       const schools = await base44.entities.School.filter({ id: activeSchoolId });
       return schools[0];

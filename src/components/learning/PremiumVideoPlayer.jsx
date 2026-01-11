@@ -1,16 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { base44 } from '@/api/base44Client';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Play, Pause, Volume2, VolumeX, SkipForward, SkipBack, Settings } from 'lucide-react';
 import { toast } from 'sonner';
+import { scopedCreate, scopedUpdate } from '@/components/api/scoped';
 
 export default function PremiumVideoPlayer({ lesson, progress, user, accessLevel = 'FULL', maxPreviewSeconds = 90, onProgressUpdate }) {
   const videoRef = useRef(null);
   const [playing, setPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [previewEnded, setPreviewEnded] = useState(false);
   const effectiveDuration = (accessLevel === 'PREVIEW' && maxPreviewSeconds)
     ? Math.min(duration || 0, maxPreviewSeconds)
     : (duration || 0);
@@ -19,6 +20,11 @@ export default function PremiumVideoPlayer({ lesson, progress, user, accessLevel
   const [playbackRate, setPlaybackRate] = useState(1);
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
   const queryClient = useQueryClient();
+  const schoolId = lesson?.school_id;
+
+  useEffect(() => {
+    setPreviewEnded(false);
+  }, [lesson?.id, accessLevel]);
 
   useEffect(() => {
     if (videoRef.current && progress?.last_position_seconds) {
@@ -63,7 +69,7 @@ export default function PremiumVideoPlayer({ lesson, progress, user, accessLevel
       video.removeEventListener('timeupdate', handleTimeUpdate);
       video.removeEventListener('loadedmetadata', handleLoadedMetadata);
     };
-  }, []);
+  }, [accessLevel, maxPreviewSeconds, previewEnded]);
 
   const saveProgress = async (position) => {
     const clampedPosition = (accessLevel === 'PREVIEW' && maxPreviewSeconds)
@@ -74,15 +80,14 @@ export default function PremiumVideoPlayer({ lesson, progress, user, accessLevel
     const percentage = denom > 0 ? (clampedPosition / denom) * 100 : 0;
 
     if (progress) {
-      await base44.entities.UserProgress.update(progress.id, {
+      await scopedUpdate('UserProgress', progress.id, {
         last_position_seconds: Math.floor(clampedPosition),
         progress_percentage: Math.floor(percentage),
         last_played_at: new Date().toISOString(),
         completed: percentage >= 90
-      });
+      }, schoolId, true);
     } else {
-      await base44.entities.UserProgress.create({
-        school_id: lesson.school_id,
+      await scopedCreate('UserProgress', schoolId, {
         user_email: user.email,
         lesson_id: lesson.id,
         course_id: lesson.course_id,
@@ -162,7 +167,7 @@ export default function PremiumVideoPlayer({ lesson, progress, user, accessLevel
     <div className="relative bg-black rounded-lg overflow-hidden">
       <video
         ref={videoRef}
-        src={lesson.video_url}
+        src={lesson.video_url || (lesson.video_stream_id ? `https://videodelivery.net/${lesson.video_stream_id}/downloads/default.mp4` : '')}
         className="w-full aspect-video"
         onPlay={() => setPlaying(true)}
         onPause={() => setPlaying(false)}

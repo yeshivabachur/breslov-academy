@@ -5,6 +5,7 @@ import { createPageUrl } from '@/utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Building2, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { scopedCreate, scopedFilter, scopedUpdate } from '@/components/api/scoped';
 
 export default function SchoolJoin() {
   const [user, setUser] = useState(null);
@@ -26,7 +27,7 @@ export default function SchoolJoin() {
       const urlParams = new URLSearchParams(window.location.search);
       const token = urlParams.get('token');
 
-      if (!token) {
+      if (!token || token.length < 16) {
         setStatus('error');
         return;
       }
@@ -68,8 +69,7 @@ export default function SchoolJoin() {
       setSchool(schools[0]);
 
       // Check if already a member
-      const existingMemberships = await base44.entities.SchoolMembership.filter({
-        school_id: foundInvite.school_id,
+      const existingMemberships = await scopedFilter('SchoolMembership', foundInvite.school_id, {
         user_email: currentUser.email
       });
 
@@ -90,17 +90,28 @@ export default function SchoolJoin() {
 
     try {
       // Create membership
-      await base44.entities.SchoolMembership.create({
-        school_id: invite.school_id,
+      await scopedCreate('SchoolMembership', invite.school_id, {
         user_email: user.email,
         role: invite.role,
         joined_at: new Date().toISOString()
       });
 
       // Mark invite as accepted
-      await base44.entities.SchoolInvite.update(invite.id, {
+      await scopedUpdate('SchoolInvite', invite.id, {
         accepted_at: new Date().toISOString()
-      });
+      }, invite.school_id, true);
+
+      try {
+        await scopedCreate('AuditLog', invite.school_id, {
+          user_email: user.email,
+          action: 'SCHOOL_INVITE_ACCEPTED',
+          entity_type: 'SchoolInvite',
+          entity_id: invite.id,
+          metadata: { invited_email: invite.email, role: invite.role }
+        });
+      } catch (error) {
+        // Best-effort audit logging.
+      }
 
       // Set as active school
       const prefs = await base44.entities.UserSchoolPreference.filter({

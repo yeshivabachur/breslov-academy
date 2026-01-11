@@ -1,22 +1,24 @@
 import React from 'react';
-import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
+import { scopedCreate, scopedFilter, scopedUpdate } from '@/components/api/scoped';
+import { useSession } from '@/components/hooks/useSession';
 
 export default function TeachCoursePricing({ course, schoolId }) {
   const queryClient = useQueryClient();
+  const { user } = useSession();
 
   const { data: offers = [] } = useQuery({
     queryKey: ['school-offers', schoolId],
-    queryFn: () => base44.entities.Offer.filter({ school_id: schoolId, status: 'active' }),
+    queryFn: () => scopedFilter('Offer', schoolId, { status: 'active' }),
     enabled: !!schoolId
   });
 
   const updateCourseMutation = useMutation({
-    mutationFn: (data) => base44.entities.Course.update(course.id, data),
+    mutationFn: (data) => scopedUpdate('Course', course.id, data, schoolId, true),
     onSuccess: () => {
       queryClient.invalidateQueries(['course']);
       toast.success('Pricing updated!');
@@ -25,6 +27,14 @@ export default function TeachCoursePricing({ course, schoolId }) {
 
   const handleAccessLevelChange = (value) => {
     updateCourseMutation.mutate({ access_level: value });
+    scopedCreate('AuditLog', schoolId, {
+      school_id: schoolId,
+      user_email: user?.email || null,
+      action: 'UPDATE_COURSE_ACCESS_LEVEL',
+      entity_type: 'Course',
+      entity_id: course.id,
+      metadata: { access_level: value }
+    }).catch(() => {});
   };
 
   return (

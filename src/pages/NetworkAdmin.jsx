@@ -11,6 +11,7 @@ import { Building2, Users, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { createPageUrl } from '@/utils';
 import VirtualizedList from '@/components/system/VirtualizedList';
+import { scopedCreate } from '@/components/api/scoped';
 
 // GLOBAL ADMIN LIST (env var or hardcoded)
 const GLOBAL_ADMINS = (import.meta.env.VITE_GLOBAL_ADMINS || 'admin@breslov.com').split(',').map(e => e.trim());
@@ -79,15 +80,13 @@ export default function NetworkAdmin() {
       });
 
       // 2. Create Owner Membership
-      await base44.entities.SchoolMembership.create({
-        school_id: school.id,
+      await scopedCreate('SchoolMembership', school.id, {
         user_email: app.admin_email,
         role: 'OWNER'
       });
 
       // 3. Create Policy
-      await base44.entities.ContentProtectionPolicy.create({
-        school_id: school.id,
+      await scopedCreate('ContentProtectionPolicy', school.id, {
         protect_content: true,
         allow_previews: true,
         max_preview_seconds: 90,
@@ -119,15 +118,13 @@ export default function NetworkAdmin() {
       const school = await base44.entities.School.create(data);
       
       // Create owner membership
-      await base44.entities.SchoolMembership.create({
-        school_id: school.id,
+      await scopedCreate('SchoolMembership', school.id, {
         user_email: data.owner_email,
         role: 'OWNER'
       });
       
       // Create default protection policy
-      await base44.entities.ContentProtectionPolicy.create({
-        school_id: school.id,
+      await scopedCreate('ContentProtectionPolicy', school.id, {
         protect_content: true,
         allow_previews: true,
         max_preview_seconds: 90,

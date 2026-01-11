@@ -8,20 +8,20 @@ import { normalizeLimit } from './contracts';
 /**
  * Scoped list - get all records for entity within school
  */
-export const scopedList = async (entityName, schoolId, sort, limit) => {
+export const scopedList = async (entityName, schoolId, sort, limit, options = {}) => {
   if (!schoolId && requiresSchoolScope(entityName)) {
     console.warn(`⚠️  Attempted to query ${entityName} without schoolId`);
     return [];
   }
 
   const filters = requiresSchoolScope(entityName) ? { school_id: schoolId } : {};
-  return base44.entities[entityName].filter(filters, sort, normalizeLimit(limit));
+  return base44.entities[entityName].filter(filters, sort, normalizeLimit(limit), options);
 };
 
 /**
  * Scoped filter - query with additional filters within school
  */
-export const scopedFilter = async (entityName, schoolId, additionalFilters = {}, sort, limit) => {
+export const scopedFilter = async (entityName, schoolId, additionalFilters = {}, sort, limit, options = {}) => {
   if (!schoolId && requiresSchoolScope(entityName)) {
     console.warn(`⚠️  Attempted to query ${entityName} without schoolId`);
     return [];
@@ -31,14 +31,14 @@ export const scopedFilter = async (entityName, schoolId, additionalFilters = {},
     ? { ...additionalFilters, school_id: schoolId }
     : additionalFilters;
 
-  return base44.entities[entityName].filter(filters, sort, normalizeLimit(limit));
+  return base44.entities[entityName].filter(filters, sort, normalizeLimit(limit), options);
 };
 
 /**
  * Scoped get - fetch single record by id within school
  */
-export const scopedGet = async (entityName, schoolId, id) => {
-  const rows = await scopedFilter(entityName, schoolId, { id });
+export const scopedGet = async (entityName, schoolId, id, options = {}) => {
+  const rows = await scopedFilter(entityName, schoolId, { id }, null, 1, options);
   return rows?.[0] || null;
 };
 

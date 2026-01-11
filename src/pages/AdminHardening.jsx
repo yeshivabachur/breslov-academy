@@ -1,48 +1,46 @@
-import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Shield, AlertTriangle, Download, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { useSession } from '@/components/hooks/useSession';
+import { buildCacheKey, scopedFilter } from '@/components/api/scoped';
+import PageShell from '@/components/ui/PageShell';
 
 export default function AdminHardening() {
-  const [user, setUser] = useState(null);
-  const [activeSchoolId, setActiveSchoolId] = useState(null);
-
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-        
-        const schoolId = localStorage.getItem('active_school_id');
-        setActiveSchoolId(schoolId);
-      } catch (error) {
-        base44.auth.redirectToLogin();
-      }
-    };
-    loadUser();
-  }, []);
+  const { user, activeSchoolId, isAdmin, isLoading } = useSession();
+  const auditFields = [
+    'id',
+    'action',
+    'user_email',
+    'created_date'
+  ];
+  const rateLimitFields = [
+    'id',
+    'user_email',
+    'count',
+    'created_date'
+  ];
 
   const { data: rateLimits = [] } = useQuery({
-    queryKey: ['rate-limits', activeSchoolId],
-    queryFn: () => base44.entities.RateLimitLog.filter({ school_id: activeSchoolId }, '-created_date', 100),
-    enabled: !!activeSchoolId
+    queryKey: buildCacheKey('rate-limits', activeSchoolId),
+    queryFn: () => scopedFilter('RateLimitLog', activeSchoolId, {}, '-created_date', 100, { fields: rateLimitFields }),
+    enabled: !!activeSchoolId && isAdmin
   });
 
   const { data: auditLogs = [] } = useQuery({
-    queryKey: ['audit-summary', activeSchoolId],
-    queryFn: () => base44.entities.AuditLog.filter({ school_id: activeSchoolId }, '-created_date', 50),
-    enabled: !!activeSchoolId
+    queryKey: buildCacheKey('audit-summary', activeSchoolId),
+    queryFn: () => scopedFilter('AuditLog', activeSchoolId, {}, '-created_date', 50, { fields: auditFields }),
+    enabled: !!activeSchoolId && isAdmin
   });
 
   const handleExportData = async () => {
     try {
       // Export school data to CSV
-      const courses = await base44.entities.Course.filter({ school_id: activeSchoolId });
-      const entitlements = await base44.entities.Entitlement.filter({ school_id: activeSchoolId });
+      const courses = await scopedFilter('Course', activeSchoolId, {}, null, 5000, { fields: ['id'] });
+      const entitlements = await scopedFilter('Entitlement', activeSchoolId, {}, null, 5000, { fields: ['id'] });
       
       const csv = [
         'Entity,Count',
@@ -72,6 +70,22 @@ export default function AdminHardening() {
       return acc;
     }, {})
   ).sort((a, b) => b[1] - a[1]).slice(0, 5);
+
+  if (isLoading) {
+    return <PageShell title="Production Hardening" subtitle="Loading session…" />;
+  }
+
+  if (!user) {
+    return <PageShell title="Production Hardening" subtitle="Please sign in to access this area." />;
+  }
+
+  if (!activeSchoolId) {
+    return <PageShell title="Production Hardening" subtitle="Select a school to continue." />;
+  }
+
+  if (!isAdmin) {
+    return <PageShell title="Production Hardening" subtitle="School admin access required." />;
+  }
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">

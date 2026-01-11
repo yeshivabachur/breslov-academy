@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { scopedFilter } from '@/components/api/scoped';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import useStorefrontContext from '@/components/hooks/useStorefrontContext';
@@ -22,6 +22,27 @@ export default function SchoolCheckout() {
   const navigate = useNavigate();
   
   const { schoolSlug: slug, offerId, refCode } = useStorefrontContext();
+  const schoolFields = [
+    'id',
+    'name',
+    'slug'
+  ];
+  const offerFields = [
+    'id',
+    'name',
+    'description',
+    'offer_type',
+    'price_cents',
+    'billing_interval',
+    'access_scope'
+  ];
+  const couponFields = [
+    'id',
+    'code',
+    'discount_type',
+    'discount_value',
+    'is_active'
+  ];
 
   // v9.4 Hardening: Checkout Idempotency Key
   const checkoutIdRef = React.useRef(Math.random().toString(36).substring(7));
@@ -57,7 +78,7 @@ export default function SchoolCheckout() {
   const { data: school } = useQuery({
     queryKey: ['school-by-slug', slug],
     queryFn: async () => {
-      const schools = await base44.entities.School.filter({ slug });
+      const schools = await base44.entities.School.filter({ slug }, null, 1, { fields: schoolFields });
       return schools[0];
     },
     enabled: !!slug
@@ -66,7 +87,7 @@ export default function SchoolCheckout() {
   const { data: offer } = useQuery({
     queryKey: ['offer', school?.id, offerId],
     queryFn: async () => {
-      const offers = await scopedFilter('Offer', school.id, { id: offerId });
+      const offers = await scopedFilter('Offer', school.id, { id: offerId, is_active: true }, null, 1, { fields: offerFields });
       return offers[0];
     },
     enabled: !!school?.id && !!offerId
@@ -76,40 +97,17 @@ export default function SchoolCheckout() {
     queryKey: ['coupon', couponCode, school?.id],
     queryFn: async () => {
       if (!couponCode) return null;
-      const coupons = await base44.entities.Coupon.filter({
-        school_id: school.id,
-        code: couponCode
-      });
+      const coupons = await scopedFilter(
+        'Coupon',
+        school.id,
+        { code: couponCode },
+        null,
+        1,
+        { fields: couponFields }
+      );
       return coupons[0];
     },
     enabled: !!couponCode && !!school
-  });
-
-  const createTransactionMutation = useMutation({
-    mutationFn: async (data) => {
-      setIsSubmitting(true);
-      return await base44.entities.Transaction.create(data);
-    },
-    onSuccess: (transaction) => {
-      // Log purchase initiation
-      try {
-        base44.entities.EventLog.create({
-          school_id: school.id,
-          user_email: transaction.user_email,
-          event_type: 'purchase_initiated',
-          entity_type: 'TRANSACTION',
-          entity_id: transaction.id,
-          metadata: { offer_id: offer.id, idempotency_key: checkoutIdRef.current }
-        });
-      } catch (e) {
-        // Optional log
-      }
-      
-      navigate(createPageUrl(`SchoolThankYou?slug=${slug}&transactionId=${transaction.id}`));
-    },
-    onSettled: () => {
-      setIsSubmitting(false);
-    }
   });
 
   const handleApplyCoupon = () => {
@@ -149,32 +147,64 @@ export default function SchoolCheckout() {
       toast.error('Too many attempts. Please try again later.');
       return;
     }
-    
-    const finalAmount = Math.max(0, offer.price_cents - discount);
-    const discountAmount = discount;
-    
-    // Build metadata with attribution
-    import('../components/analytics/attribution').then(({ getAttribution, attachAttribution }) => {
-      const attribution = getAttribution({ schoolSlug: slug });
-      const baseMetadata = {
-        referral_code: refCode || undefined,
-        idempotency_key: checkoutIdRef.current,
-        checkout_session_id: checkoutIdRef.current
-      };
-      const metadata = attachAttribution(baseMetadata, attribution);
-      
-      createTransactionMutation.mutate({
-        school_id: school.id,
-        user_email: email,
-        offer_id: offer.id,
-        amount_cents: finalAmount,
-        discount_cents: discountAmount,
-        coupon_code: couponCode || undefined,
-        provider: 'MANUAL',
-        status: 'pending',
-        metadata
+
+    setIsSubmitting(true);
+
+    const attributionModule = await import('../components/analytics/attribution');
+    const attribution = attributionModule.getAttribution({ schoolSlug: slug });
+    const metadata = attributionModule.attachAttribution({
+      referral_code: refCode || undefined,
+      idempotency_key: checkoutIdRef.current,
+    }, attribution);
+
+    try {
+      const stripeResponse = await base44.request('/stripe/checkout', {
+        method: 'POST',
+        body: {
+          school_id: school.id,
+          offer_id: offer.id,
+          email,
+          coupon_code: couponCode || undefined,
+          idempotency_key: checkoutIdRef.current,
+          referral_code: refCode || undefined,
+          metadata,
+          success_url: `${window.location.origin}/s/${slug}/thank-you?session_id={CHECKOUT_SESSION_ID}`,
+          cancel_url: `${window.location.origin}/s/${slug}/pricing`,
+        }
       });
-    });
+
+      if (stripeResponse?.url) {
+        window.location.assign(stripeResponse.url);
+        return;
+      }
+    } catch (error) {
+      if (error?.status !== 409) {
+        toast.error('Stripe checkout failed, using manual payment.');
+      }
+    }
+
+    try {
+      const manual = await base44.request('/checkout/create', {
+        method: 'POST',
+        body: {
+          school_id: school.id,
+          offer_id: offer.id,
+          email,
+          coupon_code: couponCode || undefined,
+          idempotency_key: checkoutIdRef.current,
+          referral_code: refCode || undefined,
+          metadata,
+        }
+      });
+      if (manual?.transaction_id) {
+        navigate(createPageUrl(`SchoolThankYou?slug=${slug}&transactionId=${manual.transaction_id}`));
+        return;
+      }
+    } catch (error) {
+      toast.error('Checkout failed. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (!offer || !school) {
@@ -292,12 +322,11 @@ export default function SchoolCheckout() {
             <CardContent className="space-y-4">
               <div className="bg-amber-50/50 border border-amber-100 rounded-xl p-6 text-center">
                 <p className="text-amber-900 font-bold mb-3">
-                  Manual Payment Processing
+                  Fast checkout options
                 </p>
                 <p className="text-sm text-amber-800 leading-relaxed">
-                  We currently accept manual payments (Bank Transfer, Zelle, PayPal). 
-                  After clicking "Complete Order", you will receive an email with our payment details. 
-                  Once paid, your course access will be activated within 24 hours.
+                  If card payments are enabled for this school, you will be redirected to secure Stripe checkout.
+                  Otherwise, manual payment instructions (Bank Transfer, Zelle, PayPal) will be sent by email.
                 </p>
               </div>
 
@@ -318,9 +347,9 @@ export default function SchoolCheckout() {
             size="lg" 
             className="w-full h-14 text-lg font-bold shadow-lg"
             onClick={handleCheckout}
-            disabled={isSubmitting || createTransactionMutation.isPending}
+            disabled={isSubmitting}
           >
-            {isSubmitting || createTransactionMutation.isPending ? 'Processing Securely...' : 'Complete Order & Get Access'}
+            {isSubmitting ? 'Processing Securely...' : 'Complete Order & Get Access'}
           </Button>
 
           <p className="text-center text-[10px] text-muted-foreground uppercase tracking-widest">

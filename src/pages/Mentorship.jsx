@@ -1,53 +1,43 @@
-import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Users, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
+import { useSession } from '@/components/hooks/useSession';
+import { buildCacheKey, scopedCreate, scopedFilter } from '@/components/api/scoped';
 
 export default function Mentorship() {
-  const [user, setUser] = useState(null);
+  const { user, activeSchoolId } = useSession();
   const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-      } catch (error) {
-        base44.auth.redirectToLogin();
-      }
-    };
-    loadUser();
-  }, []);
-
   const { data: myMentorships = [] } = useQuery({
-    queryKey: ['mentorships', user?.email],
+    queryKey: buildCacheKey('mentorships', activeSchoolId, user?.email),
     queryFn: async () => {
-      const asMentee = await base44.entities.Mentorship.filter({ mentee_email: user.email });
-      const asMentor = await base44.entities.Mentorship.filter({ mentor_email: user.email });
+      const asMentee = await scopedFilter('Mentorship', activeSchoolId, { mentee_email: user.email });
+      const asMentor = await scopedFilter('Mentorship', activeSchoolId, { mentor_email: user.email });
       return [...asMentee, ...asMentor];
     },
-    enabled: !!user?.email
+    enabled: !!user?.email && !!activeSchoolId
   });
 
   const { data: availableMentors = [] } = useQuery({
-    queryKey: ['available-mentors'],
-    queryFn: () => base44.entities.User.filter({ role: 'admin' })
+    queryKey: ['available-mentors', activeSchoolId],
+    queryFn: () => scopedFilter('SchoolMembership', activeSchoolId, { role: { $in: ['INSTRUCTOR', 'ADMIN', 'OWNER'] } }),
+    enabled: !!activeSchoolId
   });
 
   const requestMutation = useMutation({
     mutationFn: async (mentorEmail) => {
-      return await base44.entities.Mentorship.create({
+      return await scopedCreate('Mentorship', activeSchoolId, {
         mentor_email: mentorEmail,
         mentee_email: user.email,
         status: 'requested'
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['mentorships']);
+      queryClient.invalidateQueries(buildCacheKey('mentorships', activeSchoolId, user?.email));
       toast.success('Mentorship requested!');
     }
   });
@@ -98,10 +88,11 @@ export default function Mentorship() {
           {availableMentors.map((mentor) => (
             <Card key={mentor.id} className="hover:shadow-xl transition-shadow">
               <CardContent className="p-6">
-                <h3 className="font-bold text-lg mb-2">{mentor.full_name}</h3>
-                <p className="text-slate-600 text-sm mb-4">{mentor.email}</p>
+                <h3 className="font-bold text-lg mb-2">{mentor.user_email?.split('@')[0] || 'Mentor'}</h3>
+                <p className="text-slate-600 text-sm mb-1">{mentor.user_email}</p>
+                <p className="text-xs text-slate-500 mb-4">{mentor.role}</p>
                 <Button
-                  onClick={() => requestMutation.mutate(mentor.email)}
+                  onClick={() => requestMutation.mutate(mentor.user_email)}
                   className="w-full"
                 >
                   Request Mentorship

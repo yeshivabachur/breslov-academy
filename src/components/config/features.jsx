@@ -43,6 +43,7 @@ export const FEATURES = {
   
   // ADMIN
   schoolAdmin: { key: 'SchoolAdmin', label: 'School Admin', route: '/schooladmin', area: 'admin', audiences: ['admin'], icon: 'Settings', order: 1 },
+  adminOnboarding: { key: 'AdminOnboarding', label: 'Admin Onboarding', route: '/admin-onboarding', area: 'admin', audiences: ['admin'], icon: 'Sparkles', hidden: true, vaultOnly: true },
   schoolAnalytics: { key: 'SchoolAnalytics', label: 'School Analytics', route: '/schoolanalytics', area: 'admin', audiences: ['admin'], icon: 'TrendingUp', order: 2 },
   schoolMonetization: { key: 'SchoolMonetization', label: 'Monetization', route: '/schoolmonetization', area: 'admin', audiences: ['admin'], icon: 'DollarSign', order: 3 },
   schoolNew: { key: 'SchoolNew', label: 'Create School', route: '/schoolnew', area: 'admin', audiences: ['admin'], icon: 'Plus', hidden: true },
@@ -53,6 +54,7 @@ export const FEATURES = {
   // MARKETING & STOREFRONT
   // PUBLIC MARKETING (guest routes)
   publicHome: { key: 'PublicHome', label: 'Home', route: '/', area: 'marketing', audiences: ['public'], hidden: true },
+  publicSchools: { key: 'PublicSchools', label: 'Schools', route: '/schools', area: 'marketing', audiences: ['public'], hidden: true },
   publicAbout: { key: 'PublicAbout', label: 'About', route: '/about', area: 'marketing', audiences: ['public'], hidden: true },
   publicHowItWorks: { key: 'PublicHowItWorks', label: 'How It Works', route: '/how-it-works', area: 'marketing', audiences: ['public'], hidden: true },
   publicPricing: { key: 'PublicPricing', label: 'Pricing', route: '/pricing', area: 'marketing', audiences: ['public'], hidden: true },
@@ -63,6 +65,10 @@ export const FEATURES = {
   loginStudentPublic: { key: 'LoginStudentPublic', label: 'Student Login', route: '/login/student', area: 'marketing', audiences: ['public'], hidden: true },
   loginTeacherPublic: { key: 'LoginTeacherPublic', label: 'Teacher Login', route: '/login/teacher', area: 'marketing', audiences: ['public'], hidden: true },
   loginAdminPublic: { key: 'LoginAdminPublic', label: 'Admin Login', route: '/login/admin', area: 'marketing', audiences: ['public'], hidden: true },
+  signupChooserPublic: { key: 'SignupChooserPublic', label: 'Signup', route: '/signup', area: 'marketing', audiences: ['public'], hidden: true },
+  signupStudentPublic: { key: 'SignupStudentPublic', label: 'Student Signup', route: '/signup/student', area: 'marketing', audiences: ['public'], hidden: true },
+  signupTeacherPublic: { key: 'SignupTeacherPublic', label: 'Teacher Signup', route: '/signup/teacher', area: 'marketing', audiences: ['public'], hidden: true },
+  signupSchoolPublic: { key: 'SignupSchoolPublic', label: 'School Signup', route: '/signup/school', area: 'marketing', audiences: ['public'], hidden: true },
 
   legalPrivacy: { key: 'LegalPrivacy', label: 'Privacy Policy', route: '/privacy', aliases: ['/legal/privacy'], area: 'marketing', audiences: ['public'], hidden: true },
   legalTerms: { key: 'LegalTerms', label: 'Terms of Service', route: '/terms', aliases: ['/legal/terms'], area: 'marketing', audiences: ['public'], hidden: true },

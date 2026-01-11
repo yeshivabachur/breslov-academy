@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import useStorefrontContext from '@/components/hooks/useStorefrontContext';
+import { scopedFilter } from '@/components/api/scoped';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,6 +15,24 @@ import { DashboardSkeleton } from '@/components/ui/SkeletonLoaders';
 export default function SchoolPricing() {
   const [user, setUser] = useState(null);
   const { schoolSlug: slug } = useStorefrontContext();
+  const schoolFields = [
+    'id',
+    'name',
+    'slug',
+    'logo_url',
+    'tagline',
+    'description'
+  ];
+  const offerFields = [
+    'id',
+    'name',
+    'description',
+    'offer_type',
+    'price_cents',
+    'billing_interval',
+    'access_scope',
+    'is_active'
+  ];
 
   useEffect(() => {
     const loadUser = async () => {
@@ -43,7 +62,7 @@ export default function SchoolPricing() {
   const { data: school, isLoading: isLoadingSchool } = useQuery({
     queryKey: ['school-by-slug', slug],
     queryFn: async () => {
-      const schools = await base44.entities.School.filter({ slug });
+      const schools = await base44.entities.School.filter({ slug, is_public: true }, null, 1, { fields: schoolFields });
       return schools[0];
     },
     enabled: !!slug
@@ -51,9 +70,14 @@ export default function SchoolPricing() {
 
   const { data: offers = [] } = useQuery({
     queryKey: ['offers', school?.id],
-    queryFn: () => base44.entities.Offer.filter({ 
-      school_id: school.id 
-    }, '-created_date'),
+    queryFn: () => scopedFilter(
+      'Offer',
+      school.id,
+      { is_active: true },
+      '-created_date',
+      50,
+      { fields: offerFields }
+    ),
     enabled: !!school
   });
 

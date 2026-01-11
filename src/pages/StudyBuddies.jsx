@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Users, Calendar, Check, X, MessageSquare, Clock } from 'lucide-react';
@@ -7,42 +6,32 @@ import { toast } from 'sonner';
 import { tokens, cx } from '@/components/theme/tokens';
 import GamificationLayout from '@/components/gamification/GamificationLayout';
 import { DashboardSkeleton } from '@/components/ui/SkeletonLoaders';
+import { useSession } from '@/components/hooks/useSession';
+import { buildCacheKey, scopedFilter, scopedUpdate } from '@/components/api/scoped';
 
 export default function StudyBuddies() {
-  const [user, setUser] = useState(null);
+  const { user, activeSchoolId, isLoading } = useSession();
   const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-      } catch (error) {
-        base44.auth.redirectToLogin();
-      }
-    };
-    loadUser();
-  }, []);
-
-  const { data: buddies = [], isLoading } = useQuery({
-    queryKey: ['study-buddies', user?.email],
+  const { data: buddies = [], isLoading: buddiesLoading } = useQuery({
+    queryKey: buildCacheKey('study-buddies', activeSchoolId, user?.email),
     queryFn: async () => {
-      const b1 = await base44.entities.StudyBuddy.filter({ user1_email: user.email });
-      const b2 = await base44.entities.StudyBuddy.filter({ user2_email: user.email });
+      const b1 = await scopedFilter('StudyBuddy', activeSchoolId, { user1_email: user.email });
+      const b2 = await scopedFilter('StudyBuddy', activeSchoolId, { user2_email: user.email });
       return [...b1, ...b2];
     },
-    enabled: !!user?.email
+    enabled: !!user?.email && !!activeSchoolId
   });
 
   const acceptMutation = useMutation({
-    mutationFn: (buddy) => base44.entities.StudyBuddy.update(buddy.id, { status: 'active' }),
+    mutationFn: (buddy) => scopedUpdate('StudyBuddy', buddy.id, { status: 'active' }, activeSchoolId, true),
     onSuccess: () => {
-      queryClient.invalidateQueries(['study-buddies']);
+      queryClient.invalidateQueries(buildCacheKey('study-buddies', activeSchoolId, user?.email));
       toast.success('Study buddy accepted!');
     }
   });
 
-  if (isLoading) {
+  if (isLoading || buddiesLoading) {
     return <DashboardSkeleton />;
   }
 

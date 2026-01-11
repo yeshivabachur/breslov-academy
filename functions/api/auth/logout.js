@@ -1,4 +1,5 @@
-import { handleOptions, withHeaders } from '../_utils.js';
+import { getBearerToken, handleOptions, withHeaders } from '../_utils.js';
+import { revokeSession } from '../_auth.js';
 
 export async function onRequest({ request, env }) {
   const options = handleOptions(request, env);
@@ -6,6 +7,11 @@ export async function onRequest({ request, env }) {
 
   const url = new URL(request.url);
   const next = url.searchParams.get('next') || '/';
+
+  const token = getBearerToken(request);
+  if (token) {
+    await revokeSession(env, token);
+  }
 
   if (env?.AUTH_LOGOUT_URL) {
     const target = new URL(env.AUTH_LOGOUT_URL, url.origin);

@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
@@ -8,48 +7,38 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Search, BookOpen, FileText, MessageSquare, Book } from 'lucide-react';
+import { useSession } from '@/components/hooks/useSession';
+import { buildCacheKey, scopedFilter } from '@/components/api/scoped';
 
 export default function SchoolSearch() {
-  const [user, setUser] = useState(null);
-  const [activeSchoolId, setActiveSchoolId] = useState(null);
+  const { activeSchoolId, isLoading } = useSession();
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
-
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-        
-        const schoolId = localStorage.getItem('active_school_id');
-        setActiveSchoolId(schoolId);
-      } catch (error) {
-        base44.auth.redirectToLogin();
-      }
-    };
-    loadUser();
-  }, []);
+  const lessonSearchFields = [
+    'id',
+    'course_id',
+    'title',
+    'title_hebrew',
+    'is_preview',
+    'status'
+  ];
+  const textSearchFields = [
+    'id',
+    'text_id',
+    'title',
+    'source_ref'
+  ];
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(searchQuery), 300);
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // SECURITY: Search metadata only (titles, descriptions) - never content bodies
-  const searchFilter = (query) => ({
-    school_id: activeSchoolId,
-    $or: [
-      { title: { $regex: query, $options: 'i' } },
-      { description: { $regex: query, $options: 'i' } }
-    ]
-  });
-
   const { data: courses = [] } = useQuery({
-    queryKey: ['search-courses', activeSchoolId, debouncedQuery],
+    queryKey: buildCacheKey('search-courses', activeSchoolId, debouncedQuery),
     queryFn: async () => {
       if (!debouncedQuery) return [];
-      const results = await base44.entities.Course.filter({
-        school_id: activeSchoolId,
+      const results = await scopedFilter('Course', activeSchoolId, {
         is_published: true
       });
       return results.filter(c => 
@@ -61,14 +50,13 @@ export default function SchoolSearch() {
   });
 
   const { data: lessons = [] } = useQuery({
-    queryKey: ['search-lessons', activeSchoolId, debouncedQuery],
+    queryKey: buildCacheKey('search-lessons', activeSchoolId, debouncedQuery),
     queryFn: async () => {
       if (!debouncedQuery) return [];
       // SECURITY: Only search lesson titles/metadata, never content (prevents leakage)
-      const results = await base44.entities.Lesson.filter({ 
-        school_id: activeSchoolId,
+      const results = await scopedFilter('Lesson', activeSchoolId, { 
         status: 'published'
-      }, '-order', 100); // Limit to prevent performance issues
+      }, '-order', 100, { fields: lessonSearchFields }); // Limit to prevent performance issues
       return results.filter(l => 
         l.title?.toLowerCase().includes(debouncedQuery.toLowerCase()) ||
         l.title_hebrew?.includes(debouncedQuery)
@@ -78,12 +66,10 @@ export default function SchoolSearch() {
   });
 
   const { data: posts = [] } = useQuery({
-    queryKey: ['search-posts', activeSchoolId, debouncedQuery],
+    queryKey: buildCacheKey('search-posts', activeSchoolId, debouncedQuery),
     queryFn: async () => {
       if (!debouncedQuery) return [];
-      const results = await base44.entities.Post.filter({ 
-        school_id: activeSchoolId 
-      }, '-created_date', 100); // Limit for performance
+      const results = await scopedFilter('Post', activeSchoolId, {}, '-created_date', 100); // Limit for performance
       return results.filter(p => 
         p.content?.toLowerCase().includes(debouncedQuery.toLowerCase())
       ).slice(0, 20);
@@ -92,13 +78,11 @@ export default function SchoolSearch() {
   });
 
   const { data: texts = [] } = useQuery({
-    queryKey: ['search-texts', activeSchoolId, debouncedQuery],
+    queryKey: buildCacheKey('search-texts', activeSchoolId, debouncedQuery),
     queryFn: async () => {
       if (!debouncedQuery) return [];
       // SECURITY: Search titles/metadata only, not full text bodies
-      const results = await base44.entities.Text.filter({ 
-        school_id: activeSchoolId 
-      }, '-created_date', 100); // Limit for performance
+      const results = await scopedFilter('Text', activeSchoolId, {}, '-created_date', 100, { fields: textSearchFields }); // Limit for performance
       return results.filter(t => 
         t.title?.toLowerCase().includes(debouncedQuery.toLowerCase()) ||
         t.source_ref?.toLowerCase().includes(debouncedQuery.toLowerCase())
@@ -108,6 +92,10 @@ export default function SchoolSearch() {
   });
 
   const totalResults = courses.length + lessons.length + posts.length + texts.length;
+
+  if (isLoading) {
+    return <div className="text-center py-20">Loading...</div>;
+  }
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">

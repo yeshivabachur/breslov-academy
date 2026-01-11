@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import React, { useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -11,35 +10,14 @@ import ReactMarkdown from 'react-markdown';
 import ProtectedContent from '@/components/protection/ProtectedContent';
 import AccessGate from '@/components/security/AccessGate';
 import AiTutorPanel from '@/components/ai/AiTutorPanel';
-import { scopedFilter } from '@/components/api/scoped';
+import { buildCacheKey, scopedCreate, scopedFilter } from '@/components/api/scoped';
+import { useSession } from '@/components/hooks/useSession';
 
 export default function Reader() {
-  const [user, setUser] = useState(null);
-  const [activeSchoolId, setActiveSchoolId] = useState(null);
-  const [activeSchool, setActiveSchool] = useState(null);
+  const { user, activeSchoolId, activeSchool, isLoading } = useSession();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedText, setSelectedText] = useState(null);
   const queryClient = useQueryClient();
-
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-        
-        const schoolId = localStorage.getItem('active_school_id');
-        setActiveSchoolId(schoolId);
-        
-        if (schoolId) {
-          const schools = await base44.entities.School.filter({ id: schoolId });
-          if (schools[0]) setActiveSchool(schools[0]);
-        }
-      } catch (error) {
-        base44.auth.redirectToLogin();
-      }
-    };
-    loadUser();
-  }, []);
 
   const { data: entitlements = [] } = useQuery({
     queryKey: ['entitlements', user?.email, activeSchoolId],
@@ -76,8 +54,19 @@ export default function Reader() {
 
   const allowPreviews = !!effectivePolicy.allow_previews;
 
+  const textListFields = useMemo(() => ([
+    'id',
+    'text_id',
+    'title',
+    'title_hebrew',
+    'source',
+    'source_ref',
+    'course_id',
+    'is_preview',
+  ]), []);
+
   const { data: texts = [] } = useQuery({
-    queryKey: ['texts', activeSchoolId, user?.email, entitlements.length, allowPreviews],
+    queryKey: buildCacheKey('texts', activeSchoolId, user?.email, entitlements.length, allowPreviews),
     queryFn: async () => {
       // SECURITY: Do NOT fetch protected text bodies for unentitled users.
       // Without server-side field projection, we gate at query-time.
@@ -87,7 +76,7 @@ export default function Reader() {
       });
 
       if (hasAllCourses) {
-        return scopedFilter('Text', activeSchoolId, {}, '-created_date', 50);
+        return scopedFilter('Text', activeSchoolId, {}, '-created_date', 50, { fields: textListFields });
       }
 
       const allowedCourseIds = entitlements
@@ -106,7 +95,7 @@ export default function Reader() {
           ...(allowedCourseIds.length ? [{ course_id: { $in: allowedCourseIds } }] : [])
         ]
       };
-      return scopedFilter('Text', activeSchoolId, filter, '-created_date', 50);
+      return scopedFilter('Text', activeSchoolId, filter, '-created_date', 50, { fields: textListFields });
     },
     enabled: !!activeSchoolId && !!user
   });
@@ -120,8 +109,7 @@ export default function Reader() {
   });
 
   const highlightMutation = useMutation({
-    mutationFn: (data) => base44.entities.Highlight.create({
-      school_id: activeSchoolId,
+    mutationFn: (data) => scopedCreate('Highlight', activeSchoolId, {
       user_email: user.email,
       ...data
     }),
@@ -182,6 +170,46 @@ export default function Reader() {
         t.source?.toLowerCase().includes(searchQuery.toLowerCase())
       )
     : texts;
+
+  const selectedAccess = useMemo(() => {
+    if (!selectedText) return null;
+    return computeTextAccess(selectedText);
+  }, [selectedText, entitlements, effectivePolicy]);
+
+  const textContentFields = useMemo(() => ([
+    'id',
+    'text_id',
+    'title',
+    'title_hebrew',
+    'source',
+    'source_ref',
+    'course_id',
+    'content',
+  ]), []);
+
+  const { data: selectedTextFull = null } = useQuery({
+    queryKey: buildCacheKey('text', activeSchoolId, selectedText?.id, selectedAccess?.accessLevel),
+    queryFn: async () => {
+      if (!selectedText?.id) return null;
+      const previewChars = selectedAccess?.accessLevel === 'PREVIEW'
+        ? (selectedAccess?.maxPreviewChars || effectivePolicy.max_preview_chars || 1500)
+        : null;
+      const rows = await scopedFilter(
+        'Text',
+        activeSchoolId,
+        { id: selectedText.id },
+        null,
+        1,
+        { fields: textContentFields, previewChars }
+      );
+      return rows?.[0] || null;
+    },
+    enabled: !!activeSchoolId && !!selectedText?.id && selectedAccess?.accessLevel !== 'LOCKED',
+  });
+
+  if (isLoading) {
+    return <div className="text-center py-20">Loading...</div>;
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
@@ -262,7 +290,7 @@ export default function Reader() {
         <div className="lg:col-span-2">
           {selectedText ? (
             (() => {
-              const access = computeTextAccess(selectedText);
+              const access = selectedAccess || computeTextAccess(selectedText);
               
               if (access.accessLevel === 'LOCKED') {
                 return (
@@ -274,9 +302,10 @@ export default function Reader() {
                 );
               }
 
-              const contentToShow = access.accessLevel === 'PREVIEW' && selectedText.content
-                ? selectedText.content.substring(0, access.maxPreviewChars || 1500) + '...'
-                : selectedText.content;
+              const fullContent = selectedTextFull?.content || '';
+              const contentToShow = access.accessLevel === 'PREVIEW'
+                ? fullContent
+                : fullContent;
 
               return (
                 <div className="space-y-6">
@@ -284,17 +313,17 @@ export default function Reader() {
                     <CardHeader className="bg-gradient-to-r from-slate-50 to-blue-50">
                       <div className="flex items-start justify-between">
                         <div>
-                          <CardTitle>{selectedText.title}</CardTitle>
-                          {selectedText.title_hebrew && (
-                            <p className="text-amber-700 mt-2" dir="rtl">{selectedText.title_hebrew}</p>
+                          <CardTitle>{selectedTextFull?.title || selectedText.title}</CardTitle>
+                          {(selectedTextFull?.title_hebrew || selectedText.title_hebrew) && (
+                            <p className="text-amber-700 mt-2" dir="rtl">{selectedTextFull?.title_hebrew || selectedText.title_hebrew}</p>
                           )}
                         </div>
                         {access.accessLevel === 'PREVIEW' && (
                           <Badge className="bg-amber-500">Preview</Badge>
                         )}
                       </div>
-                      {selectedText.source && (
-                        <p className="text-sm text-slate-600 mt-2">{selectedText.source}</p>
+                      {(selectedTextFull?.source || selectedText.source) && (
+                        <p className="text-sm text-slate-600 mt-2">{selectedTextFull?.source || selectedText.source}</p>
                       )}
                     </CardHeader>
                     <CardContent className="pt-6">
@@ -324,14 +353,14 @@ export default function Reader() {
                               </ReactMarkdown>
                             </div>
                             
-                            {access.accessLevel === 'PREVIEW' && (
-                              <div className="mt-8 p-4 bg-amber-50 border border-amber-200 rounded-lg text-center">
-                                <p className="text-amber-800 mb-3">Preview limit reached</p>
-                                <Button className="bg-amber-500 hover:bg-amber-600">
-                                  Purchase Full Access
-                                </Button>
-                              </div>
-                            )}
+                              {access.accessLevel === 'PREVIEW' && (
+                                <div className="mt-8 p-4 bg-amber-50 border border-amber-200 rounded-lg text-center">
+                                  <p className="text-amber-800 mb-3">Preview limit reached</p>
+                                  <Button className="bg-amber-500 hover:bg-amber-600">
+                                    Purchase Full Access
+                                  </Button>
+                                </div>
+                              )}
                           </TabsContent>
 
                           <TabsContent value="highlights" className="mt-6">

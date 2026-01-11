@@ -3,9 +3,9 @@ import { useAITutor } from '@/components/hooks/useAITutor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Send, Bot, User, Trash2, Sparkles } from 'lucide-react';
-import { tokens, cx } from '@/components/theme/tokens';
+import { cx } from '@/components/theme/tokens';
 import GlassCard from '@/components/ui/GlassCard';
 
 export default function AITutorInterface({ context, className }) {

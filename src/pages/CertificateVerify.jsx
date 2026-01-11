@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, XCircle, Award } from 'lucide-react';
 import { maskEmail } from '@/components/certificates/certificatesEngine';
+import { buildCacheKey, scopedFilter } from '@/components/api/scoped';
 
 export default function CertificateVerify() {
   const { schoolSlug } = useStorefrontContext();
@@ -22,10 +23,9 @@ export default function CertificateVerify() {
   });
 
   const { data: certificate } = useQuery({
-    queryKey: ['certificate', school?.id, certificateId],
+    queryKey: buildCacheKey('certificate', school?.id, certificateId),
     queryFn: async () => {
-      const certs = await base44.entities.Certificate.filter({
-        school_id: school.id,
+      const certs = await scopedFilter('Certificate', school.id, {
         certificate_id: certificateId
       });
       return certs[0];
@@ -34,11 +34,10 @@ export default function CertificateVerify() {
   });
 
   const { data: course } = useQuery({
-    queryKey: ['course', certificate?.course_id],
+    queryKey: buildCacheKey('course', school?.id, certificate?.course_id),
     queryFn: async () => {
-      const courses = await base44.entities.Course.filter({
-        id: certificate.course_id,
-        school_id: school.id
+      const courses = await scopedFilter('Course', school.id, {
+        id: certificate.course_id
       });
       return courses[0];
     },

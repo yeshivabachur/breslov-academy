@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
 import { scopedCreate } from '@/components/api/scoped';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
@@ -12,45 +11,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { canCreateCourses } from '@/components/utils/permissions';
+import { useSession } from '@/components/hooks/useSession';
 
 export default function TeachCourseNew() {
-  const [user, setUser] = useState(null);
-  const [activeSchoolId, setActiveSchoolId] = useState(null);
-  const [membership, setMembership] = useState(null);
+  const { user, activeSchoolId, role, isLoading } = useSession();
   const [creating, setCreating] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-        
-        const schoolId = localStorage.getItem('active_school_id');
-        setActiveSchoolId(schoolId);
-
-        if (schoolId) {
-          const memberships = await base44.entities.SchoolMembership.filter({
-            user_email: currentUser.email,
-            school_id: schoolId
-          });
-          
-          if (memberships.length > 0) {
-            setMembership(memberships[0]);
-            
-            if (!canCreateCourses(memberships[0].role)) {
-              navigate(createPageUrl('Dashboard'));
-            }
-          } else {
-            navigate(createPageUrl('Dashboard'));
-          }
-        }
-      } catch (error) {
-        base44.auth.redirectToLogin();
-      }
-    };
-    loadUser();
-  }, []);
+    if (isLoading) return;
+    if (!user || !activeSchoolId || !canCreateCourses(role)) {
+      navigate(createPageUrl('Dashboard'));
+    }
+  }, [isLoading, user, activeSchoolId, role, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -60,7 +33,6 @@ export default function TeachCourseNew() {
       const formData = new FormData(e.target);
       
       const courseData = {
-        school_id: activeSchoolId,
         created_by: user.email,
         title: formData.get('title'),
         subtitle: formData.get('subtitle'),

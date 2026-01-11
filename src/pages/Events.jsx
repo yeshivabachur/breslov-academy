@@ -1,48 +1,38 @@
-import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, Users, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { useSession } from '@/components/hooks/useSession';
+import { buildCacheKey, scopedFilter, scopedUpdate } from '@/components/api/scoped';
 
 export default function Events() {
-  const [user, setUser] = useState(null);
+  const { user, activeSchoolId } = useSession();
   const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-      } catch (error) {
-        base44.auth.redirectToLogin();
-      }
-    };
-    loadUser();
-  }, []);
-
   const { data: events = [] } = useQuery({
-    queryKey: ['events'],
-    queryFn: () => base44.entities.Event.filter({ status: 'upcoming' }, 'start_time')
+    queryKey: buildCacheKey('events', activeSchoolId),
+    queryFn: () => scopedFilter('Event', activeSchoolId, { status: 'upcoming' }, 'start_time'),
+    enabled: !!activeSchoolId
   });
 
   const registerMutation = useMutation({
     mutationFn: async (event) => {
       const registered = event.registered_emails || [];
       if (registered.includes(user.email)) {
-        return await base44.entities.Event.update(event.id, {
+        return await scopedUpdate('Event', event.id, {
           registered_emails: registered.filter(e => e !== user.email)
-        });
+        }, activeSchoolId, true);
       } else {
-        return await base44.entities.Event.update(event.id, {
+        return await scopedUpdate('Event', event.id, {
           registered_emails: [...registered, user.email]
-        });
+        }, activeSchoolId, true);
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['events']);
+      queryClient.invalidateQueries(buildCacheKey('events', activeSchoolId));
       toast.success('Registration updated!');
     }
   });

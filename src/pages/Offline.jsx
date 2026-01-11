@@ -1,33 +1,57 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Trash2, HardDrive } from 'lucide-react';
 import { toast } from 'sonner';
+import { useSession } from '@/components/hooks/useSession';
+import { scopedCreate, scopedFilter } from '@/components/api/scoped';
+import { canDownload, checkCourseAccess, isEntitlementActive } from '@/components/utils/entitlements';
+import { DashboardSkeleton } from '@/components/ui/SkeletonLoaders';
+
+const DEFAULT_POLICY = {
+  protect_content: true,
+  require_payment_for_materials: true,
+  allow_previews: true,
+  max_preview_seconds: 90,
+  max_preview_chars: 1500,
+  watermark_enabled: true,
+  block_right_click: true,
+  block_copy: true,
+  block_print: true,
+  download_mode: 'DISALLOW',
+  copy_mode: 'DISALLOW'
+};
 
 export default function Offline() {
-  const [user, setUser] = useState(null);
   const [cachedItems, setCachedItems] = useState([]);
   const [storageUsed, setStorageUsed] = useState(0);
+  const [, setIsDownloading] = useState(false);
+  const { user, activeSchoolId, role, isLoading } = useSession();
 
   useEffect(() => {
-    const loadUser = async () => {
+    if (!isLoading && !user) {
       try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-        loadCachedData();
-      } catch (error) {
         base44.auth.redirectToLogin();
-      }
-    };
-    loadUser();
-  }, []);
+      } catch {}
+    }
+  }, [isLoading, user]);
 
-  const loadCachedData = () => {
+  useEffect(() => {
+    if (activeSchoolId) {
+      loadCachedData(activeSchoolId);
+    } else {
+      setCachedItems([]);
+      setStorageUsed(0);
+    }
+  }, [activeSchoolId]);
+
+  const loadCachedData = (schoolId) => {
     try {
       const cached = JSON.parse(localStorage.getItem('offline_cache') || '[]');
-      setCachedItems(cached);
+      const scopedCache = cached.filter((item) => item.school_id === schoolId);
+      setCachedItems(scopedCache);
       
       // Estimate storage (rough)
       let total = 0;
@@ -44,11 +68,76 @@ export default function Offline() {
 
   const handleDownloadCourse = async (courseId) => {
     try {
-      // Fetch course data
-      const courses = await base44.entities.Course.filter({ id: courseId });
-      const course = courses[0];
-      
-      const lessons = await base44.entities.Lesson.filter({ course_id: courseId });
+      if (!activeSchoolId || !user?.email) {
+        toast.error('Select a school to download offline content.');
+        return;
+      }
+      if (!courseId) {
+        toast.error('Missing course id.');
+        return;
+      }
+
+      setIsDownloading(true);
+
+      const courses = await scopedFilter(
+        'Course',
+        activeSchoolId,
+        { id: courseId },
+        null,
+        1,
+        { fields: ['id', 'title', 'access_level', 'access_tier', 'school_id'] }
+      );
+      const course = courses?.[0];
+      if (!course) {
+        toast.error('Course not found.');
+        return;
+      }
+
+      const entitlements = await scopedFilter('Entitlement', activeSchoolId, {
+        user_email: user.email
+      });
+      const activeEntitlements = entitlements.filter((ent) => isEntitlementActive(ent, new Date()));
+
+      const policies = await scopedFilter('ContentProtectionPolicy', activeSchoolId, {}, null, 1);
+      const policy = policies?.[0] || DEFAULT_POLICY;
+
+      const hasAccess = await checkCourseAccess(course, user.email, role);
+      const accessLevel = hasAccess ? 'FULL' : 'LOCKED';
+      const downloadAllowed = canDownload({
+        policy,
+        entitlements: activeEntitlements,
+        accessLevel
+      });
+
+      if (!downloadAllowed) {
+        toast.error('Download access required for offline content.');
+        return;
+      }
+
+      const lessons = await scopedFilter(
+        'Lesson',
+        activeSchoolId,
+        { course_id: courseId },
+        'order',
+        500,
+        {
+          fields: [
+            'id',
+            'course_id',
+            'title',
+            'title_hebrew',
+            'content',
+            'content_json',
+            'text',
+            'video_url',
+            'audio_url',
+            'duration_seconds',
+            'duration_minutes',
+            'is_preview',
+            'order'
+          ]
+        }
+      );
       
       // Store in localStorage
       const cacheData = {
@@ -56,29 +145,49 @@ export default function Offline() {
         type: 'course',
         title: course.title,
         data: { course, lessons },
+        school_id: activeSchoolId,
         cachedAt: new Date().toISOString()
       };
       
       const existing = JSON.parse(localStorage.getItem('offline_cache') || '[]');
       existing.push(cacheData);
       localStorage.setItem('offline_cache', JSON.stringify(existing));
+
+      try {
+        await scopedCreate('EventLog', activeSchoolId, {
+          school_id: activeSchoolId,
+          user_email: user.email,
+          event_type: 'offline_cache',
+          entity_type: 'Course',
+          entity_id: courseId,
+          metadata: { lesson_count: lessons.length }
+        });
+      } catch (e) {
+        // Best effort logging
+      }
       
       toast.success('Course downloaded for offline access!');
-      loadCachedData();
+      loadCachedData(activeSchoolId);
     } catch (error) {
       toast.error('Failed to download course');
+    } finally {
+      setIsDownloading(false);
     }
   };
 
   const handleRemoveCache = (id) => {
     const existing = JSON.parse(localStorage.getItem('offline_cache') || '[]');
-    const filtered = existing.filter(item => item.id !== id);
+    const filtered = existing.filter(item => item.id !== id || item.school_id !== activeSchoolId);
     localStorage.setItem('offline_cache', JSON.stringify(filtered));
     toast.success('Removed from offline storage');
-    loadCachedData();
+    loadCachedData(activeSchoolId);
   };
 
-  const storagePercent = Math.min((storageUsed / 5000) * 100, 100); // Assume 5MB limit
+  const storagePercent = useMemo(() => Math.min((storageUsed / 5000) * 100, 100), [storageUsed]); // Assume 5MB limit
+
+  if (isLoading) {
+    return <DashboardSkeleton />;
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -112,7 +221,11 @@ export default function Offline() {
           <CardTitle>Downloaded Content</CardTitle>
         </CardHeader>
         <CardContent>
-          {cachedItems.length === 0 ? (
+          {!activeSchoolId ? (
+            <p className="text-slate-500 text-center py-8">
+              Select a school to manage offline downloads.
+            </p>
+          ) : cachedItems.length === 0 ? (
             <p className="text-slate-500 text-center py-8">No offline content yet</p>
           ) : (
             <div className="space-y-3">

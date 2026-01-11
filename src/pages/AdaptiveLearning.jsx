@@ -1,28 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Brain, TrendingUp } from 'lucide-react';
+import { useSession } from '@/components/hooks/useSession';
+import { buildCacheKey, scopedFilter } from '@/components/api/scoped';
 
 export default function AdaptiveLearning() {
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-      } catch (error) {
-        base44.auth.redirectToLogin();
-      }
-    };
-    loadUser();
-  }, []);
+  const { user, activeSchoolId } = useSession();
 
   const { data: adaptiveData = [] } = useQuery({
-    queryKey: ['adaptive-learning', user?.email],
-    queryFn: () => base44.entities.AdaptiveLearning.filter({ user_email: user.email }),
-    enabled: !!user?.email
+    queryKey: buildCacheKey('adaptive-learning', activeSchoolId, user?.email),
+    queryFn: () => scopedFilter('AdaptiveLearning', activeSchoolId, { user_email: user.email }),
+    enabled: !!user?.email && !!activeSchoolId
   });
 
   return (

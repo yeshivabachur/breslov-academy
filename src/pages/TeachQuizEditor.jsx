@@ -17,7 +17,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '@/components/hooks/useSession';
-import { scopedFilter } from '@/components/api/scoped';
+import { scopedCreate, scopedFilter } from '@/components/api/scoped';
 import { loadQuizForAccess, saveQuiz } from '@/components/academic/quizEngine';
 import { toast } from 'sonner';
 import { GripVertical, Plus, Save, Trash2, Download, Check } from 'lucide-react';
@@ -295,6 +295,8 @@ export default function TeachQuizEditor() {
   const save = useMutation({
     mutationFn: async (values) => {
       if (!activeSchoolId) throw new Error('No active school');
+      const wasPublished = !!loaded?.quiz?.is_published;
+      const nextPublished = !!values.is_published;
 
       const questions = (values.questions || []).map((q) => ({
         prompt: q.prompt,
@@ -323,6 +325,21 @@ export default function TeachQuizEditor() {
         questions,
         userEmail: user?.email || null,
       });
+
+      if (wasPublished !== nextPublished) {
+        try {
+          await scopedCreate('AuditLog', activeSchoolId, {
+            school_id: activeSchoolId,
+            user_email: user?.email,
+            action: nextPublished ? 'PUBLISH_QUIZ' : 'UNPUBLISH_QUIZ',
+            entity_type: 'Quiz',
+            entity_id: id,
+            metadata: { status: nextPublished ? 'published' : 'draft' }
+          });
+        } catch {
+          // best effort
+        }
+      }
 
       return id;
     },

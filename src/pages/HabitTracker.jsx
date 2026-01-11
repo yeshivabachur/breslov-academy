@@ -1,31 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, Flame } from 'lucide-react';
 import { toast } from 'sonner';
+import { useSession } from '@/components/hooks/useSession';
+import { buildCacheKey, scopedFilter, scopedUpdate } from '@/components/api/scoped';
 
 export default function HabitTracker() {
-  const [user, setUser] = useState(null);
+  const { user, activeSchoolId } = useSession();
   const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await base44.auth.me();
-        setUser(currentUser);
-      } catch (error) {
-        base44.auth.redirectToLogin();
-      }
-    };
-    loadUser();
-  }, []);
-
   const { data: habits = [] } = useQuery({
-    queryKey: ['habits', user?.email],
-    queryFn: () => base44.entities.Habit.filter({ user_email: user.email, is_active: true }),
-    enabled: !!user?.email
+    queryKey: buildCacheKey('habits', activeSchoolId, user?.email),
+    queryFn: () => scopedFilter('Habit', activeSchoolId, { user_email: user.email, is_active: true }),
+    enabled: !!user?.email && !!activeSchoolId
   });
 
   const checkInMutation = useMutation({
@@ -33,15 +22,15 @@ export default function HabitTracker() {
       const today = new Date().toISOString().split('T')[0];
       const history = habit.completion_history || [];
       const updated = [...history, { date: today, completed: true, value: habit.target_value }];
-      return await base44.entities.Habit.update(habit.id, {
+      return await scopedUpdate('Habit', habit.id, {
         completion_history: updated,
         current_streak: (habit.current_streak || 0) + 1,
         longest_streak: Math.max((habit.longest_streak || 0), (habit.current_streak || 0) + 1)
-      });
+      }, activeSchoolId, true);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['habits']);
-      toast.success('Habit checked in! 🎉');
+      queryClient.invalidateQueries(buildCacheKey('habits', activeSchoolId, user?.email));
+      toast.success('Habit checked in! ??');
     }
   });
 
