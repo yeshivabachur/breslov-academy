@@ -3,7 +3,7 @@ import PortalLayout from '@/portals/shared/PortalLayout';
 
 export default function AdminLayout({ children }) {
   return (
-    <PortalLayout>
+    <PortalLayout audienceOverride="admin">
       {children}
     </PortalLayout>
   );

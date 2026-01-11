@@ -27,6 +27,9 @@ export const FEATURES = {
   myQuizzes: { key: 'MyQuizzes', label: 'My Quizzes', route: '/my-quizzes', area: 'core', audiences: ['student', 'teacher', 'admin'], icon: 'ClipboardCheck', order: 6 },
   
   quizTake: { key: 'QuizTake', label: 'Take Quiz', route: '/quiz/:quizId', area: 'core', audiences: ['student', 'teacher', 'admin'], hidden: true },
+  assignments: { key: 'Assignments', label: 'Assignments', route: '/assignments', area: 'core', audiences: ['student', 'teacher', 'admin'], icon: 'FileText', order: 7, showInMainNav: true },
+  assignmentDetail: { key: 'AssignmentDetail', label: 'Assignment Detail', route: '/assignmentdetail', area: 'core', audiences: ['student', 'teacher', 'admin'], hidden: true },
+  submissionForm: { key: 'SubmissionForm', label: 'Submission Form', route: '/submissionform', area: 'labs', audiences: ['student', 'teacher', 'admin'], hidden: true },
   
   // TEACHING
   teach: { key: 'Teach', label: 'Teach', route: '/teach', area: 'teach', audiences: ['teacher', 'admin'], icon: 'GraduationCap', order: 1 },
@@ -142,6 +145,12 @@ export const normalizeAudienceFromRole = (role) => {
 };
 
 export const getFeatureByKey = (key) => FEATURES[key];
+
+export const getFeatureByRegistryKey = (keyName) => {
+  if (!keyName) return null;
+  const wanted = String(keyName).toLowerCase();
+  return Object.values(FEATURES).find((f) => String(f?.key || '').toLowerCase() === wanted) || null;
+};
 
 export const getFeaturesForAudience = (audience) => {
   return Object.values(FEATURES).filter(f => f.audiences.includes(audience));

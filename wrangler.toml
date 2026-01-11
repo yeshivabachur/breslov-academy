@@ -1,0 +1,9 @@
+name = "breslov-academy"
+compatibility_date = "2025-01-01"
+pages_build_output_dir = "dist"
+
+# Optional D1 binding for entity storage.
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "breslov-academy"
+# database_id = "REPLACE_WITH_DATABASE_ID"

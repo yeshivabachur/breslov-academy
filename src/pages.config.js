@@ -70,6 +70,10 @@ const Events = React.lazy(() => import('./pages/Events'));
 const Forums = React.lazy(() => import('./pages/Forums'));
 const Community = React.lazy(() => import('./pages/Community'));
 const Analytics = React.lazy(() => import('./pages/Analytics'));
+const LearningPaths = React.lazy(() => import('./pages/LearningPaths'));
+const Assignments = React.lazy(() => import('./pages/Assignments'));
+const AssignmentDetail = React.lazy(() => import('./pages/AssignmentDetail'));
+const SubmissionForm = React.lazy(() => import('./pages/SubmissionForm'));
 
 // Lazy-Loaded: Marketing & Public (Often separate entry points)
 const SchoolLanding = React.lazy(() => import('./pages/SchoolLanding'));
@@ -179,6 +183,10 @@ export const PAGES = {
     "SchoolStaff": SchoolStaff,
     "InviteAccept": InviteAccept,
     "AuditLogViewer": AuditLogViewer,
+    "Assignments": Assignments,
+    "AssignmentDetail": AssignmentDetail,
+    "SubmissionForm": SubmissionForm,
+
 }
 
 export const pagesConfig = {

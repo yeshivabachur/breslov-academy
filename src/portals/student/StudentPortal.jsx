@@ -16,7 +16,8 @@ export default function StudentPortal() {
         <Routes>
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<StudentDashboard />} />
-          <Route path=":pageName" element={<PortalPageResolver portalHome="dashboard" />} />
+          <Route path="quiz/:quizId" element={<PortalPageResolver portalHome="dashboard" audience="student" pageKeyOverride="QuizTake" />} />
+          <Route path=":pageName" element={<PortalPageResolver portalHome="dashboard" audience="student" />} />
           <Route path="*" element={<Navigate to="dashboard" replace />} />
         </Routes>
       </StudentLayout>

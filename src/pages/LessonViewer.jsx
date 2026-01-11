@@ -66,6 +66,7 @@ export default function LessonViewer() {
   );
 
   const shouldLoadLesson = access.accessLevel === 'FULL' || access.accessLevel === 'PREVIEW';
+  const allowCourseData = access.accessLevel === 'FULL' || access.accessLevel === 'PREVIEW';
 
   // Full lesson payload (only when FULL or PREVIEW)
   const { data: lesson, isLoading: isLoadingLesson } = useQuery({
@@ -86,13 +87,13 @@ export default function LessonViewer() {
       const courses = await scopedFilter('Course', activeSchoolId, { id: effectiveCourseId });
       return courses[0];
     },
-    enabled: !!effectiveCourseId && !!activeSchoolId
+    enabled: !!effectiveCourseId && !!activeSchoolId && allowCourseData
   });
 
   const { data: allLessons = [] } = useQuery({
     queryKey: ['lessons', effectiveCourseId, activeSchoolId],
     queryFn: () => scopedFilter('Lesson', activeSchoolId, { course_id: effectiveCourseId }, 'order'),
-    enabled: !!effectiveCourseId && !!activeSchoolId
+    enabled: !!effectiveCourseId && !!activeSchoolId && allowCourseData
   });
 
   const { data: progress } = useQuery({
@@ -104,7 +105,7 @@ export default function LessonViewer() {
       });
       return progs[0];
     },
-    enabled: !!user?.email && !!lessonId && !!activeSchoolId
+    enabled: !!user?.email && !!lessonId && !!activeSchoolId && access.accessLevel === 'FULL'
   });
 
   const { data: discussions = [] } = useQuery({
@@ -113,18 +114,20 @@ export default function LessonViewer() {
       course_id: effectiveCourseId,
       lesson_id: lessonId 
     }, '-created_date'),
-    enabled: !!effectiveCourseId && !!activeSchoolId
+    enabled: !!effectiveCourseId && !!activeSchoolId && allowCourseData
   });
 
   // Access control (computed above)
   const canFetchMaterials = shouldFetchMaterials(access.accessLevel);
   const rawContent = String(lesson?.content || lesson?.content_json || lesson?.text || '');
   const maxChars = access.maxPreviewChars || 1500;
-  const contentToShow = (access.accessLevel === 'FULL')
-    ? rawContent
-    : (access.accessLevel === 'PREVIEW')
-      ? (rawContent.slice(0, maxChars) + (rawContent.length > maxChars ? '…' : ''))
-      : '';
+  const contentToShow = !canFetchMaterials
+    ? ''
+    : (access.accessLevel === 'FULL')
+      ? rawContent
+      : (access.accessLevel === 'PREVIEW')
+        ? (rawContent.slice(0, maxChars) + (rawContent.length > maxChars ? '…' : ''))
+        : '';
 
   useEffect(() => {
     if (progress?.notes) {
@@ -233,7 +236,7 @@ export default function LessonViewer() {
       </div>
 
       {/* Video/Audio Player */}
-      {lesson.video_url && access.accessLevel !== 'LOCKED' && (
+      {canFetchMaterials && lesson.video_url && (
         <div className="mb-10 rounded-2xl overflow-hidden shadow-2xl ring-1 ring-border/50">
           <AdvancedVideoPlayer
             src={lesson.video_url}
@@ -256,7 +259,7 @@ export default function LessonViewer() {
         </div>
       )}
 
-      {lesson.audio_url && !lesson.video_url && (
+      {canFetchMaterials && lesson.audio_url && !lesson.video_url && (
         <div className="mb-10 bg-muted/30 rounded-2xl p-6 border border-border/50">
           <audio controls className="w-full" src={lesson.audio_url}>
             Your browser does not support audio playback.

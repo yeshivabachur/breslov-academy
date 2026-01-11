@@ -2,6 +2,7 @@
 import { useState, useEffect, createContext, useContext } from 'react';
 import { base44 } from '@/api/base44Client';
 import { normalizeAudienceFromRole } from '@/components/config/features';
+import { isGlobalAdmin as isGlobalAdminByEmail } from '@/components/auth/roles';
 
 const SessionContext = createContext(null);
 
@@ -13,6 +14,7 @@ export const SessionProvider = ({ children }) => {
   const [activeSchoolSource, setActiveSchoolSource] = useState(null); // localStorage | preference | firstMembership | manual
   const [role, setRole] = useState(null);
   const [audience, setAudience] = useState('student');
+  const [isGlobalAdmin, setIsGlobalAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -23,7 +25,22 @@ export const SessionProvider = ({ children }) => {
     try {
       setIsLoading(true);
       const currentUser = await base44.auth.me();
+      if (!currentUser) {
+        setUser(null);
+        setMemberships([]);
+        setActiveSchool(null);
+        setActiveSchoolId(null);
+        setActiveSchoolSource(null);
+        setRole(null);
+        setAudience('student');
+        setIsGlobalAdmin(false);
+        return;
+      }
       setUser(currentUser);
+      setIsGlobalAdmin(
+        isGlobalAdminByEmail(currentUser?.email || '') ||
+        String(currentUser?.role || '').toLowerCase() === 'admin'
+      );
 
       // Load memberships
       const userMemberships = await base44.entities.SchoolMembership.filter({
@@ -73,6 +90,7 @@ export const SessionProvider = ({ children }) => {
       setActiveSchoolSource(null);
       setRole(null);
       setAudience('student');
+      setIsGlobalAdmin(false);
     } finally {
       setIsLoading(false);
     }
@@ -160,9 +178,10 @@ export const SessionProvider = ({ children }) => {
     role,
     audience,
     isLoading,
-    isAdmin: audience === 'admin',
-    isTeacher: audience === 'teacher' || audience === 'admin',
+    isAdmin: audience === 'admin' || isGlobalAdmin,
+    isTeacher: audience === 'teacher' || audience === 'admin' || isGlobalAdmin,
     isStudent: audience === 'student',
+    isGlobalAdmin,
     changeActiveSchool,
     refreshSession: loadSession
   };

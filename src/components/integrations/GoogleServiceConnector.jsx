@@ -161,7 +161,8 @@ export default function GoogleServiceConnector({ user }) {
     // ===== OAUTH CONFIGURATION =====
     // Update CLIENT_ID if needed
     const CLIENT_ID = '467836355270-lc5rpg2sfufl3m9dov7ab9okppvrrl33.apps.googleusercontent.com';
-    const REDIRECT_URI = 'https://breslov.base44.app/oauth2callback';
+    const baseUrl = (import.meta.env.VITE_PUBLIC_BASE_URL || window.location.origin || '').replace(/\/$/, '');
+    const REDIRECT_URI = `${baseUrl}/oauth2callback`;
     
     const scopes = service.scopes.join(' ');
     
@@ -255,7 +256,7 @@ export default function GoogleServiceConnector({ user }) {
         <CardContent className="space-y-2 text-sm text-slate-700">
           <p><strong>1.</strong> Ensure your Google Cloud project has the required APIs enabled</p>
           <p><strong>2.</strong> Set up OAuth 2.0 credentials in Google Cloud Console</p>
-          <p><strong>3.</strong> Add the redirect URI: <code className="bg-blue-100 px-2 py-1 rounded">https://breslov.base44.app/oauth2callback</code></p>
+          <p><strong>3.</strong> Add the redirect URI: <code className="bg-blue-100 px-2 py-1 rounded">{REDIRECT_URI}</code></p>
           <p><strong>4.</strong> Update the CLIENT_ID and CLIENT_SECRET in the code</p>
         </CardContent>
       </Card>

@@ -5,8 +5,8 @@ This file provides instructional context for Gemini AI agents working on the Bre
 ## Project Overview
 Breslov Academy is a **multi-tenant white-label Learning Management System (LMS)** designed for high-trust educational content delivery.
 
-- **Primary Technologies:** React (v18), Vite, Tailwind CSS, shadcn/ui, TanStack Query (v5), Lucide React, Three.js/React-Three-Fiber.
-- **Backend/SDK:** Powered by the **Base44 SDK**, which handles authentication, data persistence, and multi-tenancy.
+- **Primary Technologies:** React (v19), Vite, Tailwind CSS, shadcn/ui, TanStack Query (v5), Lucide React, Three.js/React-Three-Fiber.
+- **Backend/API:** Cloudflare-compatible edge API via `src/api/appClient.js` (Base44 SDK removed).
 - **Repository:** `git@github.com:yeshivabachur/breslov-academy.git` (Main)
 
 ## Architecture (v11.0)

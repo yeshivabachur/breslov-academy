@@ -38,9 +38,16 @@ const AppIndexRedirect = () => {
   const loginRole = (params.get('loginRole') || '').toLowerCase();
   const portalHint = getPortalHintFromPathname(loc.pathname);
 
-  const { user, memberships, activeSchool, role, audience, isLoading } = useSession();
+  const { user, memberships, activeSchool, role, audience, isLoading, isGlobalAdmin } = useSession();
 
   if (isLoading) return <RouteFallback label="Loading session…" />;
+
+  const p = String(loc.pathname || '').toLowerCase();
+  const isSuperadminPath = p.startsWith('/superadmin');
+
+  if (isSuperadminPath && isGlobalAdmin) {
+    return <Navigate to="NetworkAdmin" replace />;
+  }
 
   // If user not yet registered with any school, go to onboarding.
   if (user && Array.isArray(memberships) && memberships.length === 0) {
@@ -64,7 +71,6 @@ const AppIndexRedirect = () => {
   const isTeacherHint = intended === 'teacher' || intended === 'admin';
 
   // Portal-specific landings (portalization)
-  const p = String(loc.pathname || '').toLowerCase();
   if (p.startsWith('/superadmin')) {
     return <Navigate to="NetworkAdmin" replace />;
   }

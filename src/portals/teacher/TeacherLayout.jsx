@@ -3,7 +3,7 @@ import PortalLayout from '@/portals/shared/PortalLayout';
 
 export default function TeacherLayout({ children }) {
   return (
-    <PortalLayout>
+    <PortalLayout audienceOverride="teacher">
       {children}
     </PortalLayout>
   );

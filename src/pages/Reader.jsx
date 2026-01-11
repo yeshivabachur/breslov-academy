@@ -49,8 +49,35 @@ export default function Reader() {
     enabled: !!user && !!activeSchoolId
   });
 
+  const { data: policy } = useQuery({
+    queryKey: ['protection-policy', activeSchoolId],
+    queryFn: async () => {
+      const policies = await scopedFilter('ContentProtectionPolicy', activeSchoolId, {});
+      return policies[0] || {
+        protect_content: true,
+        allow_previews: true,
+        max_preview_chars: 1500,
+        block_copy: true,
+        copy_mode: 'ADDON',
+        download_mode: 'ADDON'
+      };
+    },
+    enabled: !!activeSchoolId
+  });
+
+  const effectivePolicy = policy || {
+    protect_content: true,
+    allow_previews: false,
+    max_preview_chars: 1500,
+    block_copy: true,
+    copy_mode: 'ADDON',
+    download_mode: 'ADDON'
+  };
+
+  const allowPreviews = !!effectivePolicy.allow_previews;
+
   const { data: texts = [] } = useQuery({
-    queryKey: ['texts', activeSchoolId, user?.email, entitlements.length],
+    queryKey: ['texts', activeSchoolId, user?.email, entitlements.length, allowPreviews],
     queryFn: async () => {
       // SECURITY: Do NOT fetch protected text bodies for unentitled users.
       // Without server-side field projection, we gate at query-time.
@@ -75,7 +102,7 @@ export default function Reader() {
         $or: [
           { course_id: null },
           { course_id: '' },
-          { is_preview: true },
+          ...(allowPreviews ? [{ is_preview: true }] : []),
           ...(allowedCourseIds.length ? [{ course_id: { $in: allowedCourseIds } }] : [])
         ]
       };
@@ -90,22 +117,6 @@ export default function Reader() {
       user_email: user.email
     }),
     enabled: !!user && !!activeSchoolId
-  });
-
-  const { data: policy } = useQuery({
-    queryKey: ['protection-policy', activeSchoolId],
-    queryFn: async () => {
-      const policies = await scopedFilter('ContentProtectionPolicy', activeSchoolId, {});
-      return policies[0] || {
-        protect_content: true,
-        allow_previews: true,
-        max_preview_chars: 1500,
-        block_copy: true,
-        copy_mode: 'ADDON',
-        download_mode: 'ADDON'
-      };
-    },
-    enabled: !!activeSchoolId
   });
 
   const highlightMutation = useMutation({
@@ -125,9 +136,9 @@ export default function Reader() {
       // Public text - allow viewing but respect copy/download policy
       return {
         accessLevel: 'FULL',
-        canCopy: policy?.copy_mode !== 'DISALLOW',
-        canDownload: policy?.download_mode !== 'DISALLOW',
-        maxPreviewChars: policy?.max_preview_chars || 1500
+        canCopy: effectivePolicy.copy_mode !== 'DISALLOW',
+        canDownload: effectivePolicy.download_mode !== 'DISALLOW',
+        maxPreviewChars: effectivePolicy.max_preview_chars || 1500
       };
     }
     
@@ -147,22 +158,22 @@ export default function Reader() {
       return type === 'DOWNLOAD_LICENSE';
     });
 
-    const previewAllowed = policy?.allow_previews && text.is_preview;
+    const previewAllowed = effectivePolicy.allow_previews && text.is_preview;
     const accessLevel = hasCourseAccess ? 'FULL' : (previewAllowed ? 'PREVIEW' : 'LOCKED');
     
-    const canCopy = policy?.copy_mode === 'INCLUDED_WITH_ACCESS' 
+    const canCopy = effectivePolicy.copy_mode === 'INCLUDED_WITH_ACCESS' 
       ? hasCourseAccess 
-      : policy?.copy_mode === 'ADDON' 
+      : effectivePolicy.copy_mode === 'ADDON' 
       ? (hasCourseAccess && hasCopyLicense)
       : false;
 
-    const canDownload = policy?.download_mode === 'INCLUDED_WITH_ACCESS' 
+    const canDownload = effectivePolicy.download_mode === 'INCLUDED_WITH_ACCESS' 
       ? hasCourseAccess 
-      : policy?.download_mode === 'ADDON' 
+      : effectivePolicy.download_mode === 'ADDON' 
       ? (hasCourseAccess && hasDownloadLicense)
       : false;
 
-    return { accessLevel, canCopy, canDownload, maxPreviewChars: policy?.max_preview_chars || 1500 };
+    return { accessLevel, canCopy, canDownload, maxPreviewChars: effectivePolicy.max_preview_chars || 1500 };
   };
 
   const filteredTexts = searchQuery
@@ -288,7 +299,7 @@ export default function Reader() {
                     </CardHeader>
                     <CardContent className="pt-6">
                       <ProtectedContent
-                        policy={policy}
+                        policy={effectivePolicy}
                         userEmail={user?.email}
                         schoolName={activeSchool?.name}
                         canCopy={access.canCopy}

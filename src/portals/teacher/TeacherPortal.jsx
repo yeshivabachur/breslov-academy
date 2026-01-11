@@ -14,7 +14,12 @@ export default function TeacherPortal() {
       <TeacherLayout>
         <Routes>
           <Route index element={<Navigate to="dashboard" replace />} />
-          <Route path=":pageName" element={<PortalPageResolver portalHome="dashboard" />} />
+          <Route path="teach/quizzes" element={<PortalPageResolver portalHome="dashboard" audience="teacher" pageKeyOverride="TeachQuizzes" />} />
+          <Route path="teach/quizzes/new" element={<PortalPageResolver portalHome="dashboard" audience="teacher" pageKeyOverride="TeachQuizEditor" />} />
+          <Route path="teach/quizzes/:quizId" element={<PortalPageResolver portalHome="dashboard" audience="teacher" pageKeyOverride="TeachQuizEditor" />} />
+          <Route path="teach/grading" element={<PortalPageResolver portalHome="dashboard" audience="teacher" pageKeyOverride="TeachGrading" />} />
+          <Route path="quiz/:quizId" element={<PortalPageResolver portalHome="dashboard" audience="teacher" pageKeyOverride="QuizTake" />} />
+          <Route path=":pageName" element={<PortalPageResolver portalHome="dashboard" audience="teacher" />} />
           <Route path="*" element={<Navigate to="dashboard" replace />} />
         </Routes>
       </TeacherLayout>

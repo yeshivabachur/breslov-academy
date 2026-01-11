@@ -14,7 +14,17 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+.wrangler
 *.local
+playwright-report
+test-results
+
+# Local SSOT/plan artifacts (keep local)
+Breslov_Academy_Master_Plan_V11_Single_Source_of_Truth_500p.pdf
+BRESLOV_ACADEMY_MASTER_PLAN_V11_BOOK.pdf
+MASTER_PLAN_V11_DOWNLOADED.pdf
+MASTER_PLAN_V11_FULL_SPEC.md
+Plan/
 
 # Editor directories and files
 .vscode/*

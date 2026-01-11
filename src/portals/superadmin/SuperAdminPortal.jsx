@@ -7,7 +7,10 @@ export default function SuperAdminPortal() {
     <PortalGate
       portalPrefix="/superadmin"
       intendedAudience="admin"
-      allowedAudiences={['admin']}
+      allowedAudiences={null}
+      requiresMembership={false}
+      requiresActiveSchool={false}
+      requiresGlobalAdmin={true}
     >
       <AppPortal />
     </PortalGate>

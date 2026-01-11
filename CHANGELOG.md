@@ -2,6 +2,12 @@
 
 All notable changes to the Breslov Academy LMS project.
 
+## [v11.0] - 2026-01-11
+### Future Horizons
+- **Mobile Native:** Added Capacitor configuration (`capacitor.config.json`) and updated layout for safe-area insets (iOS/Android notches).
+- **AI Tutor:** Implemented conversational AI study partner (`/ai-tutor`) with context-aware chat interface.
+- **Virtual Beit Midrash:** Launched experimental 3D study hall (`/virtual-beit-midrash`) with avatars and shared screens.
+
 ## [v10.0] - 2026-01-11
 ### Major Upgrades
 - **Feature Flags Framework:** Implemented per-school/user feature toggling with Admin UI (`/schoolfeatures`) and `useFeatureFlag` hook.
