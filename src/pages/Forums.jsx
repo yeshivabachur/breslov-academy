@@ -1,77 +1,126 @@
-import React from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import React, { useState, useEffect } from 'react';
+import PageShell from '@/components/ui/PageShell';
 import { Button } from '@/components/ui/button';
-import { MessageSquare, Eye, TrendingUp, CheckCircle2 } from 'lucide-react';
-import { useSession } from '@/components/hooks/useSession';
-import { buildCacheKey, scopedList } from '@/components/api/scoped';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Plus, Search, Loader2 } from 'lucide-react';
+import { db } from '@/lib/db';
+import { toast } from 'sonner';
+import ForumBoard from '@/components/community/ForumBoard';
 
 export default function Forums() {
-  const { activeSchoolId } = useSession();
+  const [topics, setTopics] = useState([]);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [newTopic, setNewTopic] = useState({ title: '', category: 'General', content: '' });
 
-  const { data: forums = [] } = useQuery({
-    queryKey: buildCacheKey('forums', activeSchoolId),
-    queryFn: () => scopedList('Forum', activeSchoolId, '-created_date', 50),
-    enabled: !!activeSchoolId
-  });
+  // Load topics
+  const refreshTopics = () => {
+    setTopics([...db.getTopics()]); // copy to trigger re-render
+  };
+
+  useEffect(() => {
+    refreshTopics();
+  }, []);
+
+  const handleCreate = () => {
+    if (!newTopic.title) return;
+    
+    db.addTopic({
+      ...newTopic,
+      author: 'You', // current user
+    });
+    
+    setIsDialogOpen(false);
+    setNewTopic({ title: '', category: 'General', content: '' });
+    refreshTopics();
+    toast.success("Topic posted!");
+  };
 
   return (
-    <div className="space-y-8">
-      <div className="bg-gradient-to-r from-violet-900 to-purple-900 rounded-2xl p-8 text-white">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <MessageSquare className="w-16 h-16" />
-            <div>
-              <h1 className="text-4xl font-bold mb-2">Community Forums</h1>
-              <p className="text-violet-200 text-lg">Ask questions, share knowledge</p>
+    <PageShell 
+      title="Community Forums" 
+      subtitle="Discuss, ask, and grow together"
+      actions={
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="w-4 h-4 mr-2" />
+              New Topic
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Start a Discussion</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Title</Label>
+                <Input 
+                  value={newTopic.title} 
+                  onChange={e => setNewTopic({...newTopic, title: e.target.value})}
+                  placeholder="What's on your mind?"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Category</Label>
+                <Select 
+                  value={newTopic.category} 
+                  onValueChange={v => setNewTopic({...newTopic, category: v})}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="General">General</SelectItem>
+                    <SelectItem value="Torah">Torah Study</SelectItem>
+                    <SelectItem value="Advice">Advice & Support</SelectItem>
+                    <SelectItem value="Social">Social</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Content</Label>
+                <Textarea 
+                  value={newTopic.content} 
+                  onChange={e => setNewTopic({...newTopic, content: e.target.value})}
+                  placeholder="Elaborate..."
+                />
+              </div>
+              <Button onClick={handleCreate} className="w-full">Post</Button>
             </div>
-          </div>
-          <Button className="bg-white text-purple-900 hover:bg-slate-100">
-            New Discussion
-          </Button>
+          </DialogContent>
+        </Dialog>
+      }
+    >
+      <div className="flex gap-4 mb-6">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <Input placeholder="Search discussions..." className="pl-10" />
         </div>
       </div>
 
-      <div className="space-y-4">
-        {forums.map((forum) => (
-          <Card key={forum.id} className="hover:shadow-lg transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-3 mb-2">
-                    <h3 className="text-lg font-bold">{forum.title}</h3>
-                    {forum.is_solved && (
-                      <Badge className="bg-green-100 text-green-800">
-                        <CheckCircle2 className="w-3 h-3 mr-1" />
-                        Solved
-                      </Badge>
-                    )}
-                    {forum.is_pinned && (
-                      <Badge className="bg-blue-100 text-blue-800">Pinned</Badge>
-                    )}
-                  </div>
-                  <p className="text-slate-600 text-sm mb-3">{forum.content?.slice(0, 150)}...</p>
-                  <div className="flex items-center space-x-4 text-sm text-slate-500">
-                    <div className="flex items-center">
-                      <Eye className="w-4 h-4 mr-1" />
-                      <span>{forum.views}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <MessageSquare className="w-4 h-4 mr-1" />
-                      <span>{forum.replies_count} replies</span>
-                    </div>
-                    <div className="flex items-center">
-                      <TrendingUp className="w-4 h-4 mr-1" />
-                      <span>{forum.upvotes} upvotes</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    </div>
+      <Tabs defaultValue="all" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="all">All Topics</TabsTrigger>
+          <TabsTrigger value="torah">Torah Study</TabsTrigger>
+          <TabsTrigger value="advice">Advice & Support</TabsTrigger>
+          <TabsTrigger value="social">Social</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="all">
+          <ForumBoard topics={topics} />
+        </TabsContent>
+        <TabsContent value="torah">
+          <ForumBoard topics={topics.filter(t => t.category === 'Torah')} />
+        </TabsContent>
+        <TabsContent value="advice">
+          <ForumBoard topics={topics.filter(t => t.category === 'Advice')} />
+        </TabsContent>
+      </Tabs>
+    </PageShell>
   );
 }

@@ -4,6 +4,7 @@
 
 export const FEATURE_AREAS = {
   core: { label: 'Core Learning', color: 'bg-blue-100 text-blue-800', order: 1 },
+  jewish: { label: 'Jewish Life', color: 'bg-indigo-100 text-indigo-800', order: 1.5 },
   teach: { label: 'Teaching Tools', color: 'bg-green-100 text-green-800', order: 2 },
   admin: { label: 'Administration', color: 'bg-purple-100 text-purple-800', order: 3 },
   marketing: { label: 'Marketing & Sales', color: 'bg-amber-100 text-amber-800', order: 4 },
@@ -31,6 +32,13 @@ export const FEATURES = {
   assignmentDetail: { key: 'AssignmentDetail', label: 'Assignment Detail', route: '/assignmentdetail', area: 'core', audiences: ['student', 'teacher', 'admin'], hidden: true },
   submissionForm: { key: 'SubmissionForm', label: 'Submission Form', route: '/submissionform', area: 'labs', audiences: ['student', 'teacher', 'admin'], hidden: true },
   
+  // JEWISH LIFE
+  dafYomi: { key: 'DafYomi', label: 'Daf Yomi Tracker', route: '/dafyomi', area: 'jewish', audiences: ['student', 'teacher', 'admin'], icon: 'BookOpen', order: 1 },
+  halacha: { key: 'HalachaDaily', label: 'Daily Halacha', route: '/halacha', area: 'jewish', audiences: ['student', 'teacher', 'admin'], icon: 'Scroll', order: 2 },
+  zmanim: { key: 'Zmanim', label: 'Zmanim & Calendar', route: '/zmanim', area: 'jewish', audiences: ['student', 'teacher', 'admin'], icon: 'Clock', order: 3 },
+  siddur: { key: 'Siddur', label: 'Siddur & Tehillim', route: '/siddur', area: 'jewish', audiences: ['student', 'teacher', 'admin'], icon: 'Book', order: 4 },
+  torahReading: { key: 'TorahReading', label: 'Torah Portion', route: '/parsha', area: 'jewish', audiences: ['student', 'teacher', 'admin'], icon: 'ScrollText', order: 5 },
+
   // TEACHING
   teach: { key: 'Teach', label: 'Teach', route: '/teach', area: 'teach', audiences: ['teacher', 'admin'], icon: 'GraduationCap', order: 1 },
   teachCourse: { key: 'TeachCourse', label: 'Course Builder', route: '/teachcourse', area: 'teach', audiences: ['teacher', 'admin'], icon: 'Edit', hidden: true },
@@ -83,6 +91,7 @@ export const FEATURES = {
   
   // LABS
   languageLearning: { key: 'LanguageLearning', label: 'Languages', route: '/languagelearning', area: 'labs', audiences: ['student', 'teacher', 'admin'], icon: 'Globe' },
+  languageStudy: { key: 'LanguageStudy', label: 'Language Study', route: '/languagestudy', area: 'labs', audiences: ['student', 'teacher', 'admin'], hidden: true },
   // Router parity: pages.config includes /languages (legacy) and additional labs pages.
   languages: { key: 'Languages', label: 'Languages (Legacy)', route: '/languages', area: 'labs', audiences: ['student', 'teacher', 'admin'], icon: 'Globe', vaultOnly: true },
   adaptiveLearning: { key: 'AdaptiveLearning', label: 'Adaptive Learning', route: '/adaptivelearning', area: 'labs', audiences: ['student', 'teacher', 'admin'], icon: 'Brain', vaultOnly: true },

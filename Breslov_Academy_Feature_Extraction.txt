@@ -1,0 +1,1954 @@
+BRESLOV ACADEMY — FEATURE EXTRACTION (from Base44 features list)
+Generated: 2026-01-12
+
+Source: Base44 app features list for BA.txt (uploaded)
+
+SECTION 1 — FEATURE CHECKLIST (curated phrases extracted from the file)
+Total unique feature phrases: 785
+
+[Jewish Study & Torah Learning] (8)
+- Added complete Jewish studies infrastructure: Talmud with Daf Yomi tracking, Zohar/Kabbalah mysticism, Halacha rulings, Torah portions, Mishnah/Rashi/Tosafot commentaries, Chassidus shiurim, Tefillah guides, Mitzvah tracking, and Hebrew/English split-screen text reader with Oxford-Apple premium design
+- advanced video player with speed controls - continuing to build the ultimate Torah learning platform
+- Course Library - Organized Torah classes and shiurim
+- daily Halacha
+- distraction-free focused learning environment that rivals Harvard Online + MasterClass while maintaining Torah sanctity
+- Hebrew/English bilingual support throughout (titles, content, Torah quotes) ✅ Chassidus-focused curriculum (Likutey Moharan, Rebbe Nachman's teachings) ✅ Jewish scholarly aesthetic (Oxford-style with serif fonts, academic structure) ✅ Spiritual progression system (Initiate→Student→Scholar→Sage→Master) ✅ Daily Torah wisdom rotation ✅ Course categories for Jewish theology, Kabbalah, Chassidus
+- improved card interactions across Dashboard/Talmud/Halacha pages with rotation effects and counts
+- Jewish lifecycle (Shabbat timer, Yahrzeit calendar, Omer counter, Bracha browser, Tefillin tracker, Zemirot player, fast days)
+
+[Language Learning & Translation] (22)
+- Course/lesson system with Hebrew/English support
+- custom flashcard decks that can be cloned
+- dictation tools
+- flashcard decks
+- Hebrew text optimization
+- interactive Hebrew/English source text panels with annotations
+- language exchange matching
+- language exchange partners
+- multi-language translations
+- progress analytics for all 7 Hebrew/Aramaic variants + Yiddish
+- pronunciation
+- Quizlet features (study sets, flashcards, match game, write mode, spaced repetition) and Teachable features (course builder, drip scheduling, coupons, instructor payouts, course landing pages) with interactive study modes
+- real-time translation (100+ languages)
+- Rosetta Stone-style language learning for 7 Hebrew/Aramaic variants
+- sign language support with hand tracking
+- simplified language
+- spaced repetition
+- spaced repetition concept reviews
+- spaced repetition flashcards
+- speech/pronunciation practice with accuracy scoring
+- Text Study Interface - Beautiful Hebrew/English text presentation
+- vocabulary builder
+
+[Core LMS & Classroom] (73)
+- 1v1 quiz battles
+- 200+ production-ready components including interactive games (true/false quiz, fill-in-blanks, sorting, matching, memory, drag-drop)
+- academic-grade UI with serif typography
+- AI auto-grading
+- AI auto-grading with test cases
+- AI course recommendations
+- automated progress reports
+- bulk enrollment
+- bulk enrollment for organizations
+- career course pathways with salary data
+- cohort analysis
+- completion predictors
+- Corporate team dashboard with bulk enrollment analytics
+- Course bundles with discounts
+- course comparison tool
+- course comparisons
+- course competitions
+- course completion rate tracking
+- course creation templates
+- course crowdfunding campaigns
+- Course Detail - Individual course with lessons
+- course notes system
+- course prerequisites & waitlists
+- course preview pages with samples
+- course Q&A
+- course request/requisition system with upvoting
+- course requisitions
+- Course reviews/ratings with 5-star system
+- Course sales pages with testimonials/social proof
+- course syllabi with weekly schedules
+- course templates
+- course versioning
+- cross-platform progress
+- Dashboard with courses and progress tracking
+- drip content scheduler for timed lesson releases
+- exam prep with practice tests
+- grade appeals
+- granular lesson feedback
+- grit scale assessment
+- instructor tools (quiz builder, bulk messaging, student analytics, assignment builder, content scheduler, office hours)
+- InstructorDashboard with course management
+- lesson feedback loops
+- Lesson Viewer - Immersive learning experience
+- Lesson Viewer - Rich text and video content delivery
+- ML course recommendations
+- ML-powered course recommendations
+- multiple intelligences assessment (Gardner)
+- multiple practice modes (drill/timed/exam prep)
+- My Progress - Track completion
+- office hours booking
+- office hours queue system
+- office hours queues
+- optimal pathway calculation
+- parent portal with progress tracking
+- peer assessment rubrics
+- podium ranking systems (course/global/weekly)
+- prior learning assessment (portfolio-based credit)
+- progress celebration milestones
+- progress circles
+- progress milestones
+- progress reports
+- progress summaries
+- progress tracker dashboard
+- progress tracking
+- Progress Tracking - Track student advancement through materials
+- Progress tracking everywhere
+- quiz battles
+- quiz builder for instructors
+- Quiz system with instant feedback
+- revenue analytics - platform now has enterprise-grade features surpassing all competitors
+- rubric designers
+- Udemy-style marketplace with ratings and enrollment counts
+- webinar registration
+
+[Content Delivery & Media] (29)
+- adaptive bitrate streaming
+- adaptive video speed
+- adaptive video speed preferences
+- advanced video player with transcript sync & PiP
+- audio descriptions
+- caption styling
+- download restrictions
+- DRM protection
+- live streaming quality
+- live streaming with chat
+- mobile (offline mode, download manager)
+- Netflix-quality video player
+- playback bookmarks
+- playback tracking
+- podcast episodes
+- screen recording detection
+- streaming protocols (HLS/DASH)
+- testimonials with video
+- video annotations with timestamps
+- video conferencing rooms
+- video conferencing rooms with breakout capabilities
+- video encoding pipelines
+- Video player with advanced features
+- video quality metrics
+- video reactions
+- video timestamp reactions
+- video transcripts with search
+- watch history
+- watch parties for synchronized video viewing
+
+[Community & Social] (27)
+- alumni donation platform
+- alumni donations
+- alumni network with mentorship
+- chat transcripts
+- collaborative annotation threads
+- collaborative note-taking with edit history
+- collaborative notes
+- collaborative whiteboard
+- collaborative/content-based filtering
+- community challenges
+- Community features (forums, study groups, live classes)
+- community feed
+- community forums with Q&A
+- community-wide challenges
+- discussion upvoting
+- following systems
+- live chat transcripts
+- live Q&A sessions with upvoting
+- live Q&A with voting
+- networking events
+- peer review calibration pools
+- peer review pools with calibration
+- social features (live chat, community feed, peer review, member profiles, study groups)
+- social feed
+- study buddy matching
+- user following system
+- webinar funnels
+
+[Gamification & Motivation] (18)
+- achievement showcase profiles
+- achievement showcases
+- badge collections
+- badge showcase collections
+- battle pass gamification system
+- gamification (badges, achievements, XP boosters, leaderboards, daily quests, milestones)
+- Gamification with achievements
+- Gamification with tiers (free/premium/elite)
+- multiplayer trivia games
+- podium rankings
+- points transactions
+- quest systems (daily/weekly/story)
+- RPG quest system (daily/weekly/story)
+- streak displays
+- streak tracking
+- streak tracking with freeze tokens
+- trivia tournaments
+- user quest tracking
+
+[Monetization & Marketing] (32)
+- 20% commission affiliate program - all with interactive flashcards
+- added dozens of new CSS utility classes for premium interactions
+- Affiliate program with 20% commission tracking
+- branded merchandise
+- branded merchandise store
+- cart abandonment recovery
+- checkout optimization
+- content licensing marketplace
+- coupon code system
+- Coupon redemption system
+- coupon systems
+- crowdfunding
+- dispute resolution
+- freelance gig marketplace
+- installment payment plans
+- internship marketplace
+- invoice generation
+- loyalty programs with tiers
+- multi-layered premium shadows
+- multiple payment methods
+- payment plans
+- peer tutoring marketplace
+- peer-to-peer tutoring marketplace
+- premium study notebook with auto-save
+- pricing/subscription pages with tier cards
+- referral system
+- refund policies
+- shared notes marketplace
+- tax configuration
+- upsell/cross-sell/downsell offers
+- used book marketplace
+- VIP access levels
+
+[Instructor, Admin & Ops] (23)
+- audit logs
+- bulk operations
+- complete audit logs
+- compliance reporting
+- compliance training
+- compliance training tracking
+- content moderation system
+- content quality scoring
+- content reporting/moderation
+- crisis intervention protocols
+- instructor badges
+- instructor certification programs
+- instructor earnings with revenue share
+- instructor tools
+- maintenance windows
+- manager dashboards
+- manager team dashboards
+- scheduled maintenance windows
+- student intervention system
+- succession planning
+- succession planning with readiness tracking
+- support ticket management
+- system announcements (maintenance/features)
+
+[Analytics, Insights & Experimentation] (38)
+- A/B testing
+- A/B testing for landing pages
+- A/B testing infrastructure
+- A/B/multivariate testing
+- Advanced analytics foundation
+- analytics dashboards with charts
+- anomaly detection
+- API usage analytics
+- attention metrics
+- buffering analytics
+- churn prediction
+- comprehensive analytics (heatmaps, engagement metrics, skill assessments, time tracking, retention prediction)
+- conversion funnel analysis
+- Dashboard - Personalized learning home
+- departmental analytics
+- departmental analytics dashboards
+- detailed study analytics
+- engagement prediction
+- engagement scoring
+- eye-tracking engagement
+- form analytics
+- funnel analysis
+- GradeBook with analytics
+- heatmap analytics
+- InstructorAnalytics dashboard
+- learning agility metrics
+- LTV prediction
+- ML churn prediction with interventions
+- peer mentor algorithm matching
+- peer performance comparison analytics
+- personalization engines
+- predictive analytics
+- Redesigned Dashboard with spiritual leveling system (Initiate→Student→Scholar→Sage→Master), daily wisdom cards, study streaks, and mobile-first "Continue Learning" section for core academic experience
+- retention metrics
+- revenue analytics
+- revenue analytics by source
+- Study Dashboard - Personal learning overview
+- user journey analytics
+
+[Security, Privacy & Compliance] (16)
+- 2FA
+- consent management
+- content encryption
+- cookie consent
+- data retention policies
+- GDPR-compliant data export
+- GDPR/CCPA privacy
+- multi-biometric auth (fingerprint/face/iris/voice)
+- OAuth clients
+- rate limiting
+- rate limiting protection
+- right to be forgotten
+- session management
+- terms of service
+- vendor risk assessments
+- vulnerability scanning
+
+[Accessibility & UX Preferences] (11)
+- accessibility (font controls, high contrast, keyboard nav)
+- accessibility audits
+- accessibility improvements (skip-to-content, focus management, reduced motion support)
+- accessibility menu
+- accessibility menu (font sizing, high contrast, reduced motion)
+- alt text generation
+- comprehensive accessibility settings (screen readers, dyslexia fonts, color-blind modes)
+- Dark mode (like every modern app)
+- form accessibility
+- keyboard shortcuts
+- screen reader optimization
+
+[Mobile, PWA & Offline] (7)
+- background sync
+- Mobile app capability (PWA)
+- multi-device sync
+- offline content downloads
+- offline mode
+- PWA capabilities
+- SMS notifications
+
+[Integrations & Developer Platform] (7)
+- cloud storage integration
+- color/music/aromatherapy integration
+- job board integration
+- performance review integration
+- SDK versions
+- third-party integrations (Slack/Zoom/Discord)
+- webhook systems
+
+[Advanced / Experimental] (13)
+- 360° videos
+- AR/holographic content
+- biorhythm optimization
+- brainwave/EEG monitoring
+- circadian rhythm scheduling
+- customizable haptic feedback
+- facial emotion detection
+- genetic learning optimization (DNA-based)
+- haptic braille displays
+- quantum computing simulations
+- space education with NASA data
+- virtual campus tours (360°)
+- VR/360° experiences
+
+[Other / Misc] (461)
+- 3D models with annotations
+- 400+ entity types and comprehensive features
+- academic awards
+- academic awards/Dean's list
+- academic integrity case management
+- academic integrity tracking
+- academic probation tracking
+- access/refresh tokens
+- account lockouts
+- adaptive learning AI
+- advanced CSS animations (ripple, tilt, reveal, parallax, neon glow, spotlight)
+- advanced cubic-bezier animations
+- advanced learning tools (AI tutor, academic advisor, smart review, focus mode, Pomodoro timer, note editor, whiteboard)
+- advanced note-taking
+- advanced note-taking with timestamps/tags
+- AI academic advisor
+- AI proctoring with violation detection
+- AI schedulers
+- AI smart schedulers for optimal study times
+- AI-powered resume builder
+- anchored instruction
+- animated explainer videos (whiteboard/motion graphics)
+- animated explainers
+- annotation threads
+- API docs
+- API keys
+- app install prompts
+- argument mapping tools
+- AssignmentGrader for teachers
+- assignments
+- Assignments page
+- audiobooks
+- automated backup schedules
+- automation builder
+- back-to-top button
+- backup schedules
+- backward design planning
+- badges
+- bandwidth optimization
+- battle passes
+- Beautiful academic design aesthetic
+- behavior tracking
+- beta tester programs
+- beta tester programs with rewards
+- better spacing throughout
+- blockchain NFT credentials
+- blockchain-verified credentials
+- Bloom's taxonomy tracking
+- brainstorm sessions
+- brand voice guidelines
+- breadcrumb navigation
+- breadcrumbs
+- breakout rooms for collaboration
+- bug tracking
+- business case studies
+- caching strategies
+- calendar integrations
+- calendar sync (Google/Outlook/Apple)
+- canonical URLs
+- career coaching sessions
+- career interest inventories
+- career paths with salary data
+- career pathways with salary data
+- career tools (job board, resume builder)
+- career trajectory planning
+- case studies
+- CDN configuration
+- certificates
+- Certificates & credentials
+- changelogs
+- Chavruta AI study partner with Socratic questioning
+- citation managers
+- citation managers (APA/MLA/Chicago)
+- click/scroll/mouse tracking
+- code splitting
+- cognitive bias training
+- cohorts
+- collectible virtual stamps (tradeable NFTs)
+- color contrast checking
+- competency mapping
+- competency mapping (Bloom's taxonomy)
+- competitive seasons & power-ups
+- competitor analysis
+- component libraries
+- comprehensive FAQ systems
+- conceptual change monitoring
+- concierge services
+- conference attendance tracking
+- content calendars
+- content curation
+- content library
+- content performance dashboards
+- content reporting
+- content style guides
+- continuing education credits (CEU/CPE/CME)
+- conversation practice
+- corporate training programs
+- coupons
+- CourseAnalytics with charts
+- CourseBuilder for creating courses
+- Coursera-style learning paths
+- Courses - Browse all available shiurim
+- crisis interventions
+- critical thinking exercises
+- cross-training
+- cross-training assignments
+- cryptocurrency payments
+- curated content collections
+- custom domains for white-labeling - this platform now has every conceivable feature
+- custom onboarding programs
+- customer lifetime value prediction
+- daily goals
+- daily reminders
+- data portability
+- data processing agreements
+- deprecation notices
+- design systems
+- design tokens
+- differentiated instruction
+- digital downloads
+- digital portfolio items with reflections
+- digital portfolios
+- disability accommodations
+- disability accommodations management
+- downloadable certificates with PDF export
+- downloadable resource library
+- drag-drop matching
+- earnings monitoring
+- email automation
+- email campaigns
+- email drip campaigns
+- email drips
+- email sequences
+- emergency funds
+- emergency student funds
+- emotional intelligence development
+- employee skills matrices
+- empty states
+- enhanced buttons with shimmer effects
+- enhanced glassmorphism with stronger blur effects
+- enhanced micro-interactions with hover states and tap feedback
+- enterprise features - platform now exceeds every major competitor combined
+- enterprise team dashboards
+- error recovery
+- error tracking
+- exit-intent popups
+- expert directories
+- expert directory with booking
+- extra credit opportunities
+- FAQs
+- feature adoption tracking
+- feature flag system for gradual rollouts
+- feature flags
+- feature voting
+- feedback loops
+- Feel: Think Oxford University meets Apple - scholarly yet modern
+- financial aid applications
+- first-gen programs
+- first-generation student programs
+- fitness challenges
+- fitness challenges with leaderboards
+- flipped classroom models
+- flow state optimization
+- focus indicators
+- formative/summative assessments
+- free trial management
+- free trial/preview system
+- free trials
+- gamified energy system for pacing
+- gamified energy systems
+- geo-blocking
+- geolocation features
+- gesture controls
+- gift courses
+- glassmorphism enhancements
+- global timezone coordination
+- graphic organizers (Venn/fishbone/concept maps)
+- group discount organizing
+- group discounts
+- growth mindset development
+- guided meditation sessions
+- habit tracker with streaks
+- heatmaps
+- high-contrast mode support
+- high-potential talent pools
+- icon libraries
+- image optimization
+- improved typography with tighter tracking
+- incident reports
+- industry certifications
+- industry trends
+- infographic lessons
+- installment plans
+- interactive code playgrounds
+- interactive simulations (physics/chemistry/business)
+- interactive videos
+- international student support
+- international student support with visa tracking
+- IP whitelisting
+- jigsaw activities
+- job placement tracking
+- knowledge bases
+- knowledge graphs for concept mapping
+- Kolb learning cycle tracking
+- KWL charts
+- L&D budget management
+- L&D budgets
+- lab simulations
+- lazy loading
+- lead magnets
+- learning contracts
+- learning goals with milestones
+- learning pathways
+- learning pathways by role
+- learning pathways by role/department
+- learning playlists
+- learning playlists with subscribers
+- learning style assessments with personalized content delivery
+- LessonBuilder for adding content
+- link purposes
+- live auto-transcription
+- live captioning
+- Live Class Schedule - Upcoming shiurim
+- live events/webinars
+- live polling during classes
+- live polls
+- live viewer counts
+- LiveClassroom for sessions
+- loading states
+- local storage management
+- logical fallacy detection
+- login attempt monitoring
+- market demand analysis
+- market positioning
+- marketing automation
+- marketing landing pages
+- mastery tests
+- mastery tests with certificates
+- memberships
+- memory games
+- mental health resources
+- mental health resources directory
+- messaging system
+- metacognition logs
+- micro-credentials
+- microlearning (bite-sized 30-180s lessons)
+- mind mapping tools
+- mind maps
+- mock interview practice
+- motion preferences
+- motivational quotes
+- multi-channel study reminders
+- Multi-tier monetization
+- multimodal content
+- neurodiversity profiles (ADHD/autism/dyslexia)
+- neurofeedback training
+- new reusable components (ScrollReveal, ParallaxSection, ToastNotification, ProgressRing, SkeletonLoader)
+- next best action recommendations
+- note templates
+- note-taking templates (Cornell, outline)
+- nutrition tracking with macro counting
+- nutrition/sleep/meditation tracking
+- onboarding flow
+- onboarding programs
+- onboarding step tracking
+- page speed optimization
+- parallax effects
+- password policies
+- pattern recognition
+- peer comparisons
+- peer mentor matching algorithms
+- performance monitoring
+- performance tasks
+- personal AI assistants
+- personal mission statements
+- personality tests (MBTI/Big Five/DISC/Enneagram)
+- PLA
+- plagiarism detection
+- playlist creation
+- Pomodoro focus timer
+- portfolio assessments
+- portfolios
+- practice modes
+- predictive/word prediction typing
+- Prerequisites enforcement
+- privacy policies
+- probation tracking
+- problem/project/inquiry-based learning
+- product roadmaps
+- professional development plans
+- project showcases
+- push notifications
+- quick action FAB
+- quick quizzes
+- QuizBuilder
+- reading lists & book clubs
+- Real-time notifications
+- recent activity feed
+- reciprocal teaching
+- recommendation algorithms
+- recruiter connections
+- refined cards with larger rounded corners (2.5rem)
+- refined motion design throughout the entire app
+- related content suggestions
+- release notes
+- remote work setup profiles
+- research paper publication tools
+- resource libraries
+- Resource library with downloadable files
+- revenue recognition
+- robots.txt
+- role-based navigation (admins see teaching tools, students see learning tools)
+- role-play scenarios
+- RPG skill trees
+- RPG-style skill trees with unlocking
+- salary negotiation calculator
+- sales funnels
+- scaffolding strategies
+- scholarships & financial aid
+- scroll reveal animations
+- scroll-reveal animations
+- search history
+- searchable knowledge base
+- seasonal affective disorder support
+- security alert system
+- security alerts
+- security patches
+- self-efficacy building
+- semantic headings
+- SEO meta tags
+- SEO metadata
+- SEO optimization
+- service workers
+- session recordings
+- Settings page - continuing to build comprehensive EdTech platform
+- share functionality
+- simulation debriefing
+- sitemaps
+- skill assessments
+- skill badges with levels
+- skill endorsements from peers/instructors
+- skill gap analysis
+- skill gap prediction
+- skill test-out for advanced students
+- skill test-outs
+- skills matrices
+- sleep quality tracking
+- smart adaptive reminders
+- SMART goals framework
+- SMART goals tracking
+- smart reminders
+- social learning feed with achievements/questions/resources
+- social learning feeds
+- social proof widgets
+- Socratic dialogue facilitation
+- sophisticated hover states with scale transforms
+- stackable micro-credentials
+- stat cards
+- story reading with comprehension
+- strengths assessments (CliftonStrengths/VIA)
+- strengths/personality/career assessments
+- stress management plans
+- stress management plans with coping strategies
+- structured data
+- structured debate topics
+- structured debates
+- student clubs
+- student clubs directory
+- student dashboards
+- student orientation
+- student orientation checklists
+- student portfolios
+- student profiles
+- student success stories showcase
+- StudentEnrollments for learners
+- StudentList component
+- StudentPerformance tracker
+- study calendar scheduling
+- study circles
+- study circles with shared resources
+- study music
+- study music/ambient sounds library
+- study rooms
+- study streaks with freeze tokens
+- SubmissionUploader for students
+- success stories
+- support tickets
+- survey system
+- surveys
+- system announcements
+- tab management
+- tags
+- talent pools
+- TeacherMessaging inbox
+- testimonials
+- textbook rental system
+- textbook rentals
+- The interface will be fully responsive - perfect on desktop for deep study, seamless on mobile for learning on-the-go
+- Theater/Split layouts
+- theme customizer
+- think-pair-share protocols
+- third-party script management
+- time management matrices
+- time management matrix (Eisenhower)
+- time tracking charts
+- timeout extensions
+- tooltip settings
+- touch optimization
+- tournaments
+- transfer credit evaluation
+- transfer credits
+- transfer of learning analysis
+- trending algorithms
+- tutoring request matching
+- tutoring requests
+- two-factor authentication
+- typing practice
+- Udemy-style search & filters
+- UDL implementation
+- upcoming events
+- upgraded all study pages with modern card designs
+- uptime monitoring
+- urgency/scarcity tactics
+- usability issue tracking
+- user behavior event tracking
+- user segmentation
+- user segmentation for marketing
+- user testing sessions
+- veteran services
+- veteran services with GI Bill tracking
+- viral coefficients
+- virtual brainstorm sessions with voting
+- virtual campus tours
+- virtual collectible stamps
+- virtual exchange programs with international partners
+- virtual exchanges
+- virtual graduation ceremonies
+- virtual graduations
+- virtual labs
+- virtual labs with safety protocols
+- virtual study rooms
+- virtual study rooms with whiteboards
+- vision board creator
+- vision boards
+- voice cloning/TTS/STT
+- voice commands
+- watermarking
+- weather-based learning adjustments
+- webhooks
+- welcome banners
+- wellness tracking
+- wellness tracking with stress/energy monitoring
+- white-labeling
+- win-back campaigns
+- win-back campaigns for inactive users
+- writing center
+- writing center appointments
+- writing exercises
+- YouTube-style recommendations
+- zero-latency transitions
+- zone of proximal development mapping
+
+SECTION 2 — DATA MODEL ENTITIES (entities/* names found in the file)
+Total unique entities: 761
+
+- AARReport
+- ABTest
+- ABTest Variant
+- ABTesting Experiment
+- Academic Advising Note
+- Academic Advisor
+- Academic Award
+- Academic Calendar
+- Academic Honors Program
+- Academic Integrity Case
+- Academic Probation
+- Access Token
+- Accessibility Audit
+- Accessibility Settings
+- Account Lockout
+- Accounting Case
+- Accreditation Evidence
+- Achievement
+- Achievement Showcase
+- Adaptive Bitrate
+- Adaptive Learning
+- Affiliate
+- Agile Retro
+- AIDetection
+- AITutor Session
+- Algorithm Visualizer
+- Alternative Text
+- Alumni
+- Alumni Donation
+- Analytics
+- Anchore Activity
+- Animated Explainer
+- Annotated Bibliography
+- Annotation Thread
+- Anomaly Detection
+- APIDocumentation
+- APIKey
+- APIProject Challenge
+- APIRate Limit
+- APIUsage
+- App Install Prompt
+- ARContent
+- Argument Mapping
+- Aromatherapy Profile
+- Art Critique
+- Assessment Alignment
+- Assignment
+- Attendance Tracking
+- Attention Metrics
+- Audio Book
+- Audio Description
+- Audit Log
+- Audit Simulation
+- Auto Grading
+- Automation
+- Background Sync
+- Backup Schedule
+- Backward Design
+- Badge
+- Badge Collection
+- Bandwidth Optimization
+- Battle Pass
+- Behavioral Interview
+- Beta Tester
+- Bibliography Generator
+- Biometric Auth
+- Biorhythm Tracking
+- Blockchain Credential
+- Blooms Taxonomy
+- Book Club
+- Bookmark
+- Brain Wave Monitoring
+- Brainstorm Session
+- Brand Strategy
+- Brand Voice
+- Branded Merchandise
+- Breadcrumb Nav
+- Breakout Room
+- Breathing Exercise
+- Buffering Analytics
+- Bug Report
+- Bulk Enrollment
+- Business Model Canvas
+- Cache Strategy
+- Calendar Integration
+- Campus Tour
+- Canonical URL
+- Capstone Project
+- Caption Style
+- Career Coaching
+- Career Interest Inventory
+- Career Path
+- Career Trajectory
+- Cart Abandonment
+- Case Study
+- CDNConfiguration
+- Certificate
+- Challenge
+- Change Log
+- Chaos Engineering
+- Chassidus Shiur
+- Chat Transcript
+- Checkout Optimization
+- Choral Rehearsal Note
+- Churn Prediction
+- Circadian Optimization
+- Citation Manager
+- Citation Style
+- Click Tracking
+- Clinical Placement
+- Cloud Architecture
+- Cloud Storage
+- Code Kata
+- Code Playground
+- Code Quality Metrics
+- Code Snippet Library
+- Code Splitting
+- Coding Interview
+- Cognitive Bias Training
+- Cohort
+- Cohort Analysis
+- Cold Call Training
+- Collaborative Filtering
+- Collaborative Note
+- Collaborative Project
+- Color Contrast Check
+- Color Therapy
+- Comment
+- Community Challenge
+- Community Engagement
+- Comparative Literature
+- Competency Mapping
+- Competitor Analysis
+- Completion Predictor
+- Compliance Report
+- Compliance Training
+- Component Variant
+- Composition Project
+- Concept Map
+- Concept Review
+- Conceptual Change
+- Concierge Request
+- Conference Attendance
+- Conference Presentation
+- Consent Management
+- Content Based Filtering
+- Content Calendar
+- Content Curation
+- Content Delivery Network
+- Content Encryption
+- Content Guidelines
+- Content Library
+- Content License
+- Content Marketing Plan
+- Content Moderation
+- Content Performance
+- Content Quality
+- Content Report
+- Continuing Education
+- Conversation Practice
+- Conversion Funnel
+- Conversion Rate Optimization
+- Cookie Consent
+- Corporate Training
+- Coupon
+- Course
+- Course Bundle
+- Course Comparison
+- Course Competition
+- Course Completion Rate
+- Course Coupon Code
+- Course Crowdfunding
+- Course Feedback
+- Course Path
+- Course Prerequisite
+- Course Preview
+- Course Recommendation Engine
+- Course Registration
+- Course Requisition
+- Course Review
+- Course Substitution
+- Course Template
+- Course Version
+- Creative Writing Workshop
+- Credential
+- Crisis Intervention
+- Critical Thinking
+- Cross Platform Progress
+- Cross Sell Recommendation
+- Cross Training
+- Crypto Currency
+- Cultural Immersion
+- Curriculum Mapping
+- Custom Domain
+- Customer Journey Map
+- Customer Persona
+- Customer Service Scenario
+- Daf Yomi Progress
+- Dance Choreography
+- Dark Mode Schedule
+- Data Export
+- Data Portability
+- Data Privacy
+- Data Processing Agreement
+- Data Retention
+- Data Science Notebook
+- Data Structure Playground
+- Data Visualization Dashboard
+- Dataset Catalog
+- Deans List
+- Debate Topic
+- Decision Tree
+- Degree Audit
+- Departmental Analytics
+- Deprecation Notice
+- Design System
+- Design Thinking
+- Design Token
+- Dev Ops Pipeline
+- Device Sync
+- Dictation Tool
+- Differentiated Instruction
+- Digital Portfolio Item
+- Directed Reading
+- Disability Accommodation
+- Discussion
+- Discussion Upvote
+- Dispute Resolution
+- Dissertation Chapter
+- Docker Container
+- Download
+- Download Restriction
+- Downsell Offer
+- Drip Schedule
+- DRMConfiguration
+- Dweck Mindset
+- Ear Training
+- Economics Simulation
+- Elevator Pitch
+- Email Campaign
+- Email Drip Campaign
+- Email Marketing Campaign
+- Email Sequence
+- Emergency Student Fund
+- Emotion Detection
+- Emotional Intelligence
+- Empathy Map
+- Energy Level
+- Engagement Analytics
+- Engagement Score
+- Error Recovery
+- Error Tracking
+- Ethical Dilemma
+- Event
+- Exam Blueprint
+- Exam Prep
+- Exit Intent Popup
+- Expert Directory
+- Extra Credit
+- Extra Credit Opportunity
+- Eye Exercise
+- Eye Tracking
+- FAQ
+- Feature Adoption
+- Feature Engineering
+- Feature Flag
+- Feature Request
+- Field Work
+- Film Analysis
+- Financial Aid
+- Financial Modeling Project
+- First Gen Program
+- Fishbone Diagram
+- Fitness Challenge
+- Flashcard Deck
+- Flipped Classroom
+- Flow State
+- Focus Indicator
+- Focus Session
+- Forcefield Analysis
+- Form Accessibility
+- Form Analytics
+- Formative Assessment
+- Forum
+- Forum Reply
+- Freelance Gig
+- Gantt Chart
+- Genetic Learning Profile
+- Geo Blocking
+- Geography Field Trip
+- Geolocation Learning
+- Gesture Control
+- Gift Course
+- GISMapping
+- Git Hub Activity
+- Git Workflow
+- Global Citizenship
+- Grade Appeal
+- Grade Calculator
+- Grant Proposal
+- Graphic Organizer
+- Gratitude Journal
+- Grit Scale
+- Group Discount
+- Habit
+- Hackathon Event
+- Halacha Ruling
+- Haptic Braille
+- Haptic Feedback
+- Heading Structure
+- Heatmap Data
+- Historical Timeline
+- Historiography Study
+- Holographic Lesson
+- Honors Society
+- Hydration Reminder
+- Icon Library
+- Image Optimization
+- Improv Exercise
+- Incident Report
+- Incomplete Grade Contract
+- Independent Study
+- Industry Certification
+- Industry Trend
+- Infographic Lesson
+- Inquiry Based Learning
+- Installment Plan
+- Instructor
+- Instructor Analytics
+- Instructor Badge
+- Instructor Certification
+- Instructor Earnings
+- Instructor Payout
+- Instrument Practice Log
+- Integration
+- Interactive Simulation
+- Interactive Video
+- International Student Support
+- Internship
+- Interpretative Exercise
+- Intervention
+- Invoice Generation
+- IPWhitelist
+- Item Bank Question
+- Jewish Calendar
+- Jigsaw Activity
+- Job Application Tracker
+- Job Listing
+- Job Placement
+- Kabbalah Concept
+- Kanban Board
+- Keyboard Shortcut
+- Knowledge Base
+- Knowledge Graph
+- Kolb Learning Cycle
+- Kubernetes Deployment
+- KWLChart
+- Lab Notebook
+- Lab Simulation
+- Landing Page AB
+- Language Exchange Partner
+- Language Lesson
+- Language Progress
+- Language Story
+- Language Translation
+- Lazy Loading
+- Lead Magnet
+- Leaderboard
+- Lean Startup
+- Learning Agility
+- Learning Budget
+- Learning Contract
+- Learning Goal
+- Learning Insight
+- Learning Objective
+- Learning Outcome
+- Learning Path
+- Learning Pathway
+- Learning Playlist
+- Learning Style
+- Leave Of Absence
+- Lesson
+- Lesson Feedback
+- Lessons Learned
+- Lifetime Value
+- Link Purpose
+- Linked In Optimization
+- Literary Theory
+- Literature Review
+- Live Captioning
+- Live Class
+- Live Poll
+- Live QA
+- Live Stream
+- Live Streaming Quality
+- Live Transcription
+- Load Testing
+- Local Storage
+- Logical Fallacy
+- Login Attempt
+- Loyalty Program
+- Machine Learning Model
+- Maintenance Window
+- Manager Dashboard
+- Market Demand
+- Market Positioning
+- Marketing Campaign
+- Mastery Test
+- Meditation Session
+- Membership
+- Mental Health Resource
+- Mentorship
+- Message
+- Metacognition Log
+- Micro Credential
+- Microlesson
+- Microservices Architecture
+- Midrash
+- Mind Map
+- Mindfulness Exercise
+- Mishnah
+- Mitzvah Tracker
+- Mock Interview
+- Model Deployment
+- Monologue Coaching
+- Monte Carlo Simulation
+- Motion Preference
+- Mouse Tracking
+- Multimodal Content
+- Multiple Intelligences
+- Multivariate Testing
+- Museum Virtual Tour
+- Music Theory Exercise
+- Music Therapy
+- Negotiation Simulation
+- Networking Contact
+- Networking Event
+- Neural Feedback
+- Neural Network Training
+- Neurodiversity Support
+- Next Best Action
+- Note Taking
+- Notification
+- Nutrition Tracking
+- OAuth Client
+- Observability Dashboard
+- Office Hours
+- Office Hours Queue
+- Offline Content
+- OKR
+- Onboarding Program
+- Onboarding Step
+- Open Source Contribution
+- Optimal Pathway
+- Originality Score
+- Page Speed
+- Pair Programming Session
+- Parent Portal
+- Participation Rubric
+- Password Policy
+- Pattern Recognition
+- Payment Method
+- Payment Plan
+- Peer Assessment Rubric
+- Peer Code Review
+- Peer Comparison
+- Peer Mentor Match
+- Peer Review
+- Peer Review Pool
+- Peer Reviewed Journal
+- Peer Tutor
+- Performance Evaluation
+- Performance Monitoring
+- Performance Review Link
+- Performance Task
+- Personal Branding
+- Personal Learning Assistant
+- Personal Mission Statement
+- Personality Test
+- Personalization Engine
+- PERTChart
+- Pestle Analysis
+- Philosophical Argument
+- Pirkei Avot
+- Plagiarism Check
+- Plagiarism Report
+- Playback Bookmark
+- Playback Tracking
+- Playlist Creation
+- Podcast
+- Podcast Episode
+- Podium Ranking
+- Poetry Analysis
+- Points Transaction
+- Porter Five Forces
+- Portfolio
+- Portfolio Assessment
+- Post
+- Posture Tracking
+- Power Up
+- PPCCampaign
+- Practice Mode
+- Predictive Analytics
+- Predictive Typing
+- Prerequisite Waiver
+- Primary Source Analysis
+- Prior Learning Assessment
+- Privacy Policy
+- Problem Based Learning
+- Proctor Session
+- Product Roadmap
+- Professional Development
+- Program Review
+- Progress Milestone
+- Progress Report
+- Progressive Web App
+- Project Based Learning
+- Project Showcase
+- Push Notification
+- Quantum Simulation
+- Quest System
+- Quiz
+- Quiz Attempt
+- Quiz Battle
+- RAIDLog
+- Rashi
+- Rate Limiting
+- Re Entry Program
+- Reading List
+- Reading Mode
+- Real Time Translation
+- Reciprocal Teaching
+- Recital Preparation
+- Recommendation
+- Recommendation Algorithm
+- Recruiter Connection
+- Referral
+- Refresh Token
+- Refund Policy
+- Regex Challenge
+- Release Notes
+- Remote Work Setup
+- Research Paper
+- Research Publication
+- Resource
+- Resource Library
+- Resume
+- Retention Cohort
+- Revenue Analytics
+- Revenue Recognition
+- Reward
+- Rhetorical Analysis
+- Right To Be Forgotten
+- Risk Register
+- Robots Txt
+- Role Play Scenario
+- Rubric Designer
+- Salary Benchmark
+- Salary Negotiation
+- Sales Funnel
+- Sales Script
+- Scaffolding Strategy
+- Scenario Planning
+- Scholarship
+- Screen Reader Optimization
+- Screen Recording Block
+- Screen Time Limit
+- Scroll Tracking
+- Scrum Board
+- SDKVersion
+- Season
+- Seasonal Affective
+- Security Alert
+- Security Patch
+- Sefer
+- Self Efficacy
+- Senior Thesis
+- SEOMetadata
+- SEOOptimization
+- Service Learning Project
+- Service Worker
+- Session Management
+- Session Recording
+- Shared Note
+- Shiur Recording
+- Sign Language Support
+- Simplified Language
+- Simulation Debriefing
+- Sitemap Structure
+- Six Thinking Hats
+- Skill Assessment
+- Skill Badge
+- Skill Endorsement
+- Skill Gap
+- Skill Gap Prediction
+- Skill Test Out
+- Skill Tree
+- Skills Matrix
+- Sleep Tracking
+- Smart Goals
+- Smart Reminder
+- Smart Scheduler
+- SMSNotification
+- Social Impact Measurement
+- Social Learning Feed
+- Social Media Strategy
+- Social Proof
+- Socratic Dialogue
+- Space Education
+- Spaced Repetition
+- Spaced Repetition Card
+- Speech To Text
+- SQLPractice Environment
+- Stack Overflow Integration
+- Stakeholder Analysis
+- Standards Alignment
+- Standup Note
+- Stock Market Simulation
+- Story Mapping
+- Streaming Protocol
+- Strengths Assessment
+- Stress Management Plan
+- Stretch Reminder
+- Structured Data
+- Student Club
+- Student Orientation
+- Student Profile
+- Student Success Story
+- Study Analytics
+- Study Buddy
+- Study Circle
+- Study Goal Reminder
+- Study Group
+- Study Music
+- Study Room
+- Study Room Session
+- Study Schedule
+- Study Session
+- Study Set
+- Study Streak
+- Study Template
+- Style Guide
+- Submission
+- Subscription
+- Subscription Trial
+- Succession Planning
+- Summative Assessment
+- Support Ticket
+- Survey
+- Survey Response
+- Swot Analysis
+- Syllabus
+- System Announcement
+- System Design Interview
+- Tab Management
+- Tag
+- Talent Pool
+- Talmud Masechta
+- Talmud Study
+- Tax Configuration
+- Tax Return Practice
+- Teaching Practicum
+- Team
+- Technical Blog Post
+- Technical Screening
+- Tefillah
+- Terms Of Service
+- Terraform Config
+- Test Driven Development
+- Testimonial
+- Text To Speech
+- Textbook Rental
+- Theatre Production
+- Thesis Defense
+- Think Pair Share
+- Third Party Script
+- Thought Experiment
+- Three DModel
+- Three60Video
+- Time Management Matrix
+- Time Zone Coordinator
+- Timeout Extension
+- Tooltip Settings
+- Torah Portion
+- Tosafot
+- Tournament
+- Transcript
+- Transfer Credit
+- Transfer Of Learning
+- Trending Content
+- Trivia Game
+- Tutoring Request
+- Tutoring Session
+- Two Factor Auth
+- Undergraduate Research
+- Universal Design Learning
+- Upsell Offer
+- Uptime Monitoring
+- Urgency Scarcity
+- Usability Issue
+- Used Book Marketplace
+- User Behavior Tracking
+- User Feedback Loop
+- User Following
+- User Journey Analytics
+- User Level
+- User Persona
+- User Power Up
+- User Preferences
+- User Progress
+- User Quest
+- User Segment
+- User Testing Session
+- Value Proposition Canvas
+- Vendor Risk Assessment
+- Veteran Services
+- Video Annotation
+- Video Call
+- Video Conferencing Room
+- Video Encoding
+- Video Progress
+- Video Quality Metrics
+- Video Reaction
+- Video Speed Preference
+- VIPAccess
+- Viral Coefficient
+- Virtual Exchange
+- Virtual Graduation
+- Virtual Lab
+- Virtual Stamp
+- Vision Board
+- Vocabulary Card
+- Voice Cloning
+- Voice Command
+- Voice Lesson
+- Voice Recording
+- Volunteer Opportunity
+- VRExperience
+- Vulnerability Scanning
+- Waitlist
+- Waitlist Management
+- Watch History
+- Watch Party
+- Watermark
+- Weather Learning
+- Webhook
+- Webhook Delivery
+- Webhook Endpoint
+- Webinar Funnel
+- Wellness Check
+- White Label
+- Whiteboard Coding
+- Win Back Campaign
+- Withdrawal Request
+- Word Prediction
+- Writing Assessment
+- Writing Center Appointment
+- Writing Feedback AI
+- Yoga Session
+- Zohar Section
+- Zone Of Proximal
+
+SECTION 3 — MODULES / PAGES / COMPONENTS (non-entities paths found in the file)
+Total unique modules/pages: 363
+
+- access/refresh tokens
+- accessibility/Accessibility Menu
+- accessibility/Font Size Controller
+- accessibility/High Contrast Toggle
+- accessibility/Skip To Content
+- affiliate/Affiliate Program
+- analytics/Comparison Chart
+- analytics/Completion Forecast
+- analytics/Completion Funnel
+- analytics/Engagement Predictor
+- analytics/Engagement Score
+- analytics/Heat Map
+- analytics/Learning Analytics Dashboard
+- analytics/Learning Chart
+- analytics/Learning Heatmap
+- analytics/Learning Streak
+- analytics/Learning Style Assessment
+- analytics/Learning Velocity
+- analytics/Monthly Insights
+- analytics/Predictive Analytics
+- analytics/Progress Dashboard
+- analytics/Retention Predictor
+- analytics/Revenue Chart
+- analytics/Skill Assessment
+- analytics/Skill Gap Analysis
+- analytics/Skill Radar
+- analytics/Skill Radar Chart
+- analytics/Student Dashboard
+- analytics/Student Performance
+- analytics/Time Spent Chart
+- analytics/Weekly Report
+- assessments/Comprehensive Assessment
+- automation/Automation Builder
+- awards/Dean
+- brainwave/EEG monitoring
+- career/Job Board
+- career/Resume Builder
+- career/Salary Negotiator
+- certificates/Certificate Generator
+- certificates/Certificate View
+- cloning/TTS
+- coaching/One On One Sessions
+- collaboration/Group Project
+- collaboration/Whiteboard
+- collaborative/content-based filtering
+- community/Community Space
+- community/Discussion Board
+- community/Forum Thread
+- community/Mentorship Program
+- constellation/star patterns
+- content/Interactive Ebook
+- course/AITutor Helper
+- course/Certificate Preview
+- course/Course Bundle
+- course/Course Comparison
+- course/Course Notes
+- course/Course Roadmap
+- course/Learning Pathway
+- course/Lesson Quiz
+- course/Prerequisite Check
+- course/Prerequisite Checker
+- course/Video Chapters
+- courses/Course Card
+- creator/Advanced Course Builder
+- creator/Bulk Operations
+- dashboard/Recent Activity
+- dashboard/Stat Card
+- dashboard/Upcoming Events
+- dashed/dotted animated borders
+- date/time localization
+- discussion/Advanced Forum
+- discussion/QASection
+- downloads/Digital Downloads
+- effects/Parallax Section
+- effects/Scroll Reveal
+- engagement/Engagement Metrics
+- enterprise/Team Dashboard
+- exclusive/limited badges
+- fishbone/concept maps
+- focus/Pomodoro Timer
+- formative/summative assessments
+- gamification/Achievement Badge
+- gamification/Achievement Popup
+- gamification/Achievement Tracker
+- gamification/Achievement Unlock
+- gamification/Badge Collection
+- gamification/Badge Showcase
+- gamification/Daily Challenge
+- gamification/Daily Quest
+- gamification/Kvius Engine
+- gamification/Leaderboard Card
+- gamification/Leaderboard Widget
+- gamification/Power Up Display
+- gamification/Power Up Inventory
+- gamification/Power Up Shop
+- gamification/Quests
+- gamification/Streak Display
+- gamification/XPBooster
+- gamification/XPProgress Bar
+- gold/silver accents for premium content
+- hebrew/aramaic variants and include also the yiddish language as well
+- insights/Learning Insights
+- instructor/Assignment Builder
+- instructor/Assignment Grader
+- instructor/Auto Grading
+- instructor/Bulk Enrollment
+- instructor/Bulk Messaging
+- instructor/Bulk Operations
+- instructor/Content Scheduler
+- instructor/Course Analytics
+- instructor/Course Builder
+- instructor/Course Cloner
+- instructor/Instructor Dashboard
+- instructor/Live Analytics
+- instructor/Live Classroom
+- instructor/Quiz Builder
+- instructor/Rebbe Dashboard
+- instructor/Student Analytics
+- instructor/Student List
+- instructor/Student Progress Dashboard
+- instructor/Voice Message Sender
+- interactive/Audio Player
+- interactive/Crossword Puzzle
+- interactive/Drag Drop Matching
+- interactive/Fill In The Blank
+- interactive/Flashcard Deck
+- interactive/Memory Game
+- interactive/Poll Widget
+- interactive/Quick Quiz
+- interactive/Sorting Game
+- interactive/True False Quiz
+- interactive/Type To Learn
+- interactive/Virtual Bookshelf
+- interactive/Vocabulary Builder
+- interactive/Word Search
+- jewish/Bracha Browser
+- jewish/Bracha Maker
+- jewish/Daf Yomi Tracker
+- jewish/Daily Quote
+- jewish/Fast Day Calendar
+- jewish/Halacha Daily
+- jewish/Hebrew Calendar
+- jewish/Hebrew Date
+- jewish/Hebrew Text Reader
+- jewish/Mitzvah Tracker
+- jewish/Omer Counter
+- jewish/Parsha Weekly
+- jewish/Parshah Quiz
+- jewish/Parshah Weekly
+- jewish/Rosh Chodesh Calendar
+- jewish/Sefer Torah
+- jewish/Sefirat Ha Omer
+- jewish/Shabbat Countdown
+- jewish/Shabbat Mode
+- jewish/Shabbat Timer
+- jewish/Siddur Viewer
+- jewish/Tefillah Reminder
+- jewish/Tefillin Reminder
+- jewish/Tefillin Tracker
+- jewish/Tfilah Tracker
+- jewish/Tikun Chatzot
+- jewish/Yahrzeit Reminder
+- jewish/Yom Tov Calendar
+- jewish/Yom Tov Indicator
+- jewish/Zemirot Player
+- jewish/Zmanim Display
+- jewish/Zmanim Widget
+- language/Conversation Simulator
+- language/Daily Goals
+- language/Flashcard Practice
+- language/Language Selector
+- language/Spaced Repetition
+- language/Story Reader
+- language/Writing Practice
+- learning/Bookmark Manager
+- learning/Bookmark Panel
+- learning/Chapter Navigation
+- learning/Chavruta AI
+- learning/Chazara Flashcards
+- learning/Code Playground
+- learning/Collaborative Notes
+- learning/Completion Badge
+- learning/Comprehension Check
+- learning/Concept Map
+- learning/Content Rating
+- learning/Course Progress
+- learning/Discussion Thread
+- learning/Download Manager
+- learning/Focus Mode
+- learning/Interactive Timeline
+- learning/Interactive Transcript
+- learning/Interactive Whiteboard
+- learning/Knowledge Graph
+- learning/Learning Pathway
+- learning/Note Sharing
+- learning/Note Summary AI
+- learning/Pomodoro Study
+- learning/Practice Exercises
+- learning/Practice Test
+- learning/Progress Milestones
+- learning/Progress Report
+- learning/Question Submit
+- learning/Quiz Card
+- learning/Quiz Mode
+- learning/Quiz Results
+- learning/Related Content
+- learning/Review Calendar
+- learning/Review Scheduler
+- learning/Seder Path
+- learning/Smart Review
+- learning/Smart Suggestions
+- learning/Source Text Panel
+- learning/Study Break Reminder
+- learning/Study Goals Setter
+- learning/Study Insights
+- learning/Study Mode Selector
+- learning/Study Music Player
+- learning/Study Notebook
+- learning/Study Planner
+- learning/Study Reminder
+- learning/Study Timer
+- learning/Submission Uploader
+- learning/Text Highlighter
+- learning/Transcript Search
+- learning/Transcript Viewer
+- learning/Video Bookmarks
+- learning/Video Chapters
+- learning/Video Notes
+- learning/Video Speed Control
+- learning/Voice Note Recorder
+- live/Office Hours
+- locked/unlocked books
+- marketing/Course Landing Page
+- marketing/Email Automation
+- marketing/Sales Funnel
+- memberships/Membership Tiers
+- mentor/student connections
+- mobile/desktop app
+- mobile/Mobile Nav
+- mobile/Offline Download
+- mobile/Offline Indicator
+- mobile/Offline Mode
+- mobile/Pull To Refresh
+- moderation/Content Report Form
+- music/ambient sounds library
+- normal/low priorities with color coding
+- notifications/Daily Reminder
+- notifications/Email Digest
+- notifications/Notification Center
+- notifications/Push Notification Toggle
+- objectives/outcomes mapping
+- onboarding/Onboarding Flow
+- open/close transitions
+- pages/Course Detail
+- pages/Dashboard
+- pages/Halacha Guide
+- pages/Instructor Dashboard
+- pages/Kabbalah Study
+- pages/Lesson Viewer
+- pages/Talmud Study
+- pages/Torah Study
+- parent/Student Progress Report
+- payments/Payment Plans
+- peer/Peer Review
+- plagiarism/AI detection
+- predictive/word prediction typing
+- prefix/suffix icons
+- pricing/subscription pages with tier cards
+- proctoring/Proctor View
+- progress/Milestone Tracker
+- projects/Class Project
+- promotions/Coupon Redemption
+- radar/pie charts
+- request/requisition system with upvoting
+- resources/Resource Library
+- reviews/Course Reviews
+- reviews/ratings with 5-star system
+- scheduling/Drip Scheduler
+- scheduling/Study Calendar
+- search/Advanced Search
+- search/Concept Search
+- search/Search History
+- search/Smart Search
+- seo/Meta Tags
+- shadcn/ui components
+- shown/clicked for ML improvements
+- skills/Skill Assessment
+- social/Community Feed
+- social/Discussion Forum
+- social/Group Study Scheduler
+- social/Live Chat
+- social/Live Session Indicator
+- social/Live Study Session
+- social/Member Profiles
+- social/Mentor Connection
+- social/Mentor Match
+- social/Peer Review System
+- social/Study Buddy Chat
+- social/Study Buddy Finder
+- social/Study Buddy Matcher
+- social/Study Group Card
+- social/Study Group Chat
+- social/Study Partner Matcher
+- social/User Profile
+- social/Virtual Beit Midrash
+- specializations/Specialization
+- speech/pronunciation practice with accuracy scoring
+- stress/energy monitoring
+- student/Progress Tracker
+- study/Flashcard Review
+- study/Match Game
+- study/Note Editor
+- study/Pomodoro Timer
+- study/Study Goals
+- study/Study Modes
+- study/Study Timer
+- study/Write Mode
+- subscription/Pricing Card
+- success/error states
+- sunrise/chatzot achievements
+- sunset/sunrise color schemes matching Jewish times
+- team/corporate features
+- testimonials/social proof
+- testimonials/Testimonial Card
+- theme/Theme Toggle
+- thick/thin border variations
+- trial/preview system
+- true/false quiz
+- true/false with instant feedback
+- urgency/scarcity tactics
+- video/Advanced Video Player
+- video/audio support
+- video/Cinematic Player
+- video/Transcript Viewer
+- video/Video Annotations
+- video/Video Player
+- voice/Speech Practice
+- webinars/Webinar Registration
+- wellness/Wellness Tracker
+- whiteboard/motion graphics
+- whiteboard/system design
+- widgets/Back To Top
+- widgets/Breadcrumbs
+- widgets/Cookie Consent
+- widgets/Empty State
+- widgets/Error Boundary
+- widgets/Floating Action Menu
+- widgets/Focus Mode
+- widgets/Language Switcher
+- widgets/Live Viewer Count
+- widgets/Loading Screen
+- widgets/Motivational Quote
+- widgets/Newsletter Signup
+- widgets/Progress Circle
+- widgets/Progress Summary
+- widgets/Quick Actions
+- widgets/Search History
+- widgets/Share Button
+- widgets/Theme Customizer
+- widgets/Toast Container
+- widgets/Weather Widget
+- widgets/Welcome Banner
+- work/break cycles and progress rings

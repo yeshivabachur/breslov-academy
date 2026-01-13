@@ -20,17 +20,20 @@ import Community from './pages/Community';
 import CourseDetail from './pages/CourseDetail';
 import CourseSales from './pages/CourseSales';
 import Courses from './pages/Courses';
+import DafYomi from './pages/DafYomi';
 import Dashboard from './pages/Dashboard';
 import Downloads from './pages/Downloads';
 import Events from './pages/Events';
 import Feed from './pages/Feed';
 import Forums from './pages/Forums';
 import HabitTracker from './pages/HabitTracker';
+import HalachaDaily from './pages/HalachaDaily';
 import IntegrationDetail from './pages/IntegrationDetail';
 import IntegrationsMarketplace from './pages/IntegrationsMarketplace';
 import Integrity from './pages/Integrity';
 import InviteAccept from './pages/InviteAccept';
 import LanguageLearning from './pages/LanguageLearning';
+import LanguageStudy from './pages/LanguageStudy';
 import Languages from './pages/Languages';
 import Leaderboard from './pages/Leaderboard';
 import LearningPaths from './pages/LearningPaths';
@@ -65,6 +68,7 @@ import SchoolSearch from './pages/SchoolSearch';
 import SchoolSelect from './pages/SchoolSelect';
 import SchoolStaff from './pages/SchoolStaff';
 import SchoolThankYou from './pages/SchoolThankYou';
+import Siddur from './pages/Siddur';
 import Skills from './pages/Skills';
 import StudyBuddies from './pages/StudyBuddies';
 import StudySet from './pages/StudySet';
@@ -81,9 +85,11 @@ import TeachGrading from './pages/TeachGrading';
 import TeachLesson from './pages/TeachLesson';
 import TeachQuizEditor from './pages/TeachQuizEditor';
 import TeachQuizzes from './pages/TeachQuizzes';
+import TorahReading from './pages/TorahReading';
 import Tournaments from './pages/Tournaments';
 import Vault from './pages/Vault';
 import VirtualBeitMidrashPage from './pages/VirtualBeitMidrashPage';
+import Zmanim from './pages/Zmanim';
 import oauth2callback from './pages/oauth2callback';
 
 
@@ -110,17 +116,20 @@ export const PAGES = {
     "CourseDetail": CourseDetail,
     "CourseSales": CourseSales,
     "Courses": Courses,
+    "DafYomi": DafYomi,
     "Dashboard": Dashboard,
     "Downloads": Downloads,
     "Events": Events,
     "Feed": Feed,
     "Forums": Forums,
     "HabitTracker": HabitTracker,
+    "HalachaDaily": HalachaDaily,
     "IntegrationDetail": IntegrationDetail,
     "IntegrationsMarketplace": IntegrationsMarketplace,
     "Integrity": Integrity,
     "InviteAccept": InviteAccept,
     "LanguageLearning": LanguageLearning,
+    "LanguageStudy": LanguageStudy,
     "Languages": Languages,
     "Leaderboard": Leaderboard,
     "LearningPaths": LearningPaths,
@@ -155,6 +164,7 @@ export const PAGES = {
     "SchoolSelect": SchoolSelect,
     "SchoolStaff": SchoolStaff,
     "SchoolThankYou": SchoolThankYou,
+    "Siddur": Siddur,
     "Skills": Skills,
     "StudyBuddies": StudyBuddies,
     "StudySet": StudySet,
@@ -171,9 +181,11 @@ export const PAGES = {
     "TeachLesson": TeachLesson,
     "TeachQuizEditor": TeachQuizEditor,
     "TeachQuizzes": TeachQuizzes,
+    "TorahReading": TorahReading,
     "Tournaments": Tournaments,
     "Vault": Vault,
     "VirtualBeitMidrash": VirtualBeitMidrashPage,
+    "Zmanim": Zmanim,
     "oauth2callback": oauth2callback,
 }
 

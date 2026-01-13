@@ -1,201 +1,167 @@
-import React from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState } from 'react';
+import PageShell from '@/components/ui/PageShell';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { DollarSign, Users, Copy, TrendingUp } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { DollarSign, Copy, Users, TrendingUp, CheckCircle, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useSession } from '@/components/hooks/useSession';
-import { buildCacheKey, scopedCreate, scopedFilter } from '@/components/api/scoped';
+
+const REFERRALS = [
+  { id: 1, user: 'david@example.com', date: '2026-01-10', status: 'Converted', commission: 36.00 },
+  { id: 2, user: 'sarah@example.com', date: '2026-01-11', status: 'Pending', commission: 0 },
+  { id: 3, user: 'moshe@example.com', date: '2026-01-12', status: 'Converted', commission: 36.00 },
+];
 
 export default function AffiliateProgram() {
-  const { user, activeSchoolId } = useSession();
-  const queryClient = useQueryClient();
+  const [copied, setCopied] = useState(false);
+  const refLink = 'https://breslov.academy/join?ref=gav4y';
 
-  const { data: affiliate } = useQuery({
-    queryKey: buildCacheKey('affiliate', activeSchoolId, user?.email),
-    queryFn: async () => {
-      const affs = await scopedFilter('Affiliate', activeSchoolId, { user_email: user.email });
-      return affs[0];
-    },
-    enabled: !!user?.email && !!activeSchoolId
-  });
-
-  const { data: referrals = [] } = useQuery({
-    queryKey: buildCacheKey('referrals', activeSchoolId, user?.email),
-    queryFn: () => scopedFilter('Referral', activeSchoolId, { affiliate_email: user.email }),
-    enabled: !!user?.email && !!activeSchoolId
-  });
-
-  const joinProgramMutation = useMutation({
-    mutationFn: async () => {
-      const code = `REF${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-      return await scopedCreate('Affiliate', activeSchoolId, {
-        user_email: user.email,
-        referral_code: code,
-        commission_rate: 20,
-        status: 'active'
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries(buildCacheKey('affiliate', activeSchoolId, user?.email));
-      toast.success('Welcome to the affiliate program!');
-    }
-  });
-
-  const copyReferralLink = () => {
-    const link = `${window.location.origin}?ref=${affiliate.referral_code}`;
-    navigator.clipboard.writeText(link);
-    toast.success('Referral link copied!');
+  const copyLink = () => {
+    navigator.clipboard.writeText(refLink);
+    setCopied(true);
+    toast.success('Affiliate link copied!');
+    setTimeout(() => setCopied(false), 2000);
   };
 
-  if (!affiliate) {
-    return (
-      <div className="max-w-4xl mx-auto space-y-8">
-        <div className="bg-gradient-to-r from-green-900 to-emerald-900 rounded-2xl p-8 text-white">
-          <h1 className="text-4xl font-bold mb-2">Affiliate Program</h1>
-          <p className="text-green-200 text-lg">Earn 20% commission by sharing Breslov Academy</p>
-        </div>
-
-        <Card>
-          <CardContent className="p-12 text-center">
-            <DollarSign className="w-16 h-16 text-green-600 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-slate-900 mb-4">Join Our Affiliate Program</h2>
-            <p className="text-slate-600 mb-6 max-w-xl mx-auto">
-              Share the gift of Torah learning and earn 20% commission on every subscription you refer. 
-              Help others discover the teachings of Rebbe Nachman while generating income.
-            </p>
-            <Button
-              onClick={() => joinProgramMutation.mutate()}
-              className="bg-green-600 hover:bg-green-700"
-              disabled={joinProgramMutation.isPending}
-            >
-              Join Affiliate Program
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-8">
-      <div className="bg-gradient-to-r from-green-900 to-emerald-900 rounded-2xl p-8 text-white">
-        <h1 className="text-4xl font-bold mb-2">Affiliate Dashboard</h1>
-        <p className="text-green-200">Track your referrals and earnings</p>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
+    <PageShell title="Affiliate Program" subtitle="Earn 20% recurring commission">
+      
+      {/* Stats Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <Card className="bg-green-50 border-green-100">
+          <CardContent className="pt-6">
+            <div className="flex justify-between items-start">
               <div>
-                <p className="text-sm text-slate-600">Total Earnings</p>
-                <p className="text-3xl font-bold text-green-600 mt-1">
-                  ${affiliate.total_earnings || 0}
-                </p>
+                <p className="text-sm font-medium text-green-700">Total Earnings</p>
+                <h3 className="text-3xl font-bold text-green-900">$72.00</h3>
               </div>
-              <DollarSign className="w-10 h-10 text-green-600" />
+              <div className="p-2 bg-green-100 rounded-lg">
+                <DollarSign className="h-6 w-6 text-green-700" />
+              </div>
+            </div>
+            <div className="mt-4 text-xs text-green-600 flex items-center">
+              <TrendingUp className="h-3 w-3 mr-1" />
+              +15% this month
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
+          <CardContent className="pt-6">
+            <div className="flex justify-between items-start">
               <div>
-                <p className="text-sm text-slate-600">Pending</p>
-                <p className="text-3xl font-bold text-amber-600 mt-1">
-                  ${affiliate.pending_earnings || 0}
-                </p>
+                <p className="text-sm font-medium text-slate-500">Active Referrals</p>
+                <h3 className="text-3xl font-bold text-slate-900">3</h3>
               </div>
-              <TrendingUp className="w-10 h-10 text-amber-600" />
+              <div className="p-2 bg-slate-100 rounded-lg">
+                <Users className="h-6 w-6 text-slate-600" />
+              </div>
+            </div>
+            <div className="mt-4 w-full">
+              <div className="flex justify-between text-xs text-slate-500 mb-1">
+                <span>Next Payout ($100 min)</span>
+                <span>72%</span>
+              </div>
+              <Progress value={72} className="h-2" />
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
+          <CardContent className="pt-6">
+            <div className="flex justify-between items-start">
               <div>
-                <p className="text-sm text-slate-600">Total Referrals</p>
-                <p className="text-3xl font-bold text-blue-600 mt-1">
-                  {referrals.length}
-                </p>
+                <p className="text-sm font-medium text-slate-500">Clicks</p>
+                <h3 className="text-3xl font-bold text-slate-900">142</h3>
               </div>
-              <Users className="w-10 h-10 text-blue-600" />
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Share2 className="h-6 w-6 text-blue-600" />
+              </div>
             </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-slate-600">Converted</p>
-                <p className="text-3xl font-bold text-purple-600 mt-1">
-                  {referrals.filter(r => r.status === 'converted').length}
-                </p>
-              </div>
-              <TrendingUp className="w-10 h-10 text-purple-600" />
+            <div className="mt-4 text-xs text-slate-500">
+              Conversion Rate: 2.1%
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Referral Link */}
-      <Card>
+      {/* Link Sharing */}
+      <Card className="mb-8">
         <CardHeader>
           <CardTitle>Your Referral Link</CardTitle>
+          <CardDescription>Share this link to track referrals automatically.</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center space-x-2">
-            <Input
-              value={`${window.location.origin}?ref=${affiliate.referral_code}`}
-              readOnly
-              className="flex-1"
-            />
-            <Button onClick={copyReferralLink}>
-              <Copy className="w-4 h-4 mr-2" />
-              Copy
+          <div className="flex gap-2">
+            <Input value={refLink} readOnly className="bg-slate-50 font-mono" />
+            <Button onClick={copyLink} className={copied ? 'bg-green-600' : ''}>
+              {copied ? <CheckCircle className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
+              {copied ? 'Copied' : 'Copy'}
             </Button>
           </div>
-          <p className="text-sm text-slate-600 mt-3">
-            Share this link and earn {affiliate.commission_rate}% commission on all subscriptions
-          </p>
         </CardContent>
       </Card>
 
-      {/* Recent Referrals */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Referrals</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {referrals.length === 0 ? (
-            <p className="text-center text-slate-500 py-8">No referrals yet. Start sharing your link!</p>
-          ) : (
-            <div className="space-y-3">
-              {referrals.map((ref) => (
-                <div key={ref.id} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div>
-                    <p className="font-medium">{ref.referred_email}</p>
-                    <p className="text-sm text-slate-600">
-                      {ref.status === 'converted' ? 'Subscribed' : 'Pending'} • 
-                      {ref.conversion_date && ` ${new Date(ref.conversion_date).toLocaleDateString()}`}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold text-green-600">${ref.commission_amount || 0}</p>
-                    <p className="text-xs text-slate-500">{ref.subscription_tier}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+      {/* Details Tabs */}
+      <Tabs defaultValue="referrals" className="w-full">
+        <TabsList>
+          <TabsTrigger value="referrals">Referral History</TabsTrigger>
+          <TabsTrigger value="assets">Marketing Assets</TabsTrigger>
+          <TabsTrigger value="payouts">Payout Settings</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="referrals">
+          <Card>
+            <CardContent className="p-0">
+              <table className="w-full text-sm text-left">
+                <thead className="text-slate-500 bg-slate-50 border-b">
+                  <tr>
+                    <th className="px-6 py-3 font-medium">User</th>
+                    <th className="px-6 py-3 font-medium">Date</th>
+                    <th className="px-6 py-3 font-medium">Status</th>
+                    <th className="px-6 py-3 font-medium text-right">Commission</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {REFERRALS.map((ref) => (
+                    <tr key={ref.id} className="hover:bg-slate-50">
+                      <td className="px-6 py-4">{ref.user}</td>
+                      <td className="px-6 py-4">{ref.date}</td>
+                      <td className="px-6 py-4">
+                        <Badge variant={ref.status === 'Converted' ? 'default' : 'secondary'}>
+                          {ref.status}
+                        </Badge>
+                      </td>
+                      <td className="px-6 py-4 text-right font-mono">
+                        {ref.commission > 0 ? `$${ref.commission.toFixed(2)}` : '-'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="assets">
+          <Card>
+            <CardContent className="pt-6 text-center text-slate-500 py-12">
+              <p>Banners and social media kits coming soon.</p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="payouts">
+          <Card>
+            <CardContent className="pt-6 text-center text-slate-500 py-12">
+              <p>Connect Stripe or PayPal to receive payouts.</p>
+              <Button variant="outline" className="mt-4">Connect Payout Method</Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </PageShell>
   );
 }
