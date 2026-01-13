@@ -1,61 +1,123 @@
-// AUTO-GENERATED ENTITY REGISTRY
-// Source: Breslov_Academy_Feature_Extraction.txt
-// This registry powers the dynamic CRUD system for 700+ entities.
+// ENTERPRISE ENTITY REGISTRY
+// Powered by Zod for runtime validation and automatic UI generation.
+import { z } from 'zod';
 
-export const ENTITY_REGISTRY = {
-  // --- ACADEMIC & LEARNING ---
-  "Course": { label: "Course", icon: "BookOpen", fields: ["title", "description", "instructor", "price"] },
-  "Lesson": { label: "Lesson", icon: "FileText", fields: ["title", "videoUrl", "content"] },
-  "Quiz": { label: "Quiz", icon: "HelpCircle", fields: ["title", "passingScore"] },
-  "Assignment": { label: "Assignment", icon: "Clipboard", fields: ["title", "dueDate"] },
-  "Certificate": { label: "Certificate", icon: "Award", fields: ["user", "course", "date"] },
-  "LearningPath": { label: "Learning Path", icon: "Map", fields: ["title", "steps"] },
-  "FlashcardDeck": { label: "Flashcard Deck", icon: "Layers", fields: ["title", "cards"] },
-  
-  // --- JEWISH LIFE ---
-  "DafYomiProgress": { label: "Daf Yomi Progress", icon: "Book", fields: ["user", "masechet", "page", "date"] },
-  "HalachaRuling": { label: "Halacha Ruling", icon: "Scroll", fields: ["topic", "ruling", "source"] },
-  "MitzvahTracker": { label: "Mitzvah Tracker", icon: "CheckCircle", fields: ["user", "mitzvah", "count"] },
-  "PrayerTime": { label: "Zmanim", icon: "Clock", fields: ["location", "date", "times"] },
-  
-  // --- GAMIFICATION ---
-  "Badge": { label: "Badge", icon: "Shield", fields: ["name", "icon", "requirement"] },
-  "UserQuest": { label: "User Quest", icon: "Target", fields: ["user", "quest", "progress"] },
-  "Streak": { label: "Streak", icon: "Flame", fields: ["user", "current", "best"] },
-  "LeaderboardEntry": { label: "Leaderboard Entry", icon: "ListOrdered", fields: ["user", "score", "rank"] },
-  
-  // --- COMMUNITY ---
-  "Forum": { label: "Forum", icon: "MessageSquare", fields: ["title", "category"] },
-  "Post": { label: "Post", icon: "MessageCircle", fields: ["user", "content", "forum"] },
-  "StudyGroup": { label: "Study Group", icon: "Users", fields: ["name", "members", "topic"] },
-  "Event": { label: "Event", icon: "Calendar", fields: ["title", "date", "location"] },
-  
-  // --- BUSINESS ---
-  "Subscription": { label: "Subscription", icon: "CreditCard", fields: ["user", "plan", "status"] },
-  "Order": { label: "Order", icon: "ShoppingCart", fields: ["user", "items", "total"] },
-  "Affiliate": { label: "Affiliate", icon: "Share2", fields: ["user", "code", "earnings"] },
-  
-  // ... (Mapping the rest of the 761 entities dynamically) ...
-};
+// --- SCHEMA DEFINITIONS ---
 
-// Helper to "generate" the remaining 700+ entities if they aren't explicitly defined above
-const GENERIC_ENTITIES = [
-  "AARReport", "ABTest", "ABTestVariant", "AcademicAdvisingNote", "AcademicAdvisor", 
-  "AcademicAward", "AcademicIntegrityCase", "AcademicProbation", "AccessToken", 
-  "AccessibilityAudit", "AccessibilitySettings", "AccountLockout", "AccountingCase", 
-  "AccreditationEvidence", "Achievement", "AchievementShowcase", "AdaptiveBitrate", 
-  "AdaptiveLearning", "AgileRetro", "AIDetection", "AITutorSession", "AlgorithmVisualizer",
-  // ... (Paste the full list here in production) ...
-];
-
-GENERIC_ENTITIES.forEach(entity => {
-  if (!ENTITY_REGISTRY[entity]) {
-    ENTITY_REGISTRY[entity] = {
-      label: entity.replace(/([A-Z])/g, ' $1').trim(), // Humanize name
-      icon: "Box", // Default icon
-      fields: ["name", "description", "created_at"] // Default fields
-    };
-  }
+const UserSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Invalid email address"),
+  role: z.enum(['student', 'teacher', 'admin', 'superadmin']).default('student'),
+  xp: z.number().default(0),
+  coins: z.number().default(0),
+  streak: z.number().default(0),
+  last_login: z.number().optional()
 });
 
-export const getEntityDefinition = (key) => ENTITY_REGISTRY[key] || ENTITY_REGISTRY["Course"];
+const CourseSchema = z.object({
+  title: z.string().min(5, "Title must be descriptive"),
+  description: z.string().optional(),
+  instructor_id: z.string().uuid("Invalid Instructor ID"),
+  price: z.number().min(0, "Price cannot be negative"),
+  is_published: z.boolean().default(false),
+  tags: z.array(z.string()).default([]),
+  level: z.enum(['beginner', 'intermediate', 'advanced']).default('beginner')
+});
+
+const LessonSchema = z.object({
+  course_id: z.string().uuid(),
+  title: z.string().min(3),
+  video_url: z.string().url("Must be a valid URL").optional().or(z.literal('')),
+  content_markdown: z.string().optional(),
+  order_index: z.number().int()
+});
+
+const ForumTopicSchema = z.object({
+  title: z.string().min(5),
+  category: z.enum(['General', 'Torah', 'Advice', 'Social']),
+  author_id: z.string(),
+  is_pinned: z.boolean().default(false),
+  is_locked: z.boolean().default(false)
+});
+
+// --- REGISTRY CONFIGURATION ---
+
+export const ENTITY_REGISTRY = {
+  // ACADEMIC
+  "Course": { 
+    label: "Course", 
+    icon: "BookOpen", 
+    schema: CourseSchema,
+    listFields: ["title", "price", "level", "is_published"],
+    relationships: [
+      { target: "Lesson", foreignKey: "course_id", label: "Lessons" },
+      { target: "Enrollment", foreignKey: "course_id", label: "Students" }
+    ]
+  },
+  "Lesson": { 
+    label: "Lesson", 
+    icon: "FileText", 
+    schema: LessonSchema,
+    listFields: ["title", "order_index"],
+    parent: "Course"
+  },
+  
+  // USERS & GAMIFICATION
+  "User": {
+    label: "User",
+    icon: "User",
+    schema: UserSchema,
+    listFields: ["name", "email", "role", "xp"]
+  },
+  "Badge": {
+    label: "Badge",
+    icon: "Shield",
+    schema: z.object({
+      name: z.string(),
+      icon_key: z.string(),
+      xp_bonus: z.number()
+    }),
+    listFields: ["name", "xp_bonus"]
+  },
+
+  // JEWISH LIFE
+  "HalachaRuling": {
+    label: "Halacha Ruling",
+    icon: "Scroll",
+    schema: z.object({
+      topic: z.string(),
+      ruling_text: z.string(),
+      source_ref: z.string()
+    }),
+    listFields: ["topic", "source_ref"]
+  },
+  
+  // COMMUNITY
+  "ForumTopic": {
+    label: "Forum Topic",
+    icon: "MessageSquare",
+    schema: ForumTopicSchema,
+    listFields: ["title", "category", "is_pinned"],
+    relationships: [
+      { target: "ForumPost", foreignKey: "topic_id", label: "Posts" }
+    ]
+  }
+};
+
+// Fallback for the other 700+ entities to ensure the app doesn't crash
+// while maintaining the "Harder" standard for the core ones.
+export const getEntityDefinition = (key) => {
+  if (ENTITY_REGISTRY[key]) return ENTITY_REGISTRY[key];
+  
+  // Generative fallback
+  return {
+    label: key.replace(/([A-Z])/g, ' $1').trim(),
+    icon: "Box",
+    schema: z.object({
+      name: z.string().optional(),
+      description: z.string().optional()
+    }),
+    listFields: ["name", "created_at"],
+    isGeneric: true
+  };
+};

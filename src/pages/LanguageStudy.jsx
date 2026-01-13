@@ -16,14 +16,18 @@ export default function LanguageStudy() {
   const [searchParams] = useSearchParams();
   const variant = searchParams.get('variant') || 'hebrew';
 
-  const handleComplete = (finalStreak) => {
+  const handleComplete = async (finalStreak) => {
     const xpEarned = finalStreak * 100;
     setFinished(true);
     setScore(xpEarned);
     
     // Persist progress
-    db.addXP(xpEarned);
-    toast.success(`+${xpEarned} XP Saved!`);
+    try {
+      await db.addXP(xpEarned);
+      toast.success(`+${xpEarned} XP Saved!`);
+    } catch {
+      toast.error('Could not save progress');
+    }
     
     confetti({
       particleCount: 100,

@@ -3,7 +3,7 @@ import PageShell from '@/components/ui/PageShell';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ShoppingBag, Star, Lock, Gift } from 'lucide-react';
+import { ShoppingBag, Star, Lock, Gift, Loader2 } from 'lucide-react';
 import { db } from '@/lib/db';
 import { toast } from 'sonner';
 
@@ -17,32 +17,44 @@ const SHOP_ITEMS = [
 
 export default function RewardsShop() {
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const refreshUser = () => {
-    setUser({ ...db.getUser() });
+  const refreshUser = async () => {
+    try {
+      const data = await db.getUser();
+      setUser(data || { coins: 0 }); // Fallback
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
     refreshUser();
   }, []);
 
-  const handleBuy = (item) => {
-    const success = db.buyItem(item);
-    if (success) {
-      toast.success(`Purchased ${item.name}!`);
-      refreshUser();
-    } else {
-      toast.error("Insufficient funds");
+  const handleBuy = async (item) => {
+    try {
+      const success = await db.buyItem(item);
+      if (success) {
+        toast.success(`Purchased ${item.name}!`);
+        await refreshUser();
+      } else {
+        toast.error("Insufficient funds");
+      }
+    } catch {
+      toast.error("Purchase failed");
     }
   };
 
-  if (!user) return <PageShell title="Shop" subtitle="Loading..." />;
+  if (loading) return <PageShell title="Rewards Shop" subtitle="Loading..." />;
+
+  const balance = user?.coins || 0;
 
   return (
-    <PageShell title="Rewards Shop" subtitle={`Balance: ${user.coins} Gems`}>
+    <PageShell title="Rewards Shop" subtitle={`Balance: ${balance} Gems`}>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {SHOP_ITEMS.map((item) => {
-          const canAfford = user.coins >= item.cost;
+          const canAfford = balance >= item.cost;
           return (
             <Card key={item.id} className="flex flex-col">
               <CardHeader className="text-center pb-2">

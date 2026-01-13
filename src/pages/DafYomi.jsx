@@ -18,22 +18,31 @@ export default function DafYomi() {
 
   // Load state
   useEffect(() => {
-    const status = db.getDafProgress(daf.masechet, daf.daf);
-    setIsLearned(status);
-    setLoading(false);
+    let mounted = true;
+    db.getDafProgress(daf.masechet, daf.daf).then(status => {
+      if (mounted) {
+        setIsLearned(status);
+        setLoading(false);
+      }
+    });
+    return () => { mounted = false; };
   }, [daf]);
 
-  const handleMarkLearned = () => {
+  const handleMarkLearned = async () => {
     if (isLearned) return; // Already done
     
-    db.markDaf(daf.masechet, daf.daf, true);
-    setIsLearned(true);
-    toast.success("Mazal Tov! XP earned.");
-    confetti({
-      particleCount: 100,
-      spread: 70,
-      origin: { y: 0.6 }
-    });
+    try {
+      await db.markDaf(daf.masechet, daf.daf, true);
+      setIsLearned(true);
+      toast.success("Mazal Tov! XP earned.");
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+    } catch (e) {
+      toast.error("Failed to save progress");
+    }
   };
 
   if (loading) return <PageShell title="Daf Yomi" subtitle="Loading..." />;

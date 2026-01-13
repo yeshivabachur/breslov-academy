@@ -16,28 +16,40 @@ export default function Forums() {
   const [topics, setTopics] = useState([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newTopic, setNewTopic] = useState({ title: '', category: 'General', content: '' });
+  const [loading, setLoading] = useState(true);
 
   // Load topics
-  const refreshTopics = () => {
-    setTopics([...db.getTopics()]); // copy to trigger re-render
+  const refreshTopics = async () => {
+    try {
+      const data = await db.getTopics();
+      setTopics(data || []);
+    } catch {
+      toast.error('Failed to load topics');
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
     refreshTopics();
   }, []);
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!newTopic.title) return;
     
-    db.addTopic({
-      ...newTopic,
-      author: 'You', // current user
-    });
-    
-    setIsDialogOpen(false);
-    setNewTopic({ title: '', category: 'General', content: '' });
-    refreshTopics();
-    toast.success("Topic posted!");
+    try {
+      await db.addTopic({
+        ...newTopic,
+        // author handled in db layer or API
+      });
+      
+      setIsDialogOpen(false);
+      setNewTopic({ title: '', category: 'General', content: '' });
+      await refreshTopics();
+      toast.success("Topic posted!");
+    } catch {
+      toast.error("Failed to post topic");
+    }
   };
 
   return (
@@ -103,24 +115,30 @@ export default function Forums() {
         </div>
       </div>
 
-      <Tabs defaultValue="all" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="all">All Topics</TabsTrigger>
-          <TabsTrigger value="torah">Torah Study</TabsTrigger>
-          <TabsTrigger value="advice">Advice & Support</TabsTrigger>
-          <TabsTrigger value="social">Social</TabsTrigger>
-        </TabsList>
+      {loading ? (
+        <div className="flex justify-center py-12">
+          <Loader2 className="animate-spin h-8 w-8 text-slate-400" />
+        </div>
+      ) : (
+        <Tabs defaultValue="all" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="all">All Topics</TabsTrigger>
+            <TabsTrigger value="torah">Torah Study</TabsTrigger>
+            <TabsTrigger value="advice">Advice & Support</TabsTrigger>
+            <TabsTrigger value="social">Social</TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="all">
-          <ForumBoard topics={topics} />
-        </TabsContent>
-        <TabsContent value="torah">
-          <ForumBoard topics={topics.filter(t => t.category === 'Torah')} />
-        </TabsContent>
-        <TabsContent value="advice">
-          <ForumBoard topics={topics.filter(t => t.category === 'Advice')} />
-        </TabsContent>
-      </Tabs>
+          <TabsContent value="all">
+            <ForumBoard topics={topics} />
+          </TabsContent>
+          <TabsContent value="torah">
+            <ForumBoard topics={topics.filter(t => t.category === 'Torah')} />
+          </TabsContent>
+          <TabsContent value="advice">
+            <ForumBoard topics={topics.filter(t => t.category === 'Advice')} />
+          </TabsContent>
+        </Tabs>
+      )}
     </PageShell>
   );
 }

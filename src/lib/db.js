@@ -1,139 +1,118 @@
-import { v4 as uuidv4 } from 'uuid';
+import { base44 } from '@/api/base44Client';
 
-// Initial Seed Data to make the app look populated
-const SEED_DATA = {
-  users: [
-    { id: 'u1', name: 'User', email: 'user@breslov.academy', xp: 1250, streak: 5, coins: 500 }
-  ],
-  forum_topics: [
-    { id: 't1', title: 'Understanding Likutey Moharan I:6', category: 'Torah', author: 'Yossi', votes: 15, replies: 4, views: 120, timestamp: Date.now() - 3600000 },
-    { id: 't2', title: 'Study partner for morning Seder?', category: 'Chavruta', author: 'David', votes: 8, replies: 2, views: 45, timestamp: Date.now() - 86400000 },
-  ],
-  daf_progress: {
-    // 'masechet-daf': boolean
-  },
-  inventory: [],
-  notifications: []
-};
+// Helper to handle API vs Local
+const api = base44.entities;
 
-// Low-level DB access
-const getDB = () => {
-  try {
-    const db = localStorage.getItem('ba_local_db');
-    return db ? JSON.parse(db) : SEED_DATA;
-  } catch {
-    return SEED_DATA;
-  }
-};
-
-const saveDB = (data) => {
-  localStorage.setItem('ba_local_db', JSON.stringify(data));
-};
-
-// Generic CRUD
 export const db = {
   // --- USER ---
-  getUser: () => getDB().users[0],
+  getUser: async () => {
+    try {
+      return await base44.auth.me();
+    } catch {
+      return null;
+    }
+  },
   
-  updateUser: (updates) => {
-    const data = getDB();
-    data.users[0] = { ...data.users[0], ...updates };
-    saveDB(data);
-    return data.users[0];
+  updateUser: async (updates) => {
+    const user = await base44.auth.me();
+    if (!user) return null;
+    // User profile is often read-only via auth/me, so we might need a UserProfile entity
+    // For now, we'll assume we update a 'UserProfile' entity linked to email
+    const profiles = await api.UserProfile.filter({ email: user.email });
+    if (profiles.length > 0) {
+      return api.UserProfile.update(profiles[0].id, updates);
+    }
+    return api.UserProfile.create({ email: user.email, ...updates });
   },
 
-  addXP: (amount) => {
-    const data = getDB();
-    data.users[0].xp += amount;
-    saveDB(data);
-    return data.users[0];
-  },
-
-  spendCoins: (amount) => {
-    const data = getDB();
-    if (data.users[0].coins < amount) throw new Error("Insufficient funds");
-    data.users[0].coins -= amount;
-    saveDB(data);
-    return data.users[0];
+  addXP: async (amount) => {
+    const user = await base44.auth.me();
+    if (!user) return;
+    // Record XP transaction
+    await api.XpTransaction.create({ amount, user_email: user.email, timestamp: Date.now() });
+    
+    // Update aggregate profile
+    const profiles = await api.UserProfile.filter({ email: user.email });
+    let profile = profiles[0];
+    if (!profile) {
+      profile = await api.UserProfile.create({ email: user.email, xp: 0, coins: 0 });
+    }
+    await api.UserProfile.update(profile.id, { xp: (profile.xp || 0) + amount });
+    return profile;
   },
 
   // --- FORUM ---
-  getTopics: () => getDB().forum_topics,
-  
-  addTopic: (topic) => {
-    const data = getDB();
-    const newTopic = { 
-      id: uuidv4(), 
-      timestamp: Date.now(), 
-      votes: 0, 
-      replies: 0, 
-      views: 0, 
-      ...topic 
-    };
-    data.forum_topics.unshift(newTopic);
-    saveDB(data);
-    return newTopic;
+  getTopics: async () => {
+    return api.ForumTopic.list('-timestamp', 50);
   },
-
-  upvoteTopic: (id) => {
-    const data = getDB();
-    const topic = data.forum_topics.find(t => t.id === id);
-    if (topic) {
-      topic.votes += 1;
-      saveDB(data);
-    }
-    return topic;
+  
+  addTopic: async (topic) => {
+    const user = await base44.auth.me();
+    return api.ForumTopic.create({
+      ...topic,
+      author: user ? (user.name || user.email) : 'Anonymous',
+      timestamp: Date.now(),
+      votes: 0,
+      replies: 0,
+      views: 0
+    });
   },
 
   // --- DAF YOMI ---
-  getDafProgress: (masechet, daf) => {
-    const key = `${masechet}-${daf}`;
-    return getDB().daf_progress[key] || false;
+  getDafProgress: async (masechet, daf) => {
+    const user = await base44.auth.me();
+    if (!user) return false;
+    const rows = await api.DafProgress.filter({ 
+      user_email: user.email,
+      masechet, 
+      daf: String(daf) 
+    });
+    return rows.length > 0;
   },
 
-  markDaf: (masechet, daf, isDone = true) => {
-    const data = getDB();
-    const key = `${masechet}-${daf}`;
-    data.daf_progress[key] = isDone;
+  markDaf: async (masechet, daf, isDone = true) => {
+    const user = await base44.auth.me();
+    if (!user) return;
+    
     if (isDone) {
-        data.users[0].xp += 50; // Bonus for learning
+      await api.DafProgress.create({
+        user_email: user.email,
+        masechet,
+        daf: String(daf),
+        timestamp: Date.now()
+      });
+      // Add Bonus XP
+      await db.addXP(50);
     }
-    saveDB(data);
-    return isDone;
   },
 
   // --- SHOP ---
-  buyItem: (item) => {
-    const data = getDB();
-    if (data.users[0].coins < item.cost) return false;
+  buyItem: async (item) => {
+    const user = await base44.auth.me();
+    if (!user) return false;
     
-    data.users[0].coins -= item.cost;
-    data.inventory.push({ ...item, purchasedAt: Date.now() });
-    saveDB(data);
+    const profiles = await api.UserProfile.filter({ email: user.email });
+    let profile = profiles[0];
+    if (!profile) profile = await api.UserProfile.create({ email: user.email, coins: 500 }); // Bonus for new users
+
+    if ((profile.coins || 0) < item.cost) return false;
+
+    // Deduct coins
+    await api.UserProfile.update(profile.id, { coins: profile.coins - item.cost });
+    
+    // Add to inventory
+    await api.InventoryItem.create({
+      user_email: user.email,
+      item_id: item.id,
+      name: item.name,
+      purchased_at: Date.now()
+    });
+    
     return true;
   },
 
-  getInventory: () => getDB().inventory,
-
-  // --- GENERIC ENTITY (Universal Page) ---
-  list: (collection) => {
-    const data = getDB();
-    return data[collection] || [];
-  },
-  
-  create: (collection, item) => {
-    const data = getDB();
-    if (!data[collection]) data[collection] = [];
-    const newItem = { id: uuidv4(), created_at: Date.now(), ...item };
-    data[collection].push(newItem);
-    saveDB(data);
-    return newItem;
-  },
-
-  delete: (collection, id) => {
-    const data = getDB();
-    if (!data[collection]) return;
-    data[collection] = data[collection].filter(i => i.id !== id);
-    saveDB(data);
-  }
+  // --- GENERIC ---
+  list: async (entity) => api[entity].list(),
+  create: async (entity, data) => api[entity].create(data),
+  delete: async (entity, id) => api[entity].delete(id),
 };
