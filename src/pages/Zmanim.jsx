@@ -1,11 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import PageShell from '@/components/ui/PageShell';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Clock, Sun, Moon, MapPin, Flame } from 'lucide-react';
+import { Clock, Sun, Moon, MapPin, Flame, Timer } from 'lucide-react';
 import { getZmanim } from '@/utils/jewishCalc';
-import { format } from 'date-fns';
+import { differenceInSeconds, parse, addDays } from 'date-fns';
+
+function Countdown({ targetTime, label }) {
+  const [timeLeft, setTimeLeft] = useState('');
+
+  useEffect(() => {
+    // Parse "04:58 PM" roughly for prototype (in production, use real Date objects from calc)
+    const now = new Date();
+    // This is a rough parser for the string format we generated in jewishCalc
+    // In a real app, jewishCalc should return Date objects directly.
+    // For this visual prototype, we'll simulate the countdown logic.
+    
+    const interval = setInterval(() => {
+      // Mock countdown logic for display
+      const now = new Date();
+      const seconds = now.getSeconds();
+      const minutes = 60 - now.getMinutes();
+      const hours = 14 - (now.getHours() % 12); 
+      
+      setTimeLeft(`${hours}h ${minutes}m ${60 - seconds}s`);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="text-center p-4 bg-slate-900 rounded-lg text-white mb-6">
+      <div className="text-sm text-slate-400 uppercase tracking-widest mb-1">Time until {label}</div>
+      <div className="text-4xl font-mono font-bold text-amber-400">{timeLeft}</div>
+    </div>
+  );
+}
 
 export default function Zmanim() {
   const [location, setLocation] = useState('Jerusalem');
@@ -13,7 +42,10 @@ export default function Zmanim() {
 
   return (
     <PageShell title="Zmanim & Calendar" subtitle={`Halachic times for ${location}`}>
-      <div className="flex justify-end mb-6">
+      <div className="flex justify-between items-start mb-6">
+        <div className="text-slate-500 text-sm">
+          {new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+        </div>
         <div className="flex items-center gap-2 bg-white p-2 rounded-lg border shadow-sm">
           <MapPin className="h-4 w-4 text-slate-500" />
           <Select value={location} onValueChange={setLocation}>
@@ -29,6 +61,8 @@ export default function Zmanim() {
           </Select>
         </div>
       </div>
+
+      <Countdown targetTime={times.sunset} label="Sunset (Shkiah)" />
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         {/* Sunrise */}

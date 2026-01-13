@@ -6,12 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, Plus, Filter, Trash2, ArrowRight, CornerDownRight } from 'lucide-react';
+import { Search, Plus, Filter, Trash2, ArrowRight, CornerDownRight, Loader2, Database } from 'lucide-react';
 import { ENTITY_REGISTRY, getEntityDefinition } from '@/components/api/entityRegistry';
 import { db } from '@/lib/db';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import AutoForm from '@/components/ui/AutoForm';
+import EmptyState from '@/components/ui/EmptyState';
 
 export default function UniversalPage() {
   const { pageName } = useParams();
@@ -63,6 +64,25 @@ export default function UniversalPage() {
     }
   };
 
+  const CreateButton = (
+    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <DialogTrigger asChild>
+        <Button>
+          <Plus className="h-4 w-4 mr-2" />
+          Create {def.label}
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>New {def.label}</DialogTitle>
+        </DialogHeader>
+        <div className="py-4">
+          <AutoForm schema={def.schema} onSubmit={handleCreate} />
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+
   return (
     <PageShell title={def.label} subtitle={`Manage ${def.label}s`}>
       {/* Toolbar */}
@@ -76,93 +96,81 @@ export default function UniversalPage() {
             <Filter className="h-4 w-4 mr-2" />
             Filter
           </Button>
-          
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Create {def.label}
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-lg">
-              <DialogHeader>
-                <DialogTitle>New {def.label}</DialogTitle>
-              </DialogHeader>
-              <div className="py-4">
-                {/* AutoForm handles the validation logic */}
-                <AutoForm schema={def.schema} onSubmit={handleCreate} />
-              </div>
-            </DialogContent>
-          </Dialog>
+          {CreateButton}
         </div>
       </div>
 
-      {/* Data Grid */}
-      <Card>
-        <CardContent className="p-0">
-          <table className="w-full text-sm text-left">
-            <thead className="bg-slate-50 text-slate-500 border-b">
-              <tr>
-                {def.listFields.map(f => (
-                  <th key={f} className="px-6 py-3 font-medium capitalize">{f.replace(/_/g, ' ')}</th>
-                ))}
-                {def.relationships && <th className="px-6 py-3 font-medium">Relationships</th>}
-                <th className="px-6 py-3 font-medium text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {items.length === 0 && (
+      {/* Content */}
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-slate-400 mb-4" />
+          <p className="text-slate-500 text-sm">Loading {def.label.toLowerCase()} data...</p>
+        </div>
+      ) : items.length === 0 ? (
+        <EmptyState 
+          icon={def.icon ? (require('lucide-react')[def.icon] || Database) : Database}
+          title={`No ${def.label}s found`}
+          description={`Get started by creating your first ${def.label.toLowerCase()}.`}
+          action={CreateButton}
+        />
+      ) : (
+        <Card>
+          <CardContent className="p-0">
+            <table className="w-full text-sm text-left">
+              <thead className="bg-slate-50 text-slate-500 border-b">
                 <tr>
-                  <td colSpan={10} className="px-6 py-8 text-center text-slate-500">
-                    No items found.
-                  </td>
-                </tr>
-              )}
-              {items.map((item) => (
-                <tr key={item.id} className="hover:bg-slate-50 group">
                   {def.listFields.map(f => (
-                    <td key={f} className="px-6 py-4">
-                      {typeof item[f] === 'boolean' ? (
-                        <Badge variant={item[f] ? 'default' : 'secondary'}>{item[f] ? 'Yes' : 'No'}</Badge>
-                      ) : (
-                        item[f] || '-'
-                      )}
-                    </td>
+                    <th key={f} className="px-6 py-3 font-medium capitalize">{f.replace(/_/g, ' ')}</th>
                   ))}
-                  
-                  {/* Relational Links */}
-                  {def.relationships && (
-                    <td className="px-6 py-4">
-                      <div className="flex gap-2">
-                        {def.relationships.map(rel => (
-                          <Button key={rel.target} variant="outline" size="sm" asChild>
-                            {/* In a real app, this would filter the target list by the parent ID */}
-                            <Link to={`/admin/${rel.target.toLowerCase()}`}>
-                              <CornerDownRight className="h-3 w-3 mr-1" />
-                              {rel.label}
-                            </Link>
-                          </Button>
-                        ))}
-                      </div>
-                    </td>
-                  )}
-
-                  <td className="px-6 py-4 text-right">
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="text-red-500 opacity-0 group-hover:opacity-100 hover:text-red-600 hover:bg-red-50"
-                      onClick={() => handleDelete(item.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </td>
+                  {def.relationships && <th className="px-6 py-3 font-medium">Relationships</th>}
+                  <th className="px-6 py-3 font-medium text-right">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </CardContent>
-      </Card>
+              </thead>
+              <tbody className="divide-y">
+                {items.map((item) => (
+                  <tr key={item.id} className="hover:bg-slate-50 group">
+                    {def.listFields.map(f => (
+                      <td key={f} className="px-6 py-4">
+                        {typeof item[f] === 'boolean' ? (
+                          <Badge variant={item[f] ? 'default' : 'secondary'}>{item[f] ? 'Yes' : 'No'}</Badge>
+                        ) : (
+                          item[f] || '-'
+                        )}
+                      </td>
+                    ))}
+                    
+                    {def.relationships && (
+                      <td className="px-6 py-4">
+                        <div className="flex gap-2">
+                          {def.relationships.map(rel => (
+                            <Button key={rel.target} variant="outline" size="sm" asChild>
+                              <Link to={`/admin/${rel.target.toLowerCase()}`}>
+                                <CornerDownRight className="h-3 w-3 mr-1" />
+                                {rel.label}
+                              </Link>
+                            </Button>
+                          ))}
+                        </div>
+                      </td>
+                    )}
+
+                    <td className="px-6 py-4 text-right">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="text-red-500 opacity-0 group-hover:opacity-100 hover:text-red-600 hover:bg-red-50"
+                        onClick={() => handleDelete(item.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
+      )}
     </PageShell>
   );
 }
