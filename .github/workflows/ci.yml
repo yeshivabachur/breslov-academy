@@ -55,7 +55,7 @@ jobs:
       - run: npm run spec:check
       - run: npm run build
       - name: Upload Build Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: dist
           path: dist/
